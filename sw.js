@@ -5,9 +5,10 @@
  * Üçüncü taraf API/harita/Google istekleri önbelleğe ALINMAZ (gizlilik + tazelik).
  * Kullanıcı verileri localStorage/IndexedDB'dedir; SW bunlara dokunmaz.
  */
-const CACHE_VERSION = '5.0.1';
+const CACHE_VERSION = '6.0.0';
 const SHELL_CACHE = `yakit-takip-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `yakit-takip-runtime-${CACHE_VERSION}`;
+const OCR_CACHE = `yakit-takip-ocr-${CACHE_VERSION}`;
 const CACHE_PREFIX = 'yakit-takip-';
 
 const APP_SHELL = [
@@ -21,6 +22,7 @@ const APP_SHELL = [
   './pwa.css',
   './leaflet.js',
   './pwa.js',
+  './ocr.js',
   './inter-latin.woff2',
   './inter-latin-ext.woff2',
   './fa-solid-subset.woff2',
@@ -31,6 +33,29 @@ const APP_SHELL = [
   './icon-maskable-512.png',
   './apple-touch-icon.png'
 ];
+
+// OCR varlıkları büyük (~5,6 MB); kurulumda değil, kullanıcı istediğinde önbelleğe alınır.
+const OCR_ASSETS = [
+  './ocr.js',
+  './tesseract.min.js',
+  './tesseract-worker.min.js',
+  './tesseract-core-simd-lstm.wasm.js',
+  './tur.traineddata.gz'
+];
+
+async function precacheOcr() {
+  const cache = await caches.open(OCR_CACHE);
+  const results = [];
+  for (const url of OCR_ASSETS) {
+    const existing = await cache.match(url);
+    if (existing) { results.push({ url, cached: true }); continue; }
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('OCR dosyası indirilemedi: ' + url + ' (' + res.status + ')');
+    await cache.put(url, res.clone());
+    results.push({ url, cached: true });
+  }
+  return results;
+}
 
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
@@ -45,7 +70,7 @@ self.addEventListener('activate', (event) => {
     const keys = await caches.keys();
     await Promise.all(
       keys
-        .filter((key) => key.startsWith(CACHE_PREFIX) && key !== SHELL_CACHE && key !== RUNTIME_CACHE)
+        .filter((key) => key.startsWith(CACHE_PREFIX) && key !== SHELL_CACHE && key !== RUNTIME_CACHE && key !== OCR_CACHE)
         .map((key) => caches.delete(key))
     );
     await self.clients.claim();
@@ -127,5 +152,23 @@ self.addEventListener('message', (event) => {
     if (port) port.postMessage({ version: CACHE_VERSION, shell: SHELL_CACHE, runtime: RUNTIME_CACHE });
   } else if (data.type === 'CLEAR_RUNTIME') {
     event.waitUntil(caches.delete(RUNTIME_CACHE));
+  } else if (data.type === 'PRECACHE_OCR') {
+    const port = event.ports && event.ports[0];
+    event.waitUntil((async () => {
+      try {
+        const files = await precacheOcr();
+        if (port) port.postMessage({ ok: true, files });
+      } catch (err) {
+        if (port) port.postMessage({ ok: false, error: String(err && err.message || err) });
+      }
+    })());
+  } else if (data.type === 'OCR_STATUS') {
+    const port = event.ports && event.ports[0];
+    event.waitUntil((async () => {
+      const cache = await caches.open(OCR_CACHE);
+      let n = 0;
+      for (const url of OCR_ASSETS) { if (await cache.match(url)) n++; }
+      if (port) port.postMessage({ ready: n === OCR_ASSETS.length, cached: n, total: OCR_ASSETS.length });
+    })());
   }
 });

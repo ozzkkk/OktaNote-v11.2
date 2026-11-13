@@ -190,6 +190,59 @@
     refreshStatus();
   }
 
+  // ---- OCR çevrimdışı hazırlığı ----
+  function swMessage(payload) {
+    return new Promise((resolve, reject) => {
+      if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) {
+        reject(new Error('Service worker henüz etkin değil. Sayfayı bir kez yenileyin.'));
+        return;
+      }
+      const ch = new MessageChannel();
+      const timer = setTimeout(() => reject(new Error('Zaman aşımı')), 180000);
+      ch.port1.onmessage = (ev) => { clearTimeout(timer); resolve(ev.data); };
+      navigator.serviceWorker.controller.postMessage(payload, [ch.port2]);
+    });
+  }
+
+  async function refreshOcrStatus() {
+    const el = $('ocr-cache-status');
+    const btn = $('ocr-precache-btn');
+    if (!el) return;
+    try {
+      const st = await swMessage({ type: 'OCR_STATUS' });
+      if (st.ready) {
+        el.textContent = 'Hazır — çevrimdışı çalışır';
+        el.className = 'text-[10px] font-semibold text-emerald-700';
+        if (btn) btn.classList.add('hidden');
+      } else {
+        el.textContent = `${st.cached}/${st.total} dosya`;
+        el.className = 'text-[10px] font-semibold text-amber-600';
+        if (btn) btn.classList.remove('hidden');
+      }
+    } catch (e) {
+      el.textContent = 'Henüz indirilmedi';
+      el.className = 'text-[10px] font-semibold text-slate-400';
+      if (btn) btn.classList.remove('hidden');
+    }
+  }
+
+  async function precacheOcr() {
+    const btn = $('ocr-precache-btn');
+    const el = $('ocr-cache-status');
+    if (btn) { btn.disabled = true; btn.textContent = 'İndiriliyor… lütfen bekleyin'; btn.classList.add('opacity-60'); }
+    try {
+      const res = await swMessage({ type: 'PRECACHE_OCR' });
+      if (res && res.ok) { toast('OCR dosyaları indirildi ✓'); }
+      else throw new Error((res && res.error) || 'İndirme başarısız');
+    } catch (err) {
+      toast('OCR indirilemedi: ' + (err && err.message ? err.message : err));
+      if (el) { el.textContent = 'İndirme başarısız'; el.className = 'text-[10px] font-semibold text-rose-600'; }
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'OCR dosyalarını indir (~5,6 MB)'; btn.classList.remove('opacity-60'); }
+      refreshOcrStatus();
+    }
+  }
+
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     state.deferredPrompt = e;
@@ -212,9 +265,12 @@
     if (installBtn) installBtn.addEventListener('click', promptInstall);
     if (updateBtn) updateBtn.addEventListener('click', applyUpdate);
     if (checkBtn) checkBtn.addEventListener('click', checkForUpdates);
+    const ocrBtn = $('ocr-precache-btn');
+    if (ocrBtn) ocrBtn.addEventListener('click', precacheOcr);
     refreshStatus();
     registerSW();
+    setTimeout(refreshOcrStatus, 1200);
   });
 
-  window.YakitPWA = { state, registerSW, checkForUpdates, applyUpdate, promptInstall, refreshStatus };
+  window.YakitPWA = { state, registerSW, checkForUpdates, applyUpdate, promptInstall, refreshStatus, refreshOcrStatus, precacheOcr };
 })();

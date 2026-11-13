@@ -18,6 +18,7 @@
     <link rel="stylesheet" href="./leaflet.css">
     <link rel="stylesheet" href="./pwa.css">
     <script src="./pwa.js" defer></script>
+    <script src="./ocr.js" defer></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -438,6 +439,11 @@
                         <span id="pwa-sw-status" class="text-[10px] font-semibold text-slate-500">Kontrol ediliyor…</span>
                     </div>
                     <div id="pwa-cache-status" class="text-[10px] text-slate-400">Önbellek durumu okunuyor…</div>
+                    <div class="flex items-center justify-between bg-white rounded-lg border border-slate-200 px-2.5 py-2">
+                        <span class="text-[10px] font-semibold text-slate-600">OCR motoru (çevrimdışı fiş okuma)</span>
+                        <span id="ocr-cache-status" class="text-[10px] font-semibold text-slate-400">kontrol ediliyor…</span>
+                    </div>
+                    <button type="button" id="ocr-precache-btn" class="w-full bg-white border border-slate-200 text-slate-700 px-3 py-1.5 rounded-xl text-[11px] font-semibold">OCR dosyalarını indir (~5,6 MB)</button>
                     <div class="flex flex-wrap gap-2">
                         <button type="button" id="pwa-install-btn" class="hidden bg-slate-800 text-white px-3 py-1.5 rounded-xl text-[11px] font-semibold">Ana ekrana ekle</button>
                         <button type="button" id="pwa-update-btn" class="hidden bg-blue-600 text-white px-3 py-1.5 rounded-xl text-[11px] font-semibold">Yeni sürümü uygula</button>
@@ -579,7 +585,7 @@
                 </div>
                 <div>
                     <div class="font-semibold text-slate-800 text-sm">Yakıt Fişi Taraması</div>
-                    <div class="text-[11px] text-slate-400">Fiş fotoğrafından otomatik aktar</div>
+                    <div class="text-[11px] text-slate-400">Fişten litre, fiyat, tutar, tarih oku</div>
                 </div>
             </button>
             <button onclick="toggleActionSheet(false); openExpenseModal()" class="w-full flex items-center gap-3.5 px-3 py-2.5 rounded-xl hover:bg-slate-50 text-left transition">
@@ -959,22 +965,63 @@
     <!-- YAKIT FİŞİ TARAMA MODALI -->
     <div id="receipt-modal" class="hidden absolute inset-0 bg-white z-50 flex flex-col">
         <div class="px-4 py-3 flex items-center justify-between border-b border-slate-100">
-            <button onclick="document.getElementById('receipt-modal').classList.add('hidden')" class="w-9 h-9 rounded-full hover:bg-slate-100 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+            <button type="button" onclick="YakitOCR.closeReceiptModal()" aria-label="Kapat" class="w-9 h-9 rounded-full hover:bg-slate-100 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
             <span class="font-bold text-slate-800 text-sm">Yakıt Fişi Taraması</span>
             <div class="w-9"></div>
         </div>
-        <div class="p-5 flex-1 flex flex-col justify-center items-center text-center space-y-4">
-            <div class="w-20 h-20 rounded-3xl bg-slate-100 text-slate-700 flex items-center justify-center text-3xl">
-                <i class="fa-solid fa-receipt"></i>
+        <div class="flex-1 min-h-0 overflow-y-auto p-4 space-y-3">
+            <!-- Adım 1: fotoğraf seç -->
+            <div id="ocr-step-pick" class="space-y-3">
+                <div class="flex flex-col items-center text-center space-y-3 py-4">
+                    <div class="w-20 h-20 rounded-3xl bg-slate-100 text-slate-700 flex items-center justify-center text-3xl">
+                        <i class="fa-solid fa-receipt"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-base">Fiş Fotoğrafı Yükle</h3>
+                        <p class="text-xs text-slate-500 mt-1 leading-relaxed">Fişin fotoğrafını seçin; litre, birim fiyat, toplam tutar ve tarih okunup size gösterilir. Onaylamadan kayıt oluşmaz.</p>
+                    </div>
+                    <label class="w-full bg-slate-800 text-white font-semibold py-3 rounded-2xl text-sm cursor-pointer shadow text-center">
+                        Fotoğraf Seç / Çek
+                        <input type="file" id="ocr-file-input" accept="image/*" class="hidden">
+                    </label>
+                    <button type="button" id="ocr-warmup-btn" class="text-[11px] font-semibold text-blue-600 hover:underline">OCR motorunu şimdiden hazırla</button>
+                </div>
+                <div class="bg-slate-50 rounded-xl p-3 border border-slate-200/70 space-y-1">
+                    <div class="text-[11px] font-semibold text-slate-600">Daha iyi sonuç için</div>
+                    <ul class="text-[10px] text-slate-500 space-y-0.5 list-disc pl-4 leading-relaxed">
+                        <li>Fişi düz, kırışıksız ve tam kadraj çekin.</li>
+                        <li>Işık yeterli olsun, gölge ve parlama olmasın.</li>
+                        <li>Termal fişlerde yazı silikse sonuç düşer; elle düzeltebilirsiniz.</li>
+                    </ul>
+                </div>
+                <p class="text-[10px] text-slate-400 leading-relaxed">Fotoğraf cihazınızdan dışarı gönderilmez; okuma tamamen tarayıcıda, çevrimdışı çalışabilen yerel OCR motoruyla yapılır.</p>
             </div>
-            <div>
-                <h3 class="font-bold text-slate-800 text-base">Fiş Fotoğrafı Yükle</h3>
-                <p class="text-xs text-slate-500 mt-1">Akaryakıt fişinizin fotoğrafını seçin, litre ve tutar bilgileri dolum formuna aktarılsın.</p>
+
+            <!-- İlerleme -->
+            <div id="ocr-progress" class="hidden space-y-2 py-6">
+                <img id="ocr-preview" class="hidden w-full max-h-48 object-contain rounded-xl border border-slate-200 bg-slate-50" alt="Fiş önizleme">
+                <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div id="ocr-progress-bar" class="h-full bg-slate-800 transition-all" style="width:0%"></div>
+                </div>
+                <div id="ocr-progress-text" class="text-[11px] font-semibold text-slate-600 text-center">Başlatılıyor…</div>
+                <div class="text-[10px] text-slate-400 text-center">İlk kullanımda motor ve dil modeli yüklenir; sonraki taramalar daha hızlıdır.</div>
             </div>
-            <label class="w-full bg-slate-800 text-white font-semibold py-3 rounded-2xl text-sm cursor-pointer shadow">
-                Fotoğraf Seç / Çek
-                <input type="file" accept="image/*" onchange="processReceiptScan(event)" class="hidden">
-            </label>
+
+            <!-- Adım 2: sonuçları doğrula -->
+            <div id="ocr-step-result" class="hidden space-y-3">
+                <div id="ocr-confidence" class="text-[11px] font-semibold text-slate-600"></div>
+                <div id="ocr-fields" class="space-y-2"></div>
+                <div class="flex gap-2">
+                    <button type="button" id="ocr-retry-btn" class="flex-1 bg-white border border-slate-200 text-slate-700 py-2.5 rounded-xl text-xs font-semibold">Başka fotoğraf</button>
+                    <button type="button" id="ocr-apply-btn" class="flex-1 bg-slate-800 text-white py-2.5 rounded-xl text-xs font-semibold">Dolum formuna aktar</button>
+                </div>
+                <button type="button" id="ocr-raw-btn" class="text-[11px] font-semibold text-slate-500 hover:underline">Okunan ham metni göster/gizle</button>
+                <div id="ocr-raw-box" class="hidden bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                    <pre id="ocr-raw-text" class="text-[10px] text-slate-600 whitespace-pre-wrap break-words max-h-48 overflow-y-auto"></pre>
+                </div>
+            </div>
+
+            <div id="ocr-status" class="text-[11px] leading-relaxed text-slate-500"></div>
         </div>
     </div>
 
@@ -2441,23 +2488,7 @@
         closeStationPicker();
     }
 
-    function openReceiptModal() {
-        const modal = document.getElementById('receipt-modal');
-        if (modal) modal.classList.remove('hidden');
-    }
-
-    function processReceiptScan(e) {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        document.getElementById('receipt-modal').classList.add('hidden');
-        openRefuelModal({
-            liters: 42.5,
-            price: 81.60,
-            total: 3468.00,
-            odometer: getActiveVehicle().odometer + 620
-        });
-        showToast('Demo: örnek fiş verileri aktarıldı (OCR henüz bağlı değil)');
-    }
+    // openReceiptModal / processReceiptScan artık ocr.js içinde (gerçek OCR).
 
     function openExpenseModal() {
         const modal = document.getElementById('expense-modal');
