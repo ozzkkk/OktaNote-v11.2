@@ -1,0 +1,19 @@
+/* Yakıt Takip v5 — PWA + harita yerel stilleri */
+
+    /* v4 harita katmanı: Leaflet'in yüksek z-index'lerini modal içinde izole et */
+    #station-leaflet-map { isolation: isolate; }
+    .leaflet-container { font-family: 'Inter', sans-serif; background: #e2e8f0; }
+    .leaflet-control-attribution { font-size: 9px; line-height: 1.3; }
+    .station-pin-wrap { background: transparent; border: none; }
+    .leaflet-popup-content-wrapper { border-radius: 12px; }
+    .leaflet-popup-content { margin: 10px 12px; }
+
+
+/* PWA bildirim çubuğu */
+#pwa-banner { padding-bottom: max(0.625rem, env(safe-area-inset-bottom)); }
+#pwa-banner-action { min-height: 32px; }
+@media (display-mode: standalone) {
+  body { overscroll-behavior-y: contain; }
+}
+/* Google Haritalar çevrimdışı yer tutucusu */
+#trip-map-offline { backdrop-filter: blur(2px); }

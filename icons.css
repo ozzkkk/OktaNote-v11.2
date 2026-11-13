@@ -1,0 +1,45 @@
+/* Font Awesome Free 6.4.0 subset — Icons CC BY 4.0, Fonts OFL 1.1, Code MIT (LICENSES.txt) */
+.fa-solid,.fa-brands{-moz-osx-font-smoothing:grayscale;-webkit-font-smoothing:antialiased;display:inline-block;font-style:normal;font-variant:normal;line-height:1;text-rendering:auto}
+.fa-solid{font-family:"Font Awesome 6 Free";font-weight:900}
+.fa-brands{font-family:"Font Awesome 6 Brands";font-weight:400}
+@font-face{font-family:"Font Awesome 6 Free";font-style:normal;font-weight:900;font-display:block;src:url("./fa-solid-subset.woff2") format("woff2")}
+@font-face{font-family:"Font Awesome 6 Brands";font-style:normal;font-weight:400;font-display:block;src:url("./fa-brands-subset.woff2") format("woff2")}
+.fa-arrow-left:before{content:"\f060"}
+.fa-arrow-up-right-from-square:before{content:"\f08e"}
+.fa-bars:before{content:"\f0c9"}
+.fa-calculator:before{content:"\f1ec"}
+.fa-camera:before{content:"\f030"}
+.fa-car:before{content:"\f1b9"}
+.fa-caret-down:before{content:"\f0d7"}
+.fa-chart-column:before{content:"\e0e3"}
+.fa-chart-line:before{content:"\f201"}
+.fa-chart-pie:before{content:"\f200"}
+.fa-check:before{content:"\f00c"}
+.fa-circle-check:before{content:"\f058"}
+.fa-circle-play:before{content:"\f144"}
+.fa-cloud-sun:before{content:"\f6c4"}
+.fa-database:before{content:"\f1c0"}
+.fa-ellipsis-vertical:before{content:"\f142"}
+.fa-expand:before{content:"\f065"}
+.fa-file-csv:before{content:"\f6dd"}
+.fa-file-lines:before{content:"\f15c"}
+.fa-fill-drip:before{content:"\f576"}
+.fa-flag-checkered:before{content:"\f11e"}
+.fa-gas-pump:before{content:"\f52f"}
+.fa-gauge-high:before{content:"\f625"}
+.fa-google:before{content:"\f1a0"}
+.fa-house:before{content:"\f015"}
+.fa-image:before{content:"\f03e"}
+.fa-list-ul:before{content:"\f0ca"}
+.fa-location-crosshairs:before{content:"\f601"}
+.fa-location-dot:before{content:"\f3c5"}
+.fa-magnifying-glass:before{content:"\f002"}
+.fa-map-location-dot:before{content:"\f5a0"}
+.fa-pen:before{content:"\f304"}
+.fa-plus:before{content:"\2b"}
+.fa-receipt:before{content:"\f543"}
+.fa-route:before{content:"\f4d7"}
+.fa-table-cells-large:before{content:"\f009"}
+.fa-trash:before{content:"\f1f8"}
+.fa-turkish-lira-sign:before{content:"\e2bb"}
+.fa-xmark:before{content:"\f00d"}

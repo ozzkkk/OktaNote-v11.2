@@ -1,0 +1,3217 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#ffffff">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Yakıt Takip">
+    <link rel="manifest" href="./manifest.webmanifest">
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+    <title>Yakıt Takip</title>
+    <link rel="stylesheet" href="./tailwind.css">
+    <link rel="stylesheet" href="./fonts.css">
+    <link rel="stylesheet" href="./icons.css">
+    <link rel="stylesheet" href="./leaflet.css">
+    <link rel="stylesheet" href="./pwa.css">
+    <script src="./pwa.js" defer></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            margin: 0;
+            padding: 0;
+            height: 100dvh;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .app-shell {
+            width: 100%;
+            max-width: 480px;
+            height: 100dvh;
+            margin: 0 auto;
+            background-color: #f8fafc;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        @media (min-width: 640px) {
+            body {
+                background-color: #e2e8f0;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+            .app-shell {
+                height: 92dvh;
+                max-height: 880px;
+                border-radius: 32px;
+                box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.2);
+                border: 1px solid #cbd5e1;
+            }
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .drawer-backdrop {
+            transition: opacity 0.25s ease;
+        }
+        .drawer-panel {
+            transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .sheet-panel {
+            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+    <script src="./leaflet.js" defer></script>
+</head>
+<body>
+
+<div class="app-shell" id="app">
+    <!-- Üst Uygulama Barı -->
+    <header class="bg-white px-4 py-3 flex items-center justify-between border-b border-slate-100 shrink-0 pt-[max(0.75rem,env(safe-area-inset-top))]">
+        <button onclick="toggleDrawer(true)" class="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-700 transition">
+            <i class="fa-solid fa-bars text-lg"></i>
+        </button>
+        <div class="flex items-center gap-2">
+            <div class="w-7 h-7 rounded-full bg-rose-600 text-white flex items-center justify-center shadow-sm">
+                <i class="fa-solid fa-gauge-high text-xs"></i>
+            </div>
+            <span class="font-bold text-lg tracking-tight text-slate-800">yakıt takip</span>
+        </div>
+        <div class="w-10 h-10 flex items-center justify-center">
+            <span id="weather-badge-top" class="text-[11px] font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded-full hidden"></span>
+        </div>
+    </header>
+
+    <!-- Araç Seçici Kartı -->
+    <div class="px-4 pt-3 pb-2 shrink-0">
+        <div class="bg-slate-100/90 hover:bg-slate-200/70 transition rounded-2xl p-3 flex items-center justify-between cursor-pointer" onclick="switchView('vehicles')">
+            <div class="flex items-center gap-3">
+                <div id="active-vehicle-avatar" class="w-10 h-10 rounded-full bg-slate-800 text-white font-bold flex items-center justify-center text-base shadow-sm">
+                    T
+                </div>
+                <div>
+                    <div id="active-vehicle-name" class="font-semibold text-slate-800 text-sm">Toyota Corolla</div>
+                    <div id="active-vehicle-odo" class="text-xs text-slate-500">7.778 km</div>
+                </div>
+            </div>
+            <i class="fa-solid fa-caret-down text-slate-500 mr-1"></i>
+        </div>
+    </div>
+
+    <!-- Ana İçerik Alanı -->
+    <main class="flex-1 overflow-y-auto no-scrollbar px-4 pb-24 space-y-4">
+
+        <!-- 1. ANA SAYFA GÖRÜNÜMÜ -->
+        <section id="view-home" class="space-y-4 pt-1">
+            <!-- Yakıt Bölümü -->
+            <div>
+                <div class="flex items-center justify-between mb-2 px-1">
+                    <div class="flex items-center gap-2">
+                        <div class="w-7 h-7 rounded-full bg-slate-200/80 text-slate-700 flex items-center justify-center">
+                            <i class="fa-solid fa-gas-pump text-xs"></i>
+                        </div>
+                        <h2 class="font-bold text-slate-800 text-base">Yakıt Dolumları</h2>
+                    </div>
+                    <span id="home-refuel-count" class="text-xs font-medium text-slate-500">1 kayıt</span>
+                </div>
+                <div id="home-refuels-list" class="space-y-3"></div>
+            </div>
+
+            <!-- Maliyetler Bölümü -->
+            <div>
+                <div class="flex items-center gap-2 mb-2 px-1">
+                    <div class="w-7 h-7 rounded-full bg-slate-200/80 text-slate-700 flex items-center justify-center">
+                        <i class="fa-solid fa-turkish-lira-sign text-xs"></i>
+                    </div>
+                    <h2 class="font-bold text-slate-800 text-base">Maliyetler</h2>
+                </div>
+                <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
+                    <div>
+                        <span class="inline-block bg-slate-200/80 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider mb-2">BU AY</span>
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2.5">
+                                    <i class="fa-solid fa-gas-pump text-slate-600 text-sm w-4 text-center"></i>
+                                    <span id="home-this-month-fuel" class="font-bold text-slate-800 text-base">₺2.986,56</span>
+                                </div>
+                                <span class="text-xs text-slate-500">Yakıt</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2.5">
+                                    <i class="fa-solid fa-receipt text-slate-600 text-sm w-4 text-center"></i>
+                                    <span id="home-this-month-other" class="font-bold text-slate-800 text-base">₺0,00</span>
+                                </div>
+                                <span class="text-xs text-slate-500">Diğer maliyetler</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 border-t border-slate-100">
+                        <span class="inline-block bg-slate-200/80 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider mb-2">GEÇEN AY</span>
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2.5">
+                                    <i class="fa-solid fa-gas-pump text-slate-400 text-sm w-4 text-center"></i>
+                                    <span id="home-last-month-fuel" class="font-semibold text-slate-700 text-sm">₺0,00</span>
+                                </div>
+                                <span class="text-xs text-slate-400">Yakıt</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2.5">
+                                    <i class="fa-solid fa-receipt text-slate-400 text-sm w-4 text-center"></i>
+                                    <span id="home-last-month-other" class="font-semibold text-slate-700 text-sm">₺0,00</span>
+                                </div>
+                                <span class="text-xs text-slate-400">Diğer maliyetler</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. ZAMAN ÇİZELGESİ / KİLOMETRE GÜNLÜĞÜ GÖRÜNÜMÜ -->
+        <section id="view-timeline" class="hidden space-y-3 pt-1">
+            <div class="flex items-center justify-between px-1">
+                <h2 class="font-bold text-slate-800 text-base">Kilometre Günlüğü</h2>
+                <span id="timeline-count" class="text-xs bg-slate-200 text-slate-700 px-2.5 py-0.5 rounded-full font-medium">1 kayıt</span>
+            </div>
+            <div id="timeline-list" class="space-y-3"></div>
+        </section>
+
+        <!-- 3. HESAP MAKİNESİ GÖRÜNÜMÜ -->
+        <section id="view-calculator" class="hidden space-y-3 pt-1">
+            <h2 class="font-bold text-slate-800 text-base px-1">Yolculuk Maliyeti Hesapla</h2>
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1">Mesafe (km)</label>
+                    <input type="number" id="calc-distance" value="100" oninput="calculateTrip()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-base font-bold text-slate-800 focus:outline-none focus:border-slate-800">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 mb-1">Yakıt Fiyatı (₺/L)</label>
+                        <input type="number" step="0.01" id="calc-price" value="81.60" oninput="calculateTrip()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-bold text-slate-800 focus:outline-none focus:border-slate-800">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 mb-1">Tüketim (L/100km)</label>
+                        <input type="number" step="0.1" id="calc-consumption" value="6.5" oninput="calculateTrip()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-bold text-slate-800 focus:outline-none focus:border-slate-800">
+                    </div>
+                </div>
+                <div class="bg-slate-50 rounded-xl p-3.5 border border-slate-200/60 flex items-center justify-between">
+                    <div>
+                        <div class="text-[11px] text-slate-500">Tahmini Toplam Maliyet</div>
+                        <div id="calc-result-cost" class="text-lg font-bold text-slate-800 mt-0.5">₺0,00</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-[11px] text-slate-500">Gerekli Yakıt</div>
+                        <div id="calc-result-liters" class="text-base font-semibold text-blue-600 mt-0.5">0,0 L</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. İSTATİSTİKLER GÖRÜNÜMÜ -->
+        <section id="view-stats" class="hidden space-y-3 pt-1">
+            <h2 class="font-bold text-slate-800 text-base px-1">İstatistikler</h2>
+            
+            <div class="bg-slate-200/80 p-1 rounded-2xl grid grid-cols-3 gap-1 shrink-0">
+                <button onclick="switchStatsTab('refuels')" id="stats-tab-refuels" class="py-2 rounded-xl text-xs font-bold bg-white text-slate-800 shadow-sm transition">Dolumlar</button>
+                <button onclick="switchStatsTab('costs')" id="stats-tab-costs" class="py-2 rounded-xl text-xs font-semibold text-slate-600 transition">Maliyetler</button>
+                <button onclick="switchStatsTab('distance')" id="stats-tab-distance" class="py-2 rounded-xl text-xs font-semibold text-slate-600 transition">Mesafe</button>
+            </div>
+
+            <!-- TAB 1: DOLUMLAR -->
+            <div id="stats-pane-refuels" class="space-y-3">
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-100">
+                        <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Bu Yıl</div>
+                        <div id="stat-year-refuels" class="text-lg font-bold text-slate-800 mt-1">0 dolum</div>
+                        <div id="stat-year-liters" class="text-xs text-blue-600 font-medium mt-0.5">0,0 L</div>
+                    </div>
+                    <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-100">
+                        <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Bu Ay</div>
+                        <div id="stat-month-refuels" class="text-lg font-bold text-slate-800 mt-1">0 dolum</div>
+                        <div id="stat-month-liters" class="text-xs text-blue-600 font-medium mt-0.5">0,0 L</div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-100">
+                        <div class="text-xs text-slate-500">Min. Dolum (En Düşük)</div>
+                        <div id="stat-min-refuel" class="text-sm font-bold text-slate-800 mt-1">0 L / ₺0</div>
+                    </div>
+                    <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-100">
+                        <div class="text-xs text-slate-500">Max. Dolum (En Yüksek)</div>
+                        <div id="stat-max-refuel" class="text-sm font-bold text-slate-800 mt-1">0 L / ₺0</div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
+                    <div class="text-xs font-bold text-slate-700">Yakıt Tüketim Analizi (L/100km)</div>
+                    <div class="grid grid-cols-3 gap-2 text-center">
+                        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200/60">
+                            <div class="text-[10px] font-medium text-slate-400">Ortalama</div>
+                            <div id="stat-avg-consumption" class="text-sm font-bold text-slate-800 mt-0.5">0,0 L</div>
+                        </div>
+                        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200/60">
+                            <div class="text-[10px] font-medium text-emerald-600">En İyi</div>
+                            <div id="stat-best-consumption" class="text-sm font-bold text-emerald-600 mt-0.5">0,0 L</div>
+                        </div>
+                        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200/60">
+                            <div class="text-[10px] font-medium text-rose-600">En Kötü</div>
+                            <div id="stat-worst-consumption" class="text-sm font-bold text-rose-600 mt-0.5">0,0 L</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: MALİYETLER -->
+            <div id="stats-pane-costs" class="hidden space-y-3">
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-100">
+                        <div class="text-xs text-slate-500">Toplam Harcama</div>
+                        <div id="stat-total-spent" class="text-lg font-bold text-slate-800 mt-1">₺0,00</div>
+                    </div>
+                    <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-100">
+                        <div class="text-xs text-slate-500">Km Başına Ortalama</div>
+                        <div id="stat-cost-per-km" class="text-lg font-bold text-emerald-600 mt-1">₺0,00</div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
+                    <div class="text-xs font-bold text-slate-700">Dönemsel Maliyetler</div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/60">
+                            <div class="text-[10px] font-medium text-slate-400">Bu Yıl</div>
+                            <div id="stat-cost-year" class="text-sm font-bold text-slate-800 mt-0.5">₺0,00</div>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/60">
+                            <div class="text-[10px] font-medium text-slate-400">Geçen Yıl</div>
+                            <div id="stat-cost-last-year" class="text-sm font-bold text-slate-800 mt-0.5">₺0,00</div>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/60">
+                            <div class="text-[10px] font-medium text-slate-400">Bu Ay</div>
+                            <div id="stat-cost-month" class="text-sm font-bold text-slate-800 mt-0.5">₺0,00</div>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/60">
+                            <div class="text-[10px] font-medium text-slate-400">Geçen Ay</div>
+                            <div id="stat-cost-last-month" class="text-sm font-bold text-slate-800 mt-0.5">₺0,00</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
+                    <div class="text-xs font-bold text-slate-700">Faturalar & Yakıt Fiyatları</div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/60">
+                            <div class="text-[10px] font-medium text-slate-400">En Yüksek Fatura</div>
+                            <div id="stat-max-invoice" class="text-sm font-bold text-rose-600 mt-0.5">₺0,00</div>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/60">
+                            <div class="text-[10px] font-medium text-slate-400">En Düşük Fatura</div>
+                            <div id="stat-min-invoice" class="text-sm font-bold text-emerald-600 mt-0.5">₺0,00</div>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/60">
+                            <div class="text-[10px] font-medium text-slate-400">En İyi Yakıt Fiyatı</div>
+                            <div id="stat-best-price" class="text-sm font-bold text-emerald-600 mt-0.5">₺0,00</div>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/60">
+                            <div class="text-[10px] font-medium text-slate-400">En Yüksek Yakıt Fiyatı</div>
+                            <div id="stat-worst-price" class="text-sm font-bold text-rose-600 mt-0.5">₺0,00</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
+                    <div class="text-xs font-bold text-slate-700">Km Başına & Periyodik Ortalamalar</div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/60">
+                            <div class="text-[10px] font-medium text-slate-400">Km Başına En İyi</div>
+                            <div id="stat-best-cost-km" class="text-sm font-bold text-emerald-600 mt-0.5">₺0,00 /km</div>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/60">
+                            <div class="text-[10px] font-medium text-slate-400">Km Başına En Kötü</div>
+                            <div id="stat-worst-cost-km" class="text-sm font-bold text-rose-600 mt-0.5">₺0,00 /km</div>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/60">
+                            <div class="text-[10px] font-medium text-slate-400">Günlük Ortalama Maliyet</div>
+                            <div id="stat-avg-daily-cost" class="text-sm font-bold text-slate-800 mt-0.5">₺0,00</div>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/60">
+                            <div class="text-[10px] font-medium text-slate-400">Aylık Ortalama Maliyet</div>
+                            <div id="stat-avg-monthly-cost" class="text-sm font-bold text-slate-800 mt-0.5">₺0,00</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: MESAFE -->
+            <div id="stats-pane-distance" class="hidden space-y-3">
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-100">
+                        <div class="text-xs text-slate-500">Uygulama İle Katedilen</div>
+                        <div id="stat-total-dist" class="text-lg font-bold text-slate-800 mt-1">0 km</div>
+                    </div>
+                    <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-100">
+                        <div class="text-xs text-slate-500">Son Sayaç Değeri</div>
+                        <div id="stat-last-odo" class="text-lg font-bold text-slate-800 mt-1">0 km</div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
+                    <div class="text-xs font-bold text-slate-700">Dönemsel Kilometre Grubu</div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/60">
+                            <div class="text-[10px] font-medium text-slate-400">Bu Yıl</div>
+                            <div id="stat-dist-this-year" class="text-base font-bold text-slate-800 mt-0.5">0 km</div>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/60">
+                            <div class="text-[10px] font-medium text-slate-400">Geçen Yıl</div>
+                            <div id="stat-dist-last-year" class="text-base font-bold text-slate-800 mt-0.5">0 km</div>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/60">
+                            <div class="text-[10px] font-medium text-slate-400">Bu Ay</div>
+                            <div id="stat-dist-this-month" class="text-base font-bold text-slate-800 mt-0.5">0 km</div>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/60">
+                            <div class="text-[10px] font-medium text-slate-400">Geçen Ay</div>
+                            <div id="stat-dist-last-month" class="text-base font-bold text-slate-800 mt-0.5">0 km</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
+                    <div class="text-xs font-bold text-slate-700">Ortalama Kilometre Kullanımı</div>
+                    <div class="grid grid-cols-2 gap-3 pt-1">
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/60">
+                            <div class="text-[10px] font-medium text-slate-400">Günlük Ortalama</div>
+                            <div id="stat-avg-daily-km" class="text-base font-bold text-slate-800 mt-0.5">0 km</div>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/60">
+                            <div class="text-[10px] font-medium text-slate-400">Aylık Ortalama</div>
+                            <div id="stat-avg-monthly-km" class="text-base font-bold text-slate-800 mt-0.5">0 km</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. YOLCULUK KAYDI GÖRÜNÜMÜ -->
+        <section id="view-trips" class="hidden space-y-3 pt-1">
+            <div class="flex items-center justify-between px-1">
+                <h2 class="font-bold text-slate-800 text-base">Yolculuk Kayıtları</h2>
+                <button onclick="openTripModal()" class="text-xs bg-slate-800 text-white px-3 py-1.5 rounded-xl font-medium">+ Yeni Gezi</button>
+            </div>
+            <div id="trips-list" class="space-y-2.5"></div>
+        </section>
+
+        <!-- 6. RAPOR OLUŞTUR GÖRÜNÜMÜ -->
+        <section id="view-reports" class="hidden space-y-3 pt-1">
+            <h2 class="font-bold text-slate-800 text-base px-1">Rapor Oluştur</h2>
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
+                <p class="text-xs text-slate-500 leading-relaxed">Aracınıza ait tüm yakıt dolumlarını, tüketim verilerini ve diğer harcamaları özet rapor olarak görüntüleyebilir veya CSV dosyası olarak indirebilirsiniz.</p>
+                <div id="report-summary-box" class="bg-slate-50 rounded-xl p-3 space-y-1.5 text-xs text-slate-700 border border-slate-200/70"></div>
+                <div class="flex items-center justify-between bg-slate-50 rounded-xl px-3 py-2.5 border border-slate-200/70">
+                    <span class="text-[11px] text-slate-500 flex items-center gap-1.5"><i class="fa-solid fa-database text-slate-400"></i> Fotoğraf Deposu</span>
+                    <span id="report-storage-info" class="text-[11px] font-semibold text-slate-700">Hesaplanıyor...</span>
+                </div>
+                <div class="bg-slate-50 rounded-xl p-3 border border-slate-200/70 space-y-1.5">
+                    <label for="photon-base-input" class="text-[11px] font-semibold text-slate-600">İstasyon arama sunucusu (Photon)</label>
+                    <div class="flex gap-2">
+                        <input id="photon-base-input" type="url" placeholder="https://photon.komoot.io" class="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-2 text-[11px] font-medium focus:outline-none focus:border-slate-800">
+                        <button type="button" onclick="savePhotonBaseSetting()" class="bg-slate-800 text-white px-3 py-2 rounded-xl text-[11px] font-semibold shrink-0">Kaydet</button>
+                    </div>
+                    <p class="text-[10px] text-slate-400 leading-relaxed">Boş bırakılırsa photon.komoot.io kullanılır. Kendi Photon sunucunuz için tam http(s) adresi girin.</p>
+                </div>
+                <div class="bg-slate-50 rounded-xl p-3 border border-slate-200/70 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-semibold text-slate-600 flex items-center gap-1.5"><i class="fa-solid fa-circle-play text-slate-400"></i> Çevrimdışı / PWA</span>
+                        <span id="pwa-sw-status" class="text-[10px] font-semibold text-slate-500">Kontrol ediliyor…</span>
+                    </div>
+                    <div id="pwa-cache-status" class="text-[10px] text-slate-400">Önbellek durumu okunuyor…</div>
+                    <div class="flex flex-wrap gap-2">
+                        <button type="button" id="pwa-install-btn" class="hidden bg-slate-800 text-white px-3 py-1.5 rounded-xl text-[11px] font-semibold">Ana ekrana ekle</button>
+                        <button type="button" id="pwa-update-btn" class="hidden bg-blue-600 text-white px-3 py-1.5 rounded-xl text-[11px] font-semibold">Yeni sürümü uygula</button>
+                        <button type="button" id="pwa-check-btn" class="bg-white border border-slate-200 text-slate-700 px-3 py-1.5 rounded-xl text-[11px] font-semibold">Güncellemeleri denetle</button>
+                    </div>
+                    <p class="text-[10px] text-slate-400 leading-relaxed">Kayıtlarınız bu cihazda kalır. Çevrimdışıyken dolum, gider, yolculuk ve fotoğraflar çalışır; harita karoları, istasyon araması ve Google Haritalar internet ister.</p>
+                </div>
+                <button onclick="downloadCSVReport()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-semibold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 transition">
+                    <i class="fa-solid fa-file-csv"></i>
+                    <span>Raporu İndir (CSV)</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- 7. TAŞITLAR GÖRÜNÜMÜ -->
+        <section id="view-vehicles" class="hidden space-y-3 pt-1">
+            <h2 class="font-bold text-slate-800 text-base px-1">Taşıtlarım</h2>
+            <div id="vehicles-list" class="space-y-2.5"></div>
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-2.5">
+                <div class="text-xs font-bold text-slate-700">Yeni Araç Ekle</div>
+                <input type="text" id="new-vehicle-name" placeholder="Araç Marka/Model (Örn: Renault Clio)" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs">
+                <div class="grid grid-cols-3 gap-2">
+                    <input type="number" id="new-vehicle-odo" placeholder="Güncel Km" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs">
+                    <input type="number" id="new-vehicle-tank" placeholder="Tank (L)" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs">
+                    <select id="new-vehicle-fuel" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs">
+                        <option value="Benzin">Benzin</option>
+                        <option value="Dizel">Dizel</option>
+                        <option value="LPG">LPG</option>
+                        <option value="Elektrik">Elektrik</option>
+                    </select>
+                </div>
+                <button onclick="addVehicle()" class="w-full bg-slate-800 text-white py-2 rounded-xl text-xs font-semibold">Aracı Kaydet</button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Yüzen Ekle (+) Butonu -->
+    <button onclick="toggleActionSheet(true)" class="absolute bottom-16 right-4 w-[52px] h-[52px] rounded-2xl bg-slate-800 hover:bg-slate-900 text-white shadow-lg flex items-center justify-center transition transform active:scale-95 z-20">
+        <i class="fa-solid fa-plus text-xl"></i>
+    </button>
+
+    <!-- Kompakt Alt Navigasyon Çubuğu -->
+    <nav class="bg-slate-100/95 backdrop-blur border-t border-slate-200/80 px-2 py-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))] flex justify-around items-center shrink-0 z-10">
+        <button onclick="switchView('home')" id="nav-home" class="nav-btn flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-slate-800">
+            <div class="nav-pill bg-slate-200/90 px-3.5 py-0.5 rounded-full mb-0.5 transition">
+                <i class="fa-solid fa-house text-xs"></i>
+            </div>
+            <span class="text-[10px] font-bold whitespace-nowrap">Ana sayfa</span>
+        </button>
+        <button onclick="switchView('timeline')" id="nav-timeline" class="nav-btn flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-slate-500">
+            <div class="nav-pill px-3.5 py-0.5 rounded-full mb-0.5 transition">
+                <i class="fa-solid fa-chart-line text-xs"></i>
+            </div>
+            <span class="text-[10px] font-medium whitespace-nowrap">Zaman çizelgesi</span>
+        </button>
+        <button onclick="switchView('calculator')" id="nav-calculator" class="nav-btn flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-slate-500">
+            <div class="nav-pill px-3.5 py-0.5 rounded-full mb-0.5 transition">
+                <i class="fa-solid fa-turkish-lira-sign text-xs"></i>
+            </div>
+            <span class="text-[10px] font-medium whitespace-nowrap">Hesap Makinesi</span>
+        </button>
+        <button onclick="switchView('stats')" id="nav-stats" class="nav-btn flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-slate-500">
+            <div class="nav-pill px-3.5 py-0.5 rounded-full mb-0.5 transition">
+                <i class="fa-solid fa-chart-pie text-xs"></i>
+            </div>
+            <span class="text-[10px] font-medium whitespace-nowrap">İstatistikler</span>
+        </button>
+    </nav>
+
+    <!-- SOL YAN MENÜ (DRAWER) -->
+    <div id="drawer-backdrop" onclick="toggleDrawer(false)" class="hidden absolute inset-0 bg-slate-900/40 z-30 drawer-backdrop"></div>
+    <aside id="nav-drawer" class="absolute top-0 left-0 bottom-0 w-72 bg-white z-40 transform -translate-x-full drawer-panel flex flex-col shadow-2xl">
+        <div class="p-5 border-b border-slate-100 flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-rose-600 text-white flex items-center justify-center shadow">
+                <i class="fa-solid fa-gauge-high text-sm"></i>
+            </div>
+            <div>
+                <div class="font-bold text-slate-800 text-base leading-tight">yakıt takip</div>
+                <div class="text-[11px] text-slate-400">Kişisel Araç Asistanı</div>
+            </div>
+        </div>
+        <div class="flex-1 overflow-y-auto py-2 px-3 space-y-1 text-sm">
+            <button onclick="switchView('home'); toggleDrawer(false)" class="w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl bg-slate-100 text-slate-900 font-semibold">
+                <i class="fa-solid fa-table-cells-large w-5 text-center text-slate-700"></i>
+                <span>Ana sayfa</span>
+            </button>
+            <button onclick="openRefuelModal(); toggleDrawer(false)" class="w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl hover:bg-slate-50 text-slate-700 font-medium">
+                <i class="fa-solid fa-plus w-5 text-center text-slate-500"></i>
+                <span>Dolum Ekle</span>
+            </button>
+            <button onclick="switchView('trips'); toggleDrawer(false)" class="w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl hover:bg-slate-50 text-slate-700 font-medium">
+                <i class="fa-solid fa-route w-5 text-center text-slate-500"></i>
+                <span>Yolculuk kaydı</span>
+            </button>
+            <button onclick="switchView('timeline'); toggleDrawer(false)" class="w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl hover:bg-slate-50 text-slate-700 font-medium">
+                <i class="fa-solid fa-list-ul w-5 text-center text-slate-500"></i>
+                <span>Kilometre günlüğü</span>
+            </button>
+            <button onclick="switchView('stats'); toggleDrawer(false)" class="w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl hover:bg-slate-50 text-slate-700 font-medium">
+                <i class="fa-solid fa-chart-column w-5 text-center text-slate-500"></i>
+                <span>İstatistikler</span>
+            </button>
+            <button onclick="switchView('reports'); toggleDrawer(false)" class="w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl hover:bg-slate-50 text-slate-700 font-medium">
+                <i class="fa-solid fa-file-lines w-5 text-center text-slate-500"></i>
+                <span>Rapor oluştur</span>
+            </button>
+            <button onclick="switchView('calculator'); toggleDrawer(false)" class="w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl hover:bg-slate-50 text-slate-700 font-medium">
+                <i class="fa-solid fa-calculator w-5 text-center text-slate-500"></i>
+                <span>Yolculuk Hesaplayıcı</span>
+            </button>
+            <button onclick="switchView('vehicles'); toggleDrawer(false)" class="w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl hover:bg-slate-50 text-slate-700 font-medium">
+                <i class="fa-solid fa-car w-5 text-center text-slate-500"></i>
+                <span>Taşıtlar</span>
+            </button>
+        </div>
+        <div class="p-4 border-t border-slate-100">
+            <button onclick="resetDemoData()" class="w-full text-xs text-slate-400 hover:text-rose-600 py-1.5 transition">Varsayılan Verilere Sıfırla</button>
+        </div>
+    </aside>
+
+    <!-- ALT İŞLEM MENÜSÜ (+ BUTONU) -->
+    <div id="sheet-backdrop" onclick="toggleActionSheet(false)" class="hidden absolute inset-0 bg-slate-900/40 z-30"></div>
+    <div id="action-sheet" class="absolute left-0 right-0 bottom-0 bg-white rounded-t-3xl z-40 transform translate-y-full sheet-panel px-4 pt-2.5 pb-5 shadow-2xl">
+        <div class="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-3"></div>
+        <div class="space-y-1">
+            <button onclick="toggleActionSheet(false); openRefuelModal()" class="w-full flex items-center gap-3.5 px-3 py-2.5 rounded-xl hover:bg-slate-50 text-left transition">
+                <div class="w-8 h-8 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-gas-pump text-sm"></i>
+                </div>
+                <div>
+                    <div class="font-semibold text-slate-800 text-sm">Dolum</div>
+                    <div class="text-[11px] text-slate-400">Yeni yakıt alımı kaydet</div>
+                </div>
+            </button>
+            <button onclick="toggleActionSheet(false); openReceiptModal()" class="w-full flex items-center gap-3.5 px-3 py-2.5 rounded-xl hover:bg-slate-50 text-left transition">
+                <div class="w-8 h-8 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-expand text-sm"></i>
+                </div>
+                <div>
+                    <div class="font-semibold text-slate-800 text-sm">Yakıt Fişi Taraması</div>
+                    <div class="text-[11px] text-slate-400">Fiş fotoğrafından otomatik aktar</div>
+                </div>
+            </button>
+            <button onclick="toggleActionSheet(false); openExpenseModal()" class="w-full flex items-center gap-3.5 px-3 py-2.5 rounded-xl hover:bg-slate-50 text-left transition">
+                <div class="w-8 h-8 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-turkish-lira-sign text-sm"></i>
+                </div>
+                <div>
+                    <div class="font-semibold text-slate-800 text-sm">Tutar</div>
+                    <div class="text-[11px] text-slate-400">Bakım, sigorta, yıkama vb. ekle</div>
+                </div>
+            </button>
+            <button onclick="toggleActionSheet(false); openTripModal()" class="w-full flex items-center gap-3.5 px-3 py-2.5 rounded-xl hover:bg-slate-50 text-left transition">
+                <div class="w-8 h-8 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-location-dot text-sm"></i>
+                </div>
+                <div>
+                    <div class="font-semibold text-slate-800 text-sm">Gezi ekle</div>
+                    <div class="text-[11px] text-slate-400">Güzergah ve mesafe kaydı oluştur</div>
+                </div>
+            </button>
+        </div>
+    </div>
+
+    <!-- DOLUM EKLEME / DÜZENLEME MODALI -->
+    <div id="refuel-modal" class="hidden absolute inset-0 bg-slate-50 z-50 flex flex-col">
+        <div class="bg-white px-4 py-3 flex items-center justify-between border-b border-slate-100 shrink-0">
+            <button onclick="closeRefuelModal()" class="w-9 h-9 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-700">
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
+            <span id="refuel-modal-title" class="font-bold text-slate-800 text-base">Dolum</span>
+            <button onclick="saveRefuel()" class="w-9 h-9 rounded-full bg-slate-800 text-white flex items-center justify-center shadow-sm">
+                <i class="fa-solid fa-check"></i>
+            </button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto no-scrollbar p-4 space-y-4">
+            <input type="hidden" id="edit-refuel-id">
+            <div class="bg-white rounded-2xl p-3.5 border border-slate-200/80">
+                <label class="block text-[11px] font-medium text-slate-500 mb-1">Mesafe sayacı (km)</label>
+                <input type="number" id="refuel-odo" class="w-full text-base font-bold text-slate-800 focus:outline-none" placeholder="Örn: 8150">
+                <div id="refuel-last-odo-hint" class="text-[11px] text-slate-400 mt-1">Son değer: 7778 km</div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-white rounded-2xl p-3.5 border border-slate-200/80">
+                    <label class="block text-[11px] font-medium text-slate-500 mb-1">Yakıt (l)</label>
+                    <input type="number" step="0.01" id="refuel-liters" oninput="autoCalcRefuel('liters')" class="w-full text-base font-bold text-slate-800 focus:outline-none" placeholder="0,00">
+                </div>
+                <div class="bg-white rounded-2xl p-3.5 border border-slate-200/80">
+                    <label class="block text-[11px] font-medium text-slate-500 mb-1">Yakıt tipi</label>
+                    <select id="refuel-type" class="w-full text-sm font-semibold text-slate-800 bg-transparent focus:outline-none">
+                        <option value="Kurşunsuz 95">Kurşunsuz 95</option>
+                        <option value="Kurşunsuz 97/98">Kurşunsuz 97/98</option>
+                        <option value="Motorin (Dizel)">Motorin (Dizel)</option>
+                        <option value="LPG">LPG</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-white rounded-2xl p-3.5 border border-slate-200/80">
+                    <label class="block text-[11px] font-medium text-slate-500 mb-1">Fiyat/L (₺)</label>
+                    <input type="number" step="0.01" id="refuel-price" oninput="autoCalcRefuel('price')" class="w-full text-base font-bold text-slate-800 focus:outline-none" placeholder="81.60">
+                </div>
+                <div class="bg-white rounded-2xl p-3.5 border border-slate-200/80">
+                    <label class="block text-[11px] font-medium text-slate-500 mb-1">Toplam maliyet (₺)</label>
+                    <input type="number" step="0.01" id="refuel-total" oninput="autoCalcRefuel('total')" class="w-full text-base font-bold text-slate-800 focus:outline-none" placeholder="0,00">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-white rounded-2xl p-3.5 border border-slate-200/80">
+                    <label class="block text-[11px] font-medium text-slate-500 mb-1">Tarih</label>
+                    <input type="date" id="refuel-date" class="w-full text-xs font-semibold text-slate-800 bg-transparent focus:outline-none">
+                </div>
+                <div class="bg-white rounded-2xl p-3.5 border border-slate-200/80">
+                    <label class="block text-[11px] font-medium text-slate-500 mb-1">Zaman</label>
+                    <input type="time" id="refuel-time" class="w-full text-xs font-semibold text-slate-800 bg-transparent focus:outline-none">
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-3.5 border border-slate-200/80 space-y-2.5">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2.5">
+                        <i class="fa-solid fa-fill-drip text-slate-500"></i>
+                        <span class="text-sm font-medium text-slate-800">Depo dolu</span>
+                    </div>
+                    <input type="checkbox" id="refuel-full" checked class="w-5 h-5 accent-slate-800 rounded">
+                </div>
+                <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
+                    <span class="text-xs text-slate-500">Tank kapasitesini ayarla (L)</span>
+                    <input type="number" id="refuel-tank-capacity" placeholder="Örn: 50" class="w-24 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-bold text-right text-slate-800 focus:outline-none">
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-3.5 border border-slate-200/80 space-y-2.5">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-location-dot text-rose-500"></i>
+                        <span class="text-sm font-semibold text-slate-800">Yakıt İstasyonu</span>
+                    </div>
+                    <span id="selected-station-display" class="text-xs font-semibold text-blue-600 text-right max-w-[55%] truncate">Seçilmedi</span>
+                </div>
+                <div id="selected-station-meta" class="hidden text-[10px] text-slate-400 leading-relaxed"></div>
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" onclick="openStationPicker('address')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold py-2 px-2.5 rounded-xl flex items-center justify-center gap-1.5 transition">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <span>Adrese Göre Seç</span>
+                    </button>
+                    <button type="button" onclick="openStationPicker('map')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold py-2 px-2.5 rounded-xl flex items-center justify-center gap-1.5 transition">
+                        <i class="fa-solid fa-map-location-dot"></i>
+                        <span>Haritadan Seç</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-3.5 border border-slate-200/80 space-y-2.5">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <i id="weather-icon" class="fa-solid fa-cloud-sun text-amber-500"></i>
+                        <span class="text-sm font-semibold text-slate-800">Hava Durumu</span>
+                    </div>
+                    <button type="button" onclick="detectWeatherByLocation()" class="text-[11px] text-blue-600 font-semibold flex items-center gap-1 hover:underline">
+                        <i class="fa-solid fa-location-crosshairs"></i>
+                        <span>Konumdan Güncelle</span>
+                    </button>
+                </div>
+                <div id="weather-status-text" class="text-[11px] text-slate-500">Konum otomatik alınmaz; isterseniz “Konumdan Güncelle”yi kullanın.</div>
+                <div class="grid grid-cols-2 gap-2">
+                    <select id="refuel-weather-cond" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700">
+                        <option value="Güneşli">☀️ Güneşli</option>
+                        <option value="Parçalı Bulutlu">⛅ Parçalı Bulutlu</option>
+                        <option value="Bulutlu">☁️ Bulutlu</option>
+                        <option value="Yağmurlu">🌧️ Yağmurlu</option>
+                        <option value="Karlı">❄️ Karlı</option>
+                    </select>
+                    <div class="flex items-center bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
+                        <input type="number" id="refuel-weather-temp" value="18" class="w-full bg-transparent text-xs font-bold text-slate-800 focus:outline-none">
+                        <span class="text-xs font-semibold text-slate-500">°C</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-3.5 border border-slate-200/80 space-y-2.5">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-camera text-slate-500"></i>
+                        <span class="text-sm font-semibold text-slate-800">Resimler</span>
+                    </div>
+                    <label class="text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-xl cursor-pointer transition">
+                        <i class="fa-solid fa-plus mr-1"></i> Ekle
+                        <input type="file" accept="image/*" multiple onchange="handleRefuelPhotos(event)" class="hidden">
+                    </label>
+                </div>
+                <div id="refuel-photos-preview" class="flex gap-2 overflow-x-auto no-scrollbar"></div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-3.5 border border-slate-200/80">
+                <label class="block text-[11px] font-medium text-slate-500 mb-1">Not (İsteğe Bağlı)</label>
+                <input type="text" id="refuel-note" placeholder="Örn: Uzun yol öncesi tam dolum" class="w-full text-xs text-slate-800 focus:outline-none">
+            </div>
+        </div>
+    </div>
+
+    <!-- İSTASYON SEÇİCİ MODALI (v4: Leaflet + OpenStreetMap + Photon) -->
+    <div id="station-modal" class="hidden absolute inset-0 bg-slate-50 z-50 flex flex-col">
+        <div class="bg-white px-4 py-3 flex items-center justify-between border-b border-slate-100 shrink-0">
+            <button type="button" onclick="closeStationPicker()" aria-label="Kapat" class="w-9 h-9 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-700">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <span class="font-bold text-slate-800 text-sm">İstasyon / Konum Seç</span>
+            <div class="w-9"></div>
+        </div>
+        <div class="p-3 bg-white border-b border-slate-100 flex gap-2 shrink-0">
+            <button type="button" id="tab-station-address" onclick="switchStationTab('address')" class="flex-1 py-2 rounded-xl text-xs font-bold bg-slate-800 text-white">Ara / Son Kullanılanlar</button>
+            <button type="button" id="tab-station-map" onclick="switchStationTab('map')" class="flex-1 py-2 rounded-xl text-xs font-bold bg-white text-slate-600 border border-slate-200">Harita</button>
+        </div>
+
+        <div id="station-address-pane" class="flex-1 min-h-0 overflow-y-auto p-4 space-y-3">
+            <div class="flex gap-2">
+                <input type="text" id="station-search-input" onkeydown="if(event.key==='Enter'){event.preventDefault();searchStations();}" placeholder="İstasyon, adres veya semt ara..." class="flex-1 bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-medium focus:outline-none focus:border-slate-800">
+                <button type="button" id="station-search-btn" onclick="searchStations()" class="bg-slate-800 text-white px-3.5 py-2 rounded-xl text-xs font-semibold shrink-0">Ara</button>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="flex bg-slate-100 rounded-xl p-1 gap-1">
+                    <button type="button" id="station-filter-fuel" onclick="setStationSearchMode('fuel')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-white text-slate-800 shadow-sm">İstasyon</button>
+                    <button type="button" id="station-filter-place" onclick="setStationSearchMode('place')" class="px-2.5 py-1 rounded-lg text-[11px] font-semibold text-slate-500">Adres</button>
+                </div>
+                <button type="button" onclick="selectCustomAddressStation()" class="ml-auto text-[11px] font-semibold text-slate-600 hover:text-slate-900 underline">Yazdığım adı kullan</button>
+            </div>
+            <div id="station-search-status" class="text-[11px] text-slate-500">Aramak için yazıp Ara'ya basın. İnternet yoksa son kullanılanlar veya manuel giriş kullanılabilir.</div>
+            <div id="station-list" class="space-y-2"></div>
+        </div>
+
+        <div id="station-map-pane" class="hidden flex-1 min-h-0 flex flex-col p-3 gap-2">
+            <div class="flex items-center gap-2 shrink-0">
+                <button type="button" id="station-locate-btn" onclick="locateAndFindNearby()" class="flex-1 bg-slate-800 text-white py-2 rounded-xl text-[11px] font-semibold flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-location-crosshairs"></i> Konumum ve yakınımdakiler
+                </button>
+                <select id="station-radius" class="bg-white border border-slate-200 rounded-xl px-2 py-2 text-[11px] font-semibold text-slate-700">
+                    <option value="1">1 km</option>
+                    <option value="3">3 km</option>
+                    <option value="5" selected>5 km</option>
+                    <option value="10">10 km</option>
+                    <option value="20">20 km</option>
+                </select>
+            </div>
+            <div class="flex items-center justify-between gap-2 shrink-0">
+                <button type="button" id="station-area-btn" onclick="findNearbyMapArea()" class="text-[11px] font-semibold text-blue-600 hover:underline">Haritanın bu alanında ara</button>
+                <span class="text-[10px] text-slate-400">OSM kayıtları eksik olabilir</span>
+            </div>
+            <div id="station-map-status" class="text-[11px] text-slate-500 shrink-0">Konum almak için düğmeye basın veya haritayı kaydırıp bu alanda arayın.</div>
+            <div id="station-leaflet-map" class="relative flex-1 min-h-[180px] bg-slate-200 rounded-2xl border border-slate-200 overflow-hidden z-0"></div>
+            <div id="station-point-bar" class="hidden shrink-0 bg-white border border-slate-200 rounded-xl p-2.5 space-y-2">
+                <div id="station-point-label" class="text-[11px] font-semibold text-slate-700"></div>
+                <div class="flex gap-2">
+                    <button type="button" id="station-reverse-btn" onclick="reverseSelectedPoint()" class="flex-1 bg-slate-100 text-slate-700 py-1.5 rounded-lg text-[11px] font-semibold">Adresi bul</button>
+                    <button type="button" onclick="confirmSelectedPoint()" class="flex-1 bg-slate-800 text-white py-1.5 rounded-lg text-[11px] font-semibold">Bu noktayı kullan</button>
+                </div>
+            </div>
+            <div id="station-map-list" class="max-h-36 overflow-y-auto space-y-2 shrink-0"></div>
+        </div>
+
+        <div class="px-4 py-2 bg-white border-t border-slate-100 text-[9px] leading-relaxed text-slate-400 shrink-0">
+            Harita: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" class="underline">© OpenStreetMap katkıda bulunanlar</a> · Arama/istasyon: <a href="https://photon.komoot.io" target="_blank" rel="noopener noreferrer" class="underline">Photon</a> / <a href="https://www.komoot.com" target="_blank" rel="noopener noreferrer" class="underline">Komoot</a> (ODbL).
+            Konumunuz yalnızca “Konumum” veya “Bu alanda ara” dediğinizde istasyon bulmak için Photon'a gönderilir. Adres araması arama sorgusunu gönderir.
+        </div>
+    </div>
+
+    <!-- GEZİ EKLE MODALI -->
+    <div id="trip-modal" class="hidden absolute inset-0 bg-slate-50 z-50 flex flex-col">
+        <div class="bg-white px-4 py-3 flex items-center justify-between border-b border-slate-100 shrink-0">
+            <button onclick="document.getElementById('trip-modal').classList.add('hidden')" class="w-9 h-9 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-700">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <span class="font-bold text-slate-800 text-base">Gezi Ekle</span>
+            <button onclick="saveTrip()" class="w-9 h-9 rounded-full bg-slate-800 text-white flex items-center justify-center shadow-sm">
+                <i class="fa-solid fa-check"></i>
+            </button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto no-scrollbar p-4 space-y-4">
+            <div class="bg-white rounded-2xl p-3.5 border border-slate-200/80 space-y-3">
+                <div>
+                    <label class="block text-[11px] font-medium text-slate-500 mb-1">Başlık</label>
+                    <input type="text" id="trip-title" placeholder="Örn: İş Seyahati / Hafta Sonu Gezisi" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm font-semibold text-slate-800 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-medium text-slate-500 mb-1">Kategori</label>
+                    <select id="trip-category" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm font-semibold text-slate-800 focus:outline-none">
+                        <option value="Kişisel">Kişisel</option>
+                        <option value="İş">İş</option>
+                        <option value="Tatil / Uzun Yol">Tatil / Uzun Yol</option>
+                        <option value="Şehir İçi">Şehir İçi</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-3.5 border border-slate-200/80 space-y-3">
+                <div class="flex items-center gap-2 text-xs font-bold text-emerald-700">
+                    <i class="fa-solid fa-circle-play"></i>
+                    <span>Başlangıç</span>
+                </div>
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="block text-[11px] font-medium text-slate-500">Başlangıç noktası</label>
+                        <button type="button" onclick="openTripMapPicker('start')" class="text-[11px] font-semibold text-blue-600 hover:underline flex items-center gap-1">
+                            <i class="fa-solid fa-map-location-dot"></i>
+                            <span>Google Haritalar'dan Seç</span>
+                        </button>
+                    </div>
+                    <input type="text" id="trip-start" placeholder="Örn: Ev / İstanbul" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-800 focus:outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-2.5">
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-500 mb-1">Tarih</label>
+                        <input type="date" id="trip-start-date" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-500 mb-1">Zaman</label>
+                        <input type="time" id="trip-start-time" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-medium text-slate-500 mb-1">Başlangıç sayacı (km)</label>
+                    <input type="number" id="trip-start-odo" oninput="updateTripDistancePreview()" placeholder="7778" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm font-bold text-slate-800 focus:outline-none">
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-3.5 border border-slate-200/80 space-y-3">
+                <div class="flex items-center gap-2 text-xs font-bold text-rose-600">
+                    <i class="fa-solid fa-flag-checkered"></i>
+                    <span>Bitiş</span>
+                </div>
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="block text-[11px] font-medium text-slate-500">Bitiş noktası</label>
+                        <button type="button" onclick="openTripMapPicker('end')" class="text-[11px] font-semibold text-blue-600 hover:underline flex items-center gap-1">
+                            <i class="fa-solid fa-map-location-dot"></i>
+                            <span>Google Haritalar'dan Seç</span>
+                        </button>
+                    </div>
+                    <input type="text" id="trip-end" placeholder="Örn: Ofis / Ankara" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-800 focus:outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-2.5">
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-500 mb-1">Tarih</label>
+                        <input type="date" id="trip-end-date" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-500 mb-1">Zaman</label>
+                        <input type="time" id="trip-end-time" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-medium text-slate-500 mb-1">Bitiş sayacı (km)</label>
+                    <input type="number" id="trip-end-odo" oninput="updateTripDistancePreview()" placeholder="Örn: 8250" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm font-bold text-slate-800 focus:outline-none">
+                </div>
+                <div class="flex items-center justify-between pt-1 text-xs">
+                    <span class="text-slate-500 font-medium">Hesaplanan Mesafe:</span>
+                    <span id="trip-calculated-dist" class="font-bold text-emerald-600">0 km</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- GOOGLE HARİTALAR KONUM SEÇİCİ MODALI -->
+    <div id="trip-map-modal" class="hidden absolute inset-0 bg-slate-50 z-50 flex flex-col">
+        <div class="bg-white px-4 py-3 flex items-center justify-between border-b border-slate-100 shrink-0">
+            <button type="button" onclick="closeTripMapPicker()" class="w-9 h-9 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-700">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="flex items-center gap-1.5">
+                <i class="fa-brands fa-google text-blue-600 text-sm"></i>
+                <span id="trip-map-modal-title" class="font-bold text-slate-800 text-sm">Haritadan Konum Seç</span>
+            </div>
+            <button type="button" onclick="confirmTripMapLocation()" class="w-9 h-9 rounded-full bg-slate-800 text-white flex items-center justify-center shadow-sm">
+                <i class="fa-solid fa-check"></i>
+            </button>
+        </div>
+
+        <div class="p-3 bg-white border-b border-slate-100 space-y-2 shrink-0">
+            <div class="flex gap-2">
+                <input type="text" id="trip-map-search" onkeydown="if(event.key==='Enter') searchTripMapQuery()" placeholder="Google Haritalar'da yer veya adres ara..." class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-medium focus:outline-none">
+                <button type="button" onclick="searchTripMapQuery()" class="bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2 rounded-xl text-xs font-semibold transition">Ara</button>
+            </div>
+            <div class="flex items-center justify-between text-[11px]">
+                <button type="button" onclick="useCurrentGpsForTripMap()" class="text-emerald-700 font-semibold flex items-center gap-1 hover:underline">
+                    <i class="fa-solid fa-location-crosshairs"></i>
+                    <span>Mevcut Konumumu Kullan</span>
+                </button>
+                <a id="trip-gmaps-external-link" href="https://maps.google.com" target="_blank" rel="noopener noreferrer" class="text-blue-600 font-semibold flex items-center gap-1 hover:underline">
+                    <span>Google Maps'te Aç</span>
+                    <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
+                </a>
+            </div>
+        </div>
+
+        <div class="relative flex-1 bg-slate-200 overflow-hidden">
+            <div id="trip-map-offline" class="hidden absolute inset-0 z-10 bg-slate-100 flex flex-col items-center justify-center text-center p-6 space-y-2">
+                <i class="fa-solid fa-map-location-dot text-3xl text-slate-400"></i>
+                <div class="text-sm font-bold text-slate-700">Google Haritalar çevrimdışı kullanılamaz</div>
+                <div class="text-xs text-slate-500 leading-relaxed">Bağlantı yokken konum etiketini elle yazıp “Seç” ile devam edebilirsiniz.</div>
+            </div>
+            <iframe id="trip-google-map-iframe" class="w-full h-full border-0" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="about:blank" data-src="https://maps.google.com/maps?q=41.0082,28.9784&z=13&output=embed"></iframe>
+        </div>
+
+        <div class="p-3.5 bg-white border-t border-slate-100 space-y-2 shrink-0">
+            <label class="block text-[11px] font-medium text-slate-500">Seçilen Konum / Adres Etiketi</label>
+            <div class="flex gap-2">
+                <input type="text" id="trip-map-selected-label" placeholder="Konum adı veya koordinat..." class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none">
+                <button type="button" onclick="confirmTripMapLocation()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-xl text-xs font-semibold transition">Seç</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- YAKIT FİŞİ TARAMA MODALI -->
+    <div id="receipt-modal" class="hidden absolute inset-0 bg-white z-50 flex flex-col">
+        <div class="px-4 py-3 flex items-center justify-between border-b border-slate-100">
+            <button onclick="document.getElementById('receipt-modal').classList.add('hidden')" class="w-9 h-9 rounded-full hover:bg-slate-100 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+            <span class="font-bold text-slate-800 text-sm">Yakıt Fişi Taraması</span>
+            <div class="w-9"></div>
+        </div>
+        <div class="p-5 flex-1 flex flex-col justify-center items-center text-center space-y-4">
+            <div class="w-20 h-20 rounded-3xl bg-slate-100 text-slate-700 flex items-center justify-center text-3xl">
+                <i class="fa-solid fa-receipt"></i>
+            </div>
+            <div>
+                <h3 class="font-bold text-slate-800 text-base">Fiş Fotoğrafı Yükle</h3>
+                <p class="text-xs text-slate-500 mt-1">Akaryakıt fişinizin fotoğrafını seçin, litre ve tutar bilgileri dolum formuna aktarılsın.</p>
+            </div>
+            <label class="w-full bg-slate-800 text-white font-semibold py-3 rounded-2xl text-sm cursor-pointer shadow">
+                Fotoğraf Seç / Çek
+                <input type="file" accept="image/*" onchange="processReceiptScan(event)" class="hidden">
+            </label>
+        </div>
+    </div>
+
+    <!-- DİĞER GİDER (TUTAR) MODALI -->
+    <div id="expense-modal" class="hidden absolute inset-0 bg-white z-50 flex flex-col">
+        <div class="px-4 py-3 flex items-center justify-between border-b border-slate-100">
+            <button onclick="document.getElementById('expense-modal').classList.add('hidden')" class="w-9 h-9 rounded-full hover:bg-slate-100 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+            <span class="font-bold text-slate-800 text-sm">Diğer Maliyet Ekle</span>
+            <button onclick="saveExpense()" class="w-9 h-9 rounded-full bg-slate-800 text-white flex items-center justify-center"><i class="fa-solid fa-check"></i></button>
+        </div>
+        <div class="p-4 space-y-3">
+            <div>
+                <label class="block text-xs font-medium text-slate-500 mb-1">Gider Türü</label>
+                <select id="expense-category" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-semibold">
+                    <option value="Bakım / Servis">Bakım / Servis</option>
+                    <option value="Sigorta / Kasko">Sigorta / Kasko</option>
+                    <option value="Araç Yıkama">Araç Yıkama</option>
+                    <option value="Otopark / HGS">Otopark / HGS</option>
+                    <option value="Lastik">Lastik</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-500 mb-1">Tutar (₺)</label>
+                <input type="number" step="0.01" id="expense-amount" placeholder="0,00" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-base font-bold">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-500 mb-1">Tarih</label>
+                <input type="date" id="expense-date" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-500 mb-1">Not</label>
+                <input type="text" id="expense-note" placeholder="Açıklama ekleyin..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs">
+            </div>
+        </div>
+    </div>
+
+    <!-- ARAÇ DÜZENLE MODALI -->
+    <div id="edit-vehicle-modal" class="hidden absolute inset-0 bg-white z-50 flex flex-col">
+        <div class="px-4 py-3 flex items-center justify-between border-b border-slate-100">
+            <button onclick="document.getElementById('edit-vehicle-modal').classList.add('hidden')" class="w-9 h-9 rounded-full hover:bg-slate-100 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+            <span class="font-bold text-slate-800 text-sm">Araç Bilgilerini Düzenle</span>
+            <button onclick="saveVehicleEdit()" class="w-9 h-9 rounded-full bg-slate-800 text-white flex items-center justify-center"><i class="fa-solid fa-check"></i></button>
+        </div>
+        <div class="p-4 space-y-3">
+            <input type="hidden" id="edit-vehicle-id">
+            <div>
+                <label class="block text-xs font-medium text-slate-500 mb-1">Araç Marka / Model</label>
+                <input type="text" id="edit-vehicle-name" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-semibold">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1">Güncel Kilometre</label>
+                    <input type="number" id="edit-vehicle-odo" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-bold">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1">Tank Kapasitesi (L)</label>
+                    <input type="number" id="edit-vehicle-tank" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-bold">
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-500 mb-1">Yakıt Türü</label>
+                <select id="edit-vehicle-fuel" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-semibold">
+                    <option value="Benzin">Benzin</option>
+                    <option value="Dizel">Dizel</option>
+                    <option value="LPG">LPG</option>
+                    <option value="Elektrik">Elektrik</option>
+                </select>
+            </div>
+            <div class="pt-4">
+                <button id="delete-vehicle-btn" type="button" onclick="deleteVehicle()" class="w-full bg-rose-50 hover:bg-rose-100 text-rose-600 font-semibold py-2.5 rounded-xl text-xs transition">Aracı Sil</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- BİLDİRİM TOAST -->
+    <div id="toast-box" class="hidden absolute top-16 left-1/2 -translate-x-1/2 bg-slate-900/90 text-white text-xs font-medium px-4 py-2 rounded-full shadow-lg z-50 whitespace-nowrap">
+        İşlem başarılı!
+    </div>
+</div>
+
+<script>
+    const STORAGE_KEY = 'yakit_takip_data_v1';
+
+    const defaultState = {
+        activeVehicleId: 'v1',
+        vehicles: [
+            { id: 'v1', name: 'Toyota Corolla', odometer: 7778, fuelType: 'Benzin', tankCapacity: 50 }
+        ],
+        refuels: [
+            {
+                id: 'r1',
+                vehicleId: 'v1',
+                odometer: 7778,
+                liters: 36.6,
+                pricePerLiter: 81.60,
+                totalCost: 2986.56,
+                fuelType: 'Kurşunsuz 95',
+                date: '2026-11-03',
+                time: '11:42',
+                fullTank: true,
+                station: 'Shell - Atatürk Bulvarı',
+                weather: 'Güneşli · 19°C',
+                photos: [],
+                note: 'İlk tam dolum'
+            }
+        ],
+        expenses: [],
+        trips: []
+    };
+
+    let state = loadState();
+    let currentRefuelPhotos = [];
+    let selectedStationName = '';
+    let selectedStationMeta = null; // { lat, lon, address, source, osmType, osmId }
+    let activeTripMapTarget = 'start';
+    let openTimelineMenuId = null;
+
+    // v4: Sahte istasyon listesi kaldırıldı. Gerçek veriler Photon/OpenStreetMap'ten
+    // kullanıcı isteğiyle gelir; internet yoksa son kullanılanlar ve manuel giriş çalışır.
+
+    function loadState() {
+        try {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                // Şema doğrulama: eksik/bozuk alanları varsayılanlarla birleştir
+                if (parsed && typeof parsed === 'object') {
+                    const merged = {
+                        activeVehicleId: typeof parsed.activeVehicleId === 'string' ? parsed.activeVehicleId : defaultState.activeVehicleId,
+                        vehicles: Array.isArray(parsed.vehicles) && parsed.vehicles.length ? parsed.vehicles : JSON.parse(JSON.stringify(defaultState.vehicles)),
+                        refuels: Array.isArray(parsed.refuels) ? parsed.refuels : [],
+                        expenses: Array.isArray(parsed.expenses) ? parsed.expenses : [],
+                        trips: Array.isArray(parsed.trips) ? parsed.trips : []
+                    };
+                    merged.vehicles = merged.vehicles.filter(v => v && typeof v.id === 'string' && typeof v.name === 'string')
+                        .map(v => ({ ...v, odometer: Number(v.odometer) || 0, tankCapacity: Number(v.tankCapacity) || 50, fuelType: v.fuelType || 'Benzin' }));
+                    if (!merged.vehicles.length) merged.vehicles = JSON.parse(JSON.stringify(defaultState.vehicles));
+                    merged.refuels = merged.refuels.filter(r => r && typeof r.id === 'string')
+                        .map(r => ({ ...r, odometer: Number(r.odometer) || 0, liters: Number(r.liters) || 0, totalCost: Number(r.totalCost) || 0, pricePerLiter: Number(r.pricePerLiter) || 0 }));
+                    merged.expenses = merged.expenses.filter(e => e && typeof e.id === 'string')
+                        .map(e => ({ ...e, amount: Number(e.amount) || 0 }));
+                    merged.trips = merged.trips.filter(t => t && typeof t.id === 'string')
+                        .map(t => ({ ...t, distance: Number(t.distance) || 0, startOdo: Number(t.startOdo) || 0, endOdo: Number(t.endOdo) || 0 }));
+                    if (!merged.vehicles.some(v => v.id === merged.activeVehicleId)) merged.activeVehicleId = merged.vehicles[0].id;
+                    return merged;
+                }
+            }
+        } catch (e) {
+            console.error('Veri yükleme hatası:', e);
+        }
+        return JSON.parse(JSON.stringify(defaultState));
+    }
+
+    function saveState() {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            return true;
+        } catch (e) {
+            console.error('Veri kaydetme hatası:', e);
+            showToast('⚠️ Veri kaydedilemedi! Depolama alanı dolu olabilir (fotoğraflar çok yer kaplar).');
+            return false;
+        }
+    }
+
+    function resetDemoData() {
+        if (!confirm('Tüm kayıtlarınız silinip varsayılan demo verileri yüklenecek. Emin misiniz?')) return;
+        state = JSON.parse(JSON.stringify(defaultState));
+        sessionAddedPhotoIds.clear();
+        recentStations = [];
+        try { localStorage.removeItem(RECENT_STATIONS_KEY); } catch (e) {}
+        saveState();
+        idbClearPhotos().catch(e => console.warn('Fotoğraf deposu temizlenemedi:', e));
+        renderAll();
+        toggleDrawer(false);
+        showToast('Varsayılan verilere sıfırlandı');
+    }
+
+    function showToast(msg) {
+        const box = document.getElementById('toast-box');
+        if (!box) return;
+        box.textContent = msg;
+        box.classList.remove('hidden');
+        setTimeout(() => box.classList.add('hidden'), 2400);
+    }
+
+    function formatCurrency(val) {
+        return '₺' + Number(val || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    // --- Güvenlik: HTML kaçışı (XSS önleme) ---
+    function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, c => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[c]));
+    }
+
+    // --- Yerel saat dilimine göre tarih anahtarları (UTC kaymasını önler) ---
+    function toDateKey(d) {
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+    function todayKey() { return toDateKey(new Date()); }
+    function thisMonthKey() { return todayKey().slice(0, 7); }
+    function lastMonthKey() {
+        const n = new Date();
+        return toDateKey(new Date(n.getFullYear(), n.getMonth() - 1, 1)).slice(0, 7);
+    }
+    // 'YYYY-AA-GG' metnini UTC yerine yerel tarihe çevirir
+    function parseDateKey(key) {
+        const [y, m, d] = String(key || '').split('-').map(Number);
+        if (!y || !m || !d) return new Date(NaN);
+        return new Date(y, m - 1, d);
+    }
+
+    // --- Sıralama yardımcıları (tarih metni ISO olduğu için sözlük sıralaması yeterli) ---
+    function compareRefuelsDesc(a, b) {
+        return String(b.date || '').localeCompare(String(a.date || '')) || b.odometer - a.odometer;
+    }
+    function compareRefuelsAsc(a, b) {
+        return String(a.date || '').localeCompare(String(b.date || '')) || a.odometer - b.odometer;
+    }
+
+    // --- Tüketim analizi: yalnızca tam depolar arası geçerli aralıklar ---
+    // Kısmi dolumların litresi, bir sonraki tam doluma kadar biriktirilir.
+    function analyzeConsumption(refuels) {
+        const sorted = [...refuels].sort((a, b) => a.odometer - b.odometer || String(a.date || '').localeCompare(String(b.date || '')));
+        const intervals = [];
+        let base = null, accL = 0, accC = 0, firstFullId = null;
+        for (const r of sorted) {
+            const isFull = r.fullTank !== false;
+            if (!isFull) {
+                if (base) { accL += r.liters; accC += r.totalCost; }
+                continue;
+            }
+            if (firstFullId === null) firstFullId = r.id;
+            if (base) {
+                const km = r.odometer - base.odometer;
+                if (km > 0) {
+                    const liters = accL + r.liters;
+                    const cost = accC + r.totalCost;
+                    intervals.push({
+                        endId: r.id, km, liters, cost,
+                        l100: (liters / km) * 100,
+                        costPerKm: cost / km
+                    });
+                }
+                accL = 0; accC = 0;
+            }
+            base = r;
+        }
+        return { intervals, firstFullId };
+    }
+
+    // ============================================================
+    // FOTOĞRAF DEPOSU — IndexedDB (v3)
+    // Fotoğraf baytları localStorage'da DEĞİL, IndexedDB'de tutulur.
+    // Kayıtlarda yalnızca 'idb:<id>' referansı saklanır.
+    // Eski 'data:' (base64) fotoğraflar açılışta otomatik taşınır.
+    // IndexedDB kullanılamazsa base64 yedek moduna düşülür (uyarıyla).
+    // ============================================================
+    const PHOTO_DB_NAME = 'yakit_takip_photos';
+    const PHOTO_DB_VERSION = 1;
+    const PHOTO_STORE = 'photos';
+    const IDB_PREFIX = 'idb:';
+    const MAX_PHOTO_DIM = 1600;        // uzun kenar en fazla 1600px
+    const PHOTO_JPEG_QUALITY = 0.82;
+
+    let photoDb = null;
+    let photoDbFailed = false;
+    let photoInitPromise = null;
+    let sessionAddedPhotoIds = new Set();   // bu modal oturumunda eklenip henüz kaydedilmeyenler
+    const photoUrlCache = new Map();        // id -> objectURL (bellek sızıntısını önlemek için)
+    let photoRenderToken = 0;
+
+    function newPhotoId() {
+        return 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    }
+    function isIdbRef(ref) { return typeof ref === 'string' && ref.startsWith(IDB_PREFIX); }
+    function refToId(ref) { return ref.slice(IDB_PREFIX.length); }
+
+    function openPhotoDb() {
+        return new Promise((resolve, reject) => {
+            if (photoDb) return resolve(photoDb);
+            if (photoDbFailed || typeof indexedDB === 'undefined') return reject(new Error('IndexedDB kullanılamıyor'));
+            let req;
+            try { req = indexedDB.open(PHOTO_DB_NAME, PHOTO_DB_VERSION); }
+            catch (e) { photoDbFailed = true; return reject(e); }
+            req.onupgradeneeded = () => {
+                const db = req.result;
+                if (!db.objectStoreNames.contains(PHOTO_STORE)) db.createObjectStore(PHOTO_STORE, { keyPath: 'id' });
+            };
+            req.onsuccess = () => {
+                photoDb = req.result;
+                photoDb.onversionchange = () => { photoDb.close(); photoDb = null; };
+                resolve(photoDb);
+            };
+            req.onerror = () => { photoDbFailed = true; reject(req.error || new Error('IndexedDB açılamadı')); };
+        });
+    }
+
+    async function idbPutPhoto(id, blob, meta = {}) {
+        const db = await openPhotoDb();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(PHOTO_STORE, 'readwrite');
+            tx.objectStore(PHOTO_STORE).put({ id, blob, mime: blob.type, size: blob.size, createdAt: Date.now(), ...meta });
+            tx.oncomplete = () => resolve(id);
+            tx.onerror = () => reject(tx.error || new Error('Fotoğraf yazılamadı'));
+            tx.onabort = () => reject(tx.error || new Error('Fotoğraf yazma işlemi iptal edildi'));
+        });
+    }
+
+    async function idbGetPhoto(id) {
+        const db = await openPhotoDb();
+        return new Promise((resolve, reject) => {
+            const req = db.transaction(PHOTO_STORE, 'readonly').objectStore(PHOTO_STORE).get(id);
+            req.onsuccess = () => resolve(req.result || null);
+            req.onerror = () => reject(req.error);
+        });
+    }
+
+    async function idbDeletePhotos(ids) {
+        if (!ids || !ids.length) return;
+        const db = await openPhotoDb();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(PHOTO_STORE, 'readwrite');
+            const store = tx.objectStore(PHOTO_STORE);
+            ids.forEach(id => store.delete(id));
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => reject(tx.error);
+            tx.onabort = () => reject(tx.error);
+        });
+    }
+
+    async function idbGetAllPhotoIds() {
+        const db = await openPhotoDb();
+        return new Promise((resolve, reject) => {
+            const req = db.transaction(PHOTO_STORE, 'readonly').objectStore(PHOTO_STORE).getAllKeys();
+            req.onsuccess = () => resolve(req.result || []);
+            req.onerror = () => reject(req.error);
+        });
+    }
+
+    async function idbPhotoStats() {
+        const db = await openPhotoDb();
+        return new Promise((resolve, reject) => {
+            const req = db.transaction(PHOTO_STORE, 'readonly').objectStore(PHOTO_STORE).openCursor();
+            let count = 0, bytes = 0;
+            req.onsuccess = () => {
+                const cursor = req.result;
+                if (cursor) {
+                    count++;
+                    bytes += cursor.value.size || (cursor.value.blob ? cursor.value.blob.size : 0);
+                    cursor.continue();
+                } else resolve({ count, bytes });
+            };
+            req.onerror = () => reject(req.error);
+        });
+    }
+
+    async function idbClearPhotos() {
+        const db = await openPhotoDb();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(PHOTO_STORE, 'readwrite');
+            tx.objectStore(PHOTO_STORE).clear();
+            tx.oncomplete = () => {
+                photoUrlCache.forEach(url => URL.revokeObjectURL(url));
+                photoUrlCache.clear();
+                resolve();
+            };
+            tx.onerror = () => reject(tx.error);
+        });
+    }
+
+    function dataUrlToBlob(dataUrl) {
+        const comma = dataUrl.indexOf(',');
+        const header = dataUrl.slice(0, comma);
+        const b64 = dataUrl.slice(comma + 1);
+        const mime = (header.match(/data:([^;]+)/) || [])[1] || 'image/jpeg';
+        const bin = atob(b64);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        return new Blob([bytes], { type: mime });
+    }
+
+    function blobToDataUrl(blob) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => reject(reader.error);
+            reader.readAsDataURL(blob);
+        });
+    }
+
+    // Fotoğrafı küçült + JPEG'e çevir. Canvas/createImageBitmap yoksa orijinali sakla.
+    async function compressImage(file) {
+        if (!file.type || !file.type.startsWith('image/')) return { blob: file };
+        let temporaryUrl = null;
+        try {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return { blob: file };
+            let source, width, height;
+            if (typeof createImageBitmap === 'function') {
+                try { source = await createImageBitmap(file, { imageOrientation: 'from-image' }); }
+                catch (e) { source = await createImageBitmap(file); }
+                width = source.width; height = source.height;
+            } else {
+                temporaryUrl = URL.createObjectURL(file);
+                source = await new Promise((res, rej) => {
+                    const img = new Image();
+                    const timer = setTimeout(() => rej(new Error('Görsel yükleme zaman aşımı')), 10000);
+                    img.onload = () => { clearTimeout(timer); res(img); };
+                    img.onerror = () => { clearTimeout(timer); rej(new Error('Görsel yüklenemedi')); };
+                    img.src = temporaryUrl;
+                });
+                width = source.naturalWidth; height = source.naturalHeight;
+            }
+            if (!width || !height) return { blob: file };
+            const scale = Math.min(1, MAX_PHOTO_DIM / Math.max(width, height));
+            // Zaten küçükse yeniden kodlama (kalite kaybını önle)
+            if (scale === 1 && file.size < 300 * 1024) return { blob: file, width, height };
+            canvas.width = Math.round(width * scale);
+            canvas.height = Math.round(height * scale);
+            ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
+            if (source.close) source.close();
+            const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', PHOTO_JPEG_QUALITY));
+            if (blob && blob.size < file.size) return { blob, width: canvas.width, height: canvas.height };
+            return { blob: file, width, height };
+        } catch (e) {
+            console.warn('Fotoğraf sıkıştırılamadı, orijinal saklanacak:', e);
+            return { blob: file };
+        } finally {
+            if (temporaryUrl) URL.revokeObjectURL(temporaryUrl);
+        }
+    }
+
+    // Referansı görüntülenebilir URL'ye çevir (idb: → objectURL, data: → olduğu gibi)
+    async function resolvePhotoUrl(ref) {
+        if (!isIdbRef(ref)) return ref;
+        const id = refToId(ref);
+        if (photoUrlCache.has(id)) return photoUrlCache.get(id);
+        const rec = await idbGetPhoto(id);
+        if (!rec || !rec.blob) return null;
+        const url = URL.createObjectURL(rec.blob);
+        photoUrlCache.set(id, url);
+        return url;
+    }
+
+    function revokePhotoUrl(id) {
+        const url = photoUrlCache.get(id);
+        if (url) { URL.revokeObjectURL(url); photoUrlCache.delete(id); }
+    }
+
+    function collectIdbPhotoIds(refuels) {
+        const ids = [];
+        refuels.forEach(r => (Array.isArray(r.photos) ? r.photos : []).forEach(p => {
+            if (isIdbRef(p)) ids.push(refToId(p));
+        }));
+        return ids;
+    }
+
+    // Açılışta: eski base64 fotoğrafları IndexedDB'ye taşı
+    async function migratePhotosToIndexedDb() {
+        let migrated = 0, failed = 0;
+        for (const r of state.refuels) {
+            if (!Array.isArray(r.photos)) { r.photos = []; continue; }
+            for (let i = 0; i < r.photos.length; i++) {
+                const ref = r.photos[i];
+                if (typeof ref === 'string' && ref.startsWith('data:')) {
+                    try {
+                        const blob = dataUrlToBlob(ref);
+                        const id = newPhotoId();
+                        await idbPutPhoto(id, blob, { migratedFrom: 'localStorage' });
+                        r.photos[i] = IDB_PREFIX + id;
+                        migrated++;
+                    } catch (e) {
+                        failed++;
+                        console.error('Fotoğraf taşınamadı:', e);
+                    }
+                }
+            }
+        }
+        if (migrated > 0) {
+            saveState(); // localStorage artık sadece referans içerir → kota rahatlar
+            showToast(`${migrated} fotoğraf IndexedDB'ye taşındı ✓`);
+        }
+        if (failed > 0) showToast(`⚠️ ${failed} fotoğraf taşınamadı, eski yerde kaldı`);
+        return migrated;
+    }
+
+    // Hiçbir kaydın referans vermediği fotoğrafları temizle
+    async function cleanupOrphanPhotos() {
+        try {
+            const referenced = new Set(collectIdbPhotoIds(state.refuels));
+            sessionAddedPhotoIds.forEach(id => referenced.add(id)); // açık modal oturumundakileri koru
+            const allIds = await idbGetAllPhotoIds();
+            const orphans = allIds.filter(id => !referenced.has(id));
+            if (orphans.length) {
+                await idbDeletePhotos(orphans);
+                orphans.forEach(revokePhotoUrl);
+            }
+            return orphans.length;
+        } catch (e) {
+            console.warn('Yetim fotoğraf temizliği yapılamadı:', e);
+            return 0;
+        }
+    }
+
+    // Modal oturumu: kaydedilmemiş yeni fotoğrafları çöpe at
+    function discardSessionPhotos() {
+        if (sessionAddedPhotoIds.size) {
+            const ids = [...sessionAddedPhotoIds];
+            sessionAddedPhotoIds.clear();
+            ids.forEach(revokePhotoUrl);
+            idbDeletePhotos(ids).catch(() => {});
+        }
+    }
+
+    async function updateStorageInfo() {
+        const el = document.getElementById('report-storage-info');
+        if (!el) return;
+        try {
+            const stats = await idbPhotoStats();
+            const mb = (stats.bytes / 1024 / 1024).toFixed(2);
+            el.textContent = `${stats.count} fotoğraf · ${mb} MB (IndexedDB)`;
+        } catch (e) {
+            el.textContent = 'IndexedDB kullanılamıyor — fotoğraflar base64 yedek modunda';
+        }
+    }
+
+    function switchView(viewName) {
+        openTimelineMenuId = null;
+        const views = ['home', 'timeline', 'calculator', 'stats', 'trips', 'reports', 'vehicles'];
+        views.forEach(v => {
+            const el = document.getElementById('view-' + v);
+            if (el) el.classList.toggle('hidden', v !== viewName);
+        });
+
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('text-slate-800');
+            btn.classList.add('text-slate-500');
+            const pill = btn.querySelector('.nav-pill');
+            if (pill) pill.classList.remove('bg-slate-200/90');
+        });
+
+        const activeBtn = document.getElementById('nav-' + viewName);
+        if (activeBtn) {
+            activeBtn.classList.remove('text-slate-500');
+            activeBtn.classList.add('text-slate-800');
+            const pill = activeBtn.querySelector('.nav-pill');
+            if (pill) pill.classList.add('bg-slate-200/90');
+        }
+
+        renderAll();
+        if (viewName === 'reports') updateStorageInfo();
+    }
+
+    function toggleDrawer(open) {
+        const drawer = document.getElementById('nav-drawer');
+        const backdrop = document.getElementById('drawer-backdrop');
+        if (open) {
+            backdrop.classList.remove('hidden');
+            drawer.classList.remove('-translate-x-full');
+        } else {
+            drawer.classList.add('-translate-x-full');
+            backdrop.classList.add('hidden');
+        }
+    }
+
+    function toggleActionSheet(open) {
+        const sheet = document.getElementById('action-sheet');
+        const backdrop = document.getElementById('sheet-backdrop');
+        if (open) {
+            backdrop.classList.remove('hidden');
+            sheet.classList.remove('translate-y-full');
+        } else {
+            sheet.classList.add('translate-y-full');
+            backdrop.classList.add('hidden');
+        }
+    }
+
+    function getActiveVehicle() {
+        return state.vehicles.find(v => v.id === state.activeVehicleId) || state.vehicles[0];
+    }
+
+    // Kilometre Günlüğü Kayıt Menüsü İşlemleri
+    function toggleTimelineMenu(event, id) {
+        event.stopPropagation();
+        openTimelineMenuId = (openTimelineMenuId === id) ? null : id;
+        renderAll();
+    }
+
+    function deleteRefuelRecord(id) {
+        if (!confirm('Bu dolum kaydı silinecek. Emin misiniz?')) return;
+        openTimelineMenuId = null;
+        const removed = state.refuels.find(r => r.id === id);
+        // Kayda bağlı IndexedDB fotoğraflarını da temizle
+        if (removed) {
+            const photoIds = collectIdbPhotoIds([removed]);
+            photoIds.forEach(revokePhotoUrl);
+            idbDeletePhotos(photoIds).catch(e => console.warn('Fotoğraflar silinemedi:', e));
+        }
+        state.refuels = state.refuels.filter(r => r.id !== id);
+        
+        // Araç güncel kilometresini kalan kayıtlara göre senkronize et
+        const vehicle = getActiveVehicle();
+        const vRefuels = state.refuels.filter(r => r.vehicleId === vehicle.id);
+        if (vRefuels.length > 0) {
+            const maxOdo = Math.max(...vRefuels.map(r => r.odometer));
+            vehicle.odometer = maxOdo;
+        }
+
+        saveState();
+        renderAll();
+        showToast('Kayıt silindi');
+    }
+
+    function openEditRefuelModal(id) {
+        openTimelineMenuId = null;
+        const record = state.refuels.find(r => r.id === id);
+        if (!record) return;
+
+        const vehicle = getActiveVehicle();
+        document.getElementById('edit-refuel-id').value = record.id;
+        document.getElementById('refuel-modal-title').textContent = 'Dolumu Düzenle';
+        document.getElementById('refuel-odo').value = record.odometer;
+        document.getElementById('refuel-last-odo-hint').textContent = `Son değer: ${vehicle.odometer.toLocaleString('tr-TR')} km`;
+        document.getElementById('refuel-liters').value = record.liters;
+        document.getElementById('refuel-type').value = record.fuelType || 'Kurşunsuz 95';
+        document.getElementById('refuel-price').value = record.pricePerLiter;
+        document.getElementById('refuel-total').value = record.totalCost;
+        document.getElementById('refuel-date').value = record.date || '';
+        document.getElementById('refuel-time').value = record.time || '';
+        document.getElementById('refuel-full').checked = record.fullTank !== false;
+        
+        const tankCapEl = document.getElementById('refuel-tank-capacity');
+        if (tankCapEl) tankCapEl.value = vehicle.tankCapacity || '';
+
+        selectedStationName = (record.station && record.station !== 'Belirtilmedi') ? record.station : '';
+        selectedStationMeta = (record.stationLat != null && record.stationLon != null && isFiniteCoord(Number(record.stationLat), Number(record.stationLon)))
+            ? { lat: Number(record.stationLat), lon: Number(record.stationLon), address: record.stationAddress || '', source: record.stationSource || 'kayıt', osmType: record.stationOsmType || null, osmId: record.stationOsmId || null }
+            : null;
+        updateSelectedStationDisplay();
+
+        // Hava durumu ayrıştırma
+        if (record.weather && record.weather.includes('·')) {
+            const parts = record.weather.split('·');
+            const condStr = parts[0].trim();
+            const tempStr = parts[1].replace('°C', '').trim();
+            const condEl = document.getElementById('refuel-weather-cond');
+            const tempEl = document.getElementById('refuel-weather-temp');
+            if (condEl) condEl.value = condStr;
+            if (tempEl && !isNaN(parseFloat(tempStr))) tempEl.value = parseFloat(tempStr);
+            document.getElementById('weather-status-text').textContent = `Kayıtlı hava durumu: ${record.weather}`;
+        } else {
+            const condReset = document.getElementById('refuel-weather-cond');
+            const tempReset = document.getElementById('refuel-weather-temp');
+            if (condReset) condReset.value = 'Güneşli';
+            if (tempReset) tempReset.value = 18;
+            const weatherStatus = document.getElementById('weather-status-text');
+            if (weatherStatus) weatherStatus.textContent = 'Konum otomatik alınmaz; isterseniz “Konumdan Güncelle”yi kullanın.';
+        }
+
+        discardSessionPhotos(); // önceki oturumdan kalan kaydedilmemiş fotoğrafları temizle
+        currentRefuelPhotos = record.photos ? [...record.photos] : [];
+        renderRefuelPhotos();
+        document.getElementById('refuel-note').value = record.note || '';
+
+        document.getElementById('refuel-modal').classList.remove('hidden');
+    }
+
+    function openRefuelModal(prefill = {}) {
+        const vehicle = getActiveVehicle();
+        const vRefuels = state.refuels.filter(r => r.vehicleId === vehicle.id);
+        const lastRefuel = [...vRefuels].sort(compareRefuelsDesc)[0];
+
+        document.getElementById('edit-refuel-id').value = '';
+        document.getElementById('refuel-modal-title').textContent = 'Dolum';
+        document.getElementById('refuel-odo').value = prefill.odometer || '';
+        document.getElementById('refuel-last-odo-hint').textContent = `Son değer: ${vehicle.odometer.toLocaleString('tr-TR')} km`;
+        document.getElementById('refuel-liters').value = prefill.liters || '';
+        document.getElementById('refuel-price').value = prefill.price || (lastRefuel ? lastRefuel.pricePerLiter.toFixed(2) : '81.60');
+        document.getElementById('refuel-total').value = prefill.total || '';
+        document.getElementById('refuel-full').checked = true;
+        const tankCapEl = document.getElementById('refuel-tank-capacity');
+        if (tankCapEl) tankCapEl.value = vehicle.tankCapacity || '';
+
+        const now = new Date();
+        document.getElementById('refuel-date').value = todayKey();
+        document.getElementById('refuel-time').value = now.toTimeString().slice(0, 5);
+        document.getElementById('refuel-note').value = '';
+
+        selectedStationName = '';
+        selectedStationMeta = null;
+        updateSelectedStationDisplay();
+        discardSessionPhotos();
+        currentRefuelPhotos = [];
+        renderRefuelPhotos();
+
+        // v4 gizlilik: konum yalnızca kullanıcı isterse alınır (harita/konum düğmeleri).
+        const weatherStatus = document.getElementById('weather-status-text');
+        if (weatherStatus) weatherStatus.textContent = 'Konum otomatik alınmaz; isterseniz “Konumdan Güncelle”yi kullanın.';
+        const condEl = document.getElementById('refuel-weather-cond');
+        const tempEl = document.getElementById('refuel-weather-temp');
+        if (condEl) condEl.value = 'Güneşli';
+        if (tempEl) tempEl.value = 18;
+        document.getElementById('refuel-modal').classList.remove('hidden');
+    }
+
+    function closeRefuelModal() {
+        discardSessionPhotos(); // kaydedilmemiş yeni fotoğrafları çöpe at
+        currentRefuelPhotos = [];
+        document.getElementById('edit-refuel-id').value = '';
+        document.getElementById('refuel-modal').classList.add('hidden');
+    }
+
+    function autoCalcRefuel(changedField) {
+        const litersEl = document.getElementById('refuel-liters');
+        const priceEl = document.getElementById('refuel-price');
+        const totalEl = document.getElementById('refuel-total');
+
+        const liters = parseFloat(litersEl.value);
+        const price = parseFloat(priceEl.value);
+        const total = parseFloat(totalEl.value);
+
+        if (changedField === 'liters' || changedField === 'price') {
+            if (!isNaN(liters) && !isNaN(price)) {
+                totalEl.value = (liters * price).toFixed(2);
+            }
+        } else if (changedField === 'total') {
+            if (!isNaN(total) && !isNaN(price) && price > 0) {
+                litersEl.value = (total / price).toFixed(2);
+            } else if (!isNaN(total) && !isNaN(liters) && liters > 0) {
+                priceEl.value = (total / liters).toFixed(2);
+            }
+        }
+    }
+
+    async function handleRefuelPhotos(event) {
+        const files = Array.from(event.target.files || []);
+        event.target.value = ''; // aynı dosya tekrar seçilebilsin
+        if (!files.length) return;
+        showToast('Fotoğraflar işleniyor...');
+        for (const file of files) {
+            try {
+                const { blob, width, height } = await compressImage(file);
+                try {
+                    const id = newPhotoId();
+                    await idbPutPhoto(id, blob, { width, height, originalName: file.name || '' });
+                    currentRefuelPhotos.push(IDB_PREFIX + id);
+                    sessionAddedPhotoIds.add(id);
+                } catch (dbErr) {
+                    // IndexedDB yoksa base64 yedek modu (küçültülmüş blob ile)
+                    console.warn('IndexedDB yazma hatası, base64 yedeği:', dbErr);
+                    const dataUrl = await blobToDataUrl(blob);
+                    currentRefuelPhotos.push(dataUrl);
+                    showToast('⚠️ IndexedDB kullanılamadı; fotoğraf küçültülerek yedek modda eklendi');
+                }
+                await renderRefuelPhotos();
+            } catch (e) {
+                console.error('Fotoğraf işlenemedi:', e);
+                showToast('Bir fotoğraf işlenemedi');
+            }
+        }
+    }
+
+    async function renderRefuelPhotos() {
+        const container = document.getElementById('refuel-photos-preview');
+        if (!container) return;
+        const token = ++photoRenderToken;
+        const refs = [...currentRefuelPhotos];
+        const urls = await Promise.all(refs.map(ref => resolvePhotoUrl(ref).catch(() => null)));
+        if (token !== photoRenderToken) return; // daha güncel bir render başladıysa bunu atla
+        container.innerHTML = refs.map((ref, idx) => {
+            const url = urls[idx];
+            const inner = url
+                ? `<img src="${escapeHtml(url)}" class="w-full h-full object-cover" alt="Fiş">`
+                : '<div class="w-full h-full bg-slate-100 flex items-center justify-center text-slate-400 text-lg" title="Fotoğraf bulunamadı"><i class="fa-solid fa-image"></i></div>';
+            return `
+            <div class="relative w-16 h-16 rounded-xl overflow-hidden border border-slate-200 shrink-0">
+                ${inner}
+                <button type="button" onclick="removeRefuelPhoto(${idx})" class="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-slate-900/70 text-white text-[10px] flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>`;
+        }).join('');
+    }
+
+    function removeRefuelPhoto(idx) {
+        const ref = currentRefuelPhotos[idx];
+        currentRefuelPhotos.splice(idx, 1);
+        if (isIdbRef(ref)) {
+            const id = refToId(ref);
+            if (sessionAddedPhotoIds.has(id)) {
+                // Henüz kaydedilmemiş yeni fotoğraf → hemen sil
+                sessionAddedPhotoIds.delete(id);
+                revokePhotoUrl(id);
+                idbDeletePhotos([id]).catch(() => {});
+            }
+            // Kayıtlı fotoğraf ise silme işlemi kaydetme anında yapılır (iptal edilirse geri gelsin)
+        }
+        renderRefuelPhotos();
+    }
+
+    function detectWeatherByLocation() {
+        const statusEl = document.getElementById('weather-status-text');
+        const condEl = document.getElementById('refuel-weather-cond');
+        const tempEl = document.getElementById('refuel-weather-temp');
+        if (!statusEl) return;
+
+        statusEl.textContent = 'Konum ve hava durumu alınıyor...';
+
+        if (!navigator.geolocation) {
+            statusEl.textContent = 'Konum desteklenmiyor · Varsayılan değer yüklendi';
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            async (pos) => {
+                const { latitude, longitude } = pos.coords;
+                try {
+                    const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude.toFixed(4)}&longitude=${longitude.toFixed(4)}&current_weather=true`);
+                    const data = await res.json();
+                    if (data && data.current_weather) {
+                        const temp = Math.round(data.current_weather.temperature);
+                        const code = data.current_weather.weathercode;
+                        let cond = 'Güneşli';
+                        if (code >= 1 && code <= 2) cond = 'Parçalı Bulutlu';
+                        else if (code === 3 || (code >= 45 && code <= 48)) cond = 'Bulutlu';
+                        else if ((code >= 71 && code <= 77) || code === 85 || code === 86) cond = 'Karlı';
+                        else if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82) || code >= 95) cond = 'Yağmurlu';
+
+                        condEl.value = cond;
+                        tempEl.value = temp;
+                        statusEl.textContent = `Konum (${latitude.toFixed(2)}, ${longitude.toFixed(2)}) · ${cond}, ${temp}°C`;
+                        const topBadge = document.getElementById('weather-badge-top');
+                        if (topBadge) {
+                            topBadge.textContent = `${temp}°C`;
+                            topBadge.classList.remove('hidden');
+                        }
+                    }
+                } catch (err) {
+                    statusEl.textContent = 'Hava durumu alınamadı; manuel değerleri kullanabilirsiniz.';
+                }
+            },
+            () => {
+                statusEl.textContent = 'Konum izni verilmedi · Manuel seçebilirsiniz';
+            },
+            { timeout: 6000 }
+        );
+    }
+
+    async function saveRefuel() {
+        const vehicle = getActiveVehicle();
+        const editId = document.getElementById('edit-refuel-id').value;
+        const odo = parseFloat(document.getElementById('refuel-odo').value) || vehicle.odometer;
+        const liters = parseFloat(document.getElementById('refuel-liters').value);
+        const price = parseFloat(document.getElementById('refuel-price').value);
+        const total = parseFloat(document.getElementById('refuel-total').value);
+
+        if (isNaN(liters) || liters <= 0 || isNaN(total) || total <= 0) {
+            showToast('Lütfen geçerli litre ve tutar girin');
+            return;
+        }
+
+        const cond = document.getElementById('refuel-weather-cond').value;
+        const temp = document.getElementById('refuel-weather-temp').value;
+
+        const recordData = {
+            vehicleId: vehicle.id,
+            odometer: odo,
+            liters: liters,
+            pricePerLiter: !isNaN(price) && price > 0 ? price : +(total / liters).toFixed(2),
+            totalCost: total,
+            fuelType: document.getElementById('refuel-type').value,
+            date: document.getElementById('refuel-date').value,
+            time: document.getElementById('refuel-time').value,
+            fullTank: document.getElementById('refuel-full').checked,
+            station: selectedStationName || 'Belirtilmedi',
+            stationLat: selectedStationMeta ? selectedStationMeta.lat : null,
+            stationLon: selectedStationMeta ? selectedStationMeta.lon : null,
+            stationAddress: selectedStationMeta ? (selectedStationMeta.address || '') : '',
+            stationSource: selectedStationMeta ? (selectedStationMeta.source || 'harita') : (selectedStationName ? 'manuel' : ''),
+            stationOsmType: selectedStationMeta ? (selectedStationMeta.osmType || null) : null,
+            stationOsmId: selectedStationMeta ? (selectedStationMeta.osmId || null) : null,
+            weather: `${cond} · ${temp}°C`,
+            photos: [...currentRefuelPhotos],
+            note: document.getElementById('refuel-note').value.trim()
+        };
+
+        // Depolama hatasında geri alma için anlık görüntü
+        const refuelsBackup = JSON.parse(JSON.stringify(state.refuels));
+        const odoBackup = vehicle.odometer;
+        const tankBackup = vehicle.tankCapacity;
+
+        // Düzenlemede kaldırılan eski fotoğrafları belirle (kayıt başarılı olursa silinecek)
+        let removedPhotoIds = [];
+        if (editId) {
+            const old = state.refuels.find(r => r.id === editId);
+            if (old && Array.isArray(old.photos)) {
+                const kept = new Set(currentRefuelPhotos);
+                removedPhotoIds = old.photos.filter(p => isIdbRef(p) && !kept.has(p)).map(refToId);
+            }
+        }
+
+        if (editId) {
+            const idx = state.refuels.findIndex(r => r.id === editId);
+            if (idx !== -1) {
+                state.refuels[idx] = { ...state.refuels[idx], ...recordData };
+            }
+        } else {
+            state.refuels.push({
+                id: 'r' + Date.now(),
+                ...recordData
+            });
+        }
+
+        state.refuels.sort(compareRefuelsDesc);
+
+        // Aracın güncel kilometresini güncelle
+        const vRefuels = state.refuels.filter(r => r.vehicleId === vehicle.id);
+        if (vRefuels.length > 0) {
+            const maxOdo = Math.max(...vRefuels.map(r => r.odometer));
+            if (editId) {
+                vehicle.odometer = maxOdo;
+            } else if (odo > vehicle.odometer) {
+                vehicle.odometer = odo;
+            }
+        }
+
+        const tankCapVal = parseFloat(document.getElementById('refuel-tank-capacity')?.value);
+        if (!isNaN(tankCapVal) && tankCapVal > 0) {
+            vehicle.tankCapacity = tankCapVal;
+        }
+
+        if (!saveState()) {
+            // Depolama başarısız: durumu geri al, modalı açık tut, fotoğraflara dokunma
+            state.refuels = refuelsBackup;
+            vehicle.odometer = odoBackup;
+            vehicle.tankCapacity = tankBackup;
+            showToast('⚠️ Kayıt yerel depoya yazılamadı, işlem geri alındı');
+            return;
+        }
+
+        // Kayıt başarılı → fotoğraf oturumunu kalıcılaştır
+        sessionAddedPhotoIds.clear();
+        if (removedPhotoIds.length) {
+            removedPhotoIds.forEach(revokePhotoUrl);
+            idbDeletePhotos(removedPhotoIds).catch(e => console.warn('Kaldırılan fotoğraflar silinemedi:', e));
+        }
+        closeRefuelModal();
+        renderAll();
+        showToast(editId ? 'Dolum kaydı güncellendi' : 'Yeni yakıt dolumu eklendi');
+    }
+
+    function calculateTrip() {
+        const distEl = document.getElementById('calc-distance');
+        const priceEl = document.getElementById('calc-price');
+        const consEl = document.getElementById('calc-consumption');
+        const costEl = document.getElementById('calc-result-cost');
+        const litersEl = document.getElementById('calc-result-liters');
+
+        if (!distEl || !priceEl || !consEl) return;
+
+        const distance = parseFloat(distEl.value) || 0;
+        const price = parseFloat(priceEl.value) || 0;
+        const consumption = parseFloat(consEl.value) || 0;
+
+        const neededLiters = (distance * consumption) / 100;
+        const totalCost = neededLiters * price;
+
+        if (costEl) costEl.textContent = formatCurrency(totalCost);
+        if (litersEl) litersEl.textContent = neededLiters.toFixed(2).replace('.', ',') + ' L';
+    }
+
+    // ============================================================
+    // GERÇEK HARİTA / İSTASYON (v4)
+    // Harita: Leaflet + OpenStreetMap karoları.
+    // İstasyon/adres: Photon (Komoot) — OpenStreetMap verisi.
+    // Konum yalnızca kullanıcı düğmeye bastığında alınır/gönderilir.
+    // Sahte istasyon yok; internet yoksa son kullanılanlar + manuel giriş.
+    // ============================================================
+    const PHOTON_DEFAULT_BASE = 'https://photon.komoot.io';
+    const PHOTON_BASE_KEY = 'yakit_takip_photon_base';
+    let PHOTON_BASE = PHOTON_DEFAULT_BASE;
+    try {
+        const savedBase = localStorage.getItem(PHOTON_BASE_KEY);
+        if (savedBase && /^https?:\/\//i.test(savedBase)) PHOTON_BASE = savedBase.replace(/\/+$/, '');
+    } catch (e) {}
+    const PHOTON_MIN_INTERVAL_MS = 1100; // kamu demo sunucusunu yormamak için istekleri sıraya sok
+    const PHOTON_CACHE_TTL_MS = 10 * 60 * 1000;
+    const RECENT_STATIONS_KEY = 'yakit_takip_recent_stations_v1';
+    const photonCache = new Map();
+    let photonQueue = Promise.resolve();
+    let lastPhotonRequestAt = 0;
+    let recentStations = loadRecentStations();
+    let stationSearchMode = 'fuel';
+    let stationMap = null, stationTileLayer = null, stationMarkersLayer = null, stationRadiusCircle = null;
+    let stationUserMarker = null, stationManualMarker = null, stationSelectedMarker = null;
+    let stationUserLocation = null, stationPendingPoint = null;
+    let stationSearchAbort = null, stationNearbyAbort = null, stationReverseAbort = null;
+    let stationTileErrorShown = false;
+
+    function stationSleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+    function isFiniteCoord(lat, lon) {
+        return Number.isFinite(lat) && Number.isFinite(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
+    }
+    function haversineKm(lat1, lon1, lat2, lon2) {
+        const R = 6371, toRad = x => x * Math.PI / 180;
+        const dLat = toRad(lat2 - lat1), dLon = toRad(lon2 - lon1);
+        const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+        return 2 * R * Math.asin(Math.sqrt(a));
+    }
+    function formatStationDistance(km) {
+        if (!Number.isFinite(km)) return '';
+        return km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1).replace('.', ',')} km`;
+    }
+    function stationErrorMessage(err) {
+        if (err && err.name === 'AbortError') return 'İstek iptal edildi veya zaman aşımına uğradı.';
+        if (err && err.message === 'offline') return 'İnternet bağlantısı yok. Son kullanılanları seçebilir veya manuel ad girebilirsiniz.';
+        if (err && err.status === 429) return 'Çok fazla istek gönderildi. Lütfen biraz bekleyip tekrar deneyin.';
+        if (err && err.status >= 500) return 'Harita/arama servisi geçici olarak yanıt vermiyor. Manuel giriş kullanabilirsiniz.';
+        return 'İstasyon/adres bilgisi alınamadı. İnterneti kontrol edip tekrar deneyin veya manuel giriş yapın.';
+    }
+
+    function loadRecentStations() {
+        try {
+            const arr = JSON.parse(localStorage.getItem(RECENT_STATIONS_KEY) || '[]');
+            if (!Array.isArray(arr)) return [];
+            return arr.filter(s => s && typeof s.name === 'string' && s.name.trim())
+                .map(s => ({
+                    name: s.name.slice(0, 160), address: String(s.address || '').slice(0, 300),
+                    lat: Number.isFinite(Number(s.lat)) ? Number(s.lat) : null,
+                    lon: Number.isFinite(Number(s.lon)) ? Number(s.lon) : null,
+                    source: s.source || 'manuel', osmType: s.osmType || null, osmId: s.osmId || null,
+                    isFuel: !!s.isFuel
+                })).slice(0, 8);
+        } catch (e) { return []; }
+    }
+    function saveRecentStation(entry) {
+        if (!entry || !entry.name) return;
+        const key = s => String(s.name).toLocaleLowerCase('tr-TR') + '|' + (Number.isFinite(s.lat) ? s.lat.toFixed(4) : '') + '|' + (Number.isFinite(s.lon) ? s.lon.toFixed(4) : '');
+        recentStations = [entry, ...recentStations.filter(s => key(s) !== key(entry))].slice(0, 8);
+        try { localStorage.setItem(RECENT_STATIONS_KEY, JSON.stringify(recentStations)); } catch (e) { console.warn('Son istasyonlar kaydedilemedi:', e); }
+    }
+
+    function buildPhotonAddress(p) {
+        const street = [p.street, p.housenumber].filter(Boolean).join(' ');
+        const parts = [street, p.district, p.city, p.county, p.state, p.postcode, p.country].filter(Boolean);
+        return [...new Set(parts)].join(', ');
+    }
+    function normalizePhotonFeature(f, center) {
+        const coords = f && f.geometry && f.geometry.coordinates;
+        if (!Array.isArray(coords)) return null;
+        const lon = Number(coords[0]), lat = Number(coords[1]);
+        if (!isFiniteCoord(lat, lon)) return null;
+        const p = f.properties || {};
+        const extra = p.extra || {};
+        const name = p.name || extra.brand || extra.operator || p.street || p.district || p.city || p.county || p.state || 'İsimsiz konum';
+        const osmTypeMap = { N: 'node', W: 'way', R: 'relation', node: 'node', way: 'way', relation: 'relation' };
+        const osmType = osmTypeMap[p.osm_type] || null;
+        const osmId = p.osm_id != null ? String(p.osm_id) : null;
+        return {
+            id: osmType && osmId ? `${osmType}:${osmId}` : `pt:${lat.toFixed(6)},${lon.toFixed(6)}`,
+            name: String(name).slice(0, 160), address: buildPhotonAddress(p), lat, lon,
+            source: 'photon', osmType, osmId,
+            isFuel: p.osm_key === 'amenity' && p.osm_value === 'fuel',
+            distance: center ? haversineKm(center.lat, center.lon, lat, lon) : null
+        };
+    }
+    function dedupeStations(list) {
+        const seen = new Set(); const out = [];
+        for (const s of list) {
+            const k = s.id || `${s.name}|${s.lat.toFixed(4)}|${s.lon.toFixed(4)}`;
+            if (seen.has(k)) continue;
+            seen.add(k); out.push(s);
+        }
+        return out;
+    }
+
+    // Tek kuyruk + önbellek: otomatik arama yok, yalnızca kullanıcı eylemi.
+    function photonFetch(path, params, opts = {}) {
+        const qs = new URLSearchParams(params).toString();
+        const cacheKey = path + '?' + qs;
+        const cached = photonCache.get(cacheKey);
+        if (cached && Date.now() - cached.ts < PHOTON_CACHE_TTL_MS) return Promise.resolve(JSON.parse(JSON.stringify(cached.data)));
+        const run = photonQueue.then(async () => {
+            if (opts.signal && opts.signal.aborted) throw new DOMException('Aborted', 'AbortError');
+            if (typeof navigator !== 'undefined' && navigator.onLine === false) { const e = new Error('offline'); throw e; }
+            const wait = Math.max(0, lastPhotonRequestAt + PHOTON_MIN_INTERVAL_MS - Date.now());
+            if (wait) await stationSleep(wait);
+            if (opts.signal && opts.signal.aborted) throw new DOMException('Aborted', 'AbortError');
+            lastPhotonRequestAt = Date.now();
+            const ctrl = new AbortController();
+            const timer = setTimeout(() => ctrl.abort(), 15000);
+            const onAbort = () => ctrl.abort();
+            if (opts.signal) opts.signal.addEventListener('abort', onAbort, { once: true });
+            try {
+                const res = await fetch(PHOTON_BASE + path + '?' + qs, { signal: ctrl.signal, headers: { 'Accept': 'application/json' } });
+                if (!res.ok) { const e = new Error('HTTP ' + res.status); e.status = res.status; throw e; }
+                const data = await res.json();
+                if (!data || !Array.isArray(data.features)) throw new Error('Beklenmeyen Photon yanıtı');
+                photonCache.set(cacheKey, { ts: Date.now(), data });
+                if (photonCache.size > 60) photonCache.delete(photonCache.keys().next().value);
+                return data;
+            } finally {
+                clearTimeout(timer);
+                if (opts.signal) opts.signal.removeEventListener('abort', onAbort);
+            }
+        });
+        photonQueue = run.catch(() => {});
+        return run;
+    }
+
+    function setStationLoading(loading) {
+        ['station-search-btn', 'station-area-btn', 'station-reverse-btn'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) { el.disabled = loading; el.classList.toggle('opacity-50', loading); }
+        });
+    }
+    function setStationStatus(id, msg) { const el = document.getElementById(id); if (el) el.textContent = msg; }
+
+    function initPhotonBaseSetting() {
+        const el = document.getElementById('photon-base-input');
+        if (el) el.value = PHOTON_BASE === PHOTON_DEFAULT_BASE ? '' : PHOTON_BASE;
+    }
+    function savePhotonBaseSetting() {
+        const el = document.getElementById('photon-base-input');
+        if (!el) return;
+        const value = el.value.trim();
+        if (!value) {
+            PHOTON_BASE = PHOTON_DEFAULT_BASE;
+            try { localStorage.removeItem(PHOTON_BASE_KEY); } catch (e) {}
+            photonCache.clear();
+            initPhotonBaseSetting();
+            showToast('Varsayılan Photon sunucusu kullanılacak');
+            return;
+        }
+        try {
+            const u = new URL(value);
+            if (u.protocol !== 'http:' && u.protocol !== 'https:') throw new Error('protocol');
+            PHOTON_BASE = value.replace(/\/+$/, '');
+            try { localStorage.setItem(PHOTON_BASE_KEY, PHOTON_BASE); } catch (e) {}
+            photonCache.clear();
+            showToast('Photon sunucusu kaydedildi');
+        } catch (e) {
+            showToast('Geçerli bir http(s) adresi girin');
+        }
+    }
+
+    function renderStationResults(container, stations, emptyMsg, opts = {}) {
+        if (!container) return;
+        container.innerHTML = '';
+        if (!stations.length) {
+            const d = document.createElement('div');
+            d.className = 'text-xs text-slate-400 text-center py-4';
+            d.textContent = emptyMsg || 'Sonuç bulunamadı.';
+            container.appendChild(d);
+            return;
+        }
+        stations.forEach(s => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'w-full text-left p-3 bg-white hover:bg-slate-50 rounded-xl border border-slate-200/70 transition space-y-1';
+            const top = document.createElement('div'); top.className = 'flex items-center gap-2';
+            const name = document.createElement('div'); name.className = 'font-bold text-slate-800 text-xs truncate'; name.textContent = s.name;
+            top.appendChild(name);
+            if (s.isFuel) { const b = document.createElement('span'); b.className = 'text-[9px] font-bold bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded shrink-0'; b.textContent = 'İstasyon'; top.appendChild(b); }
+            if (opts.recent) { const b = document.createElement('span'); b.className = 'text-[9px] font-bold bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded shrink-0'; b.textContent = 'Son'; top.appendChild(b); }
+            if (Number.isFinite(s.distance)) { const b = document.createElement('span'); b.className = 'ml-auto text-[10px] font-semibold text-blue-600 shrink-0'; b.textContent = formatStationDistance(s.distance); top.appendChild(b); }
+            const addr = document.createElement('div'); addr.className = 'text-[10px] text-slate-500 leading-relaxed'; addr.textContent = s.address || (Number.isFinite(s.lat) ? `${s.lat.toFixed(5)}, ${s.lon.toFixed(5)}` : 'Adres bilgisi yok');
+            btn.appendChild(top); btn.appendChild(addr);
+            btn.addEventListener('click', () => confirmStation(s.name, s));
+            container.appendChild(btn);
+        });
+    }
+    function renderRecentStations() {
+        const list = document.getElementById('station-list');
+        if (!list) return;
+        if (recentStations.length) {
+            setStationStatus('station-search-status', 'Son kullanılanlar · çevrimdışı da seçilebilir');
+            renderStationResults(list, recentStations, '', { recent: true });
+        } else {
+            setStationStatus('station-search-status', 'Aramak için yazıp Ara\'ya basın. İnternet yoksa "Yazdığım adı kullan" ile devam edebilirsiniz.');
+            renderStationResults(list, [], 'Henüz son kullanılan istasyon yok.');
+        }
+    }
+    function setStationSearchMode(mode) {
+        stationSearchMode = mode === 'place' ? 'place' : 'fuel';
+        const fuel = document.getElementById('station-filter-fuel'), place = document.getElementById('station-filter-place');
+        const active = 'px-2.5 py-1 rounded-lg text-[11px] font-bold bg-white text-slate-800 shadow-sm';
+        const passive = 'px-2.5 py-1 rounded-lg text-[11px] font-semibold text-slate-500';
+        if (fuel) fuel.className = stationSearchMode === 'fuel' ? active : passive;
+        if (place) place.className = stationSearchMode === 'place' ? active : passive;
+        const input = document.getElementById('station-search-input');
+        if (input) input.placeholder = stationSearchMode === 'fuel' ? 'İstasyon adı veya marka ara...' : 'Adres, semt veya yer ara...';
+    }
+    function getStationBias() {
+        if (stationUserLocation) return stationUserLocation;
+        if (selectedStationMeta && isFiniteCoord(selectedStationMeta.lat, selectedStationMeta.lon)) return selectedStationMeta;
+        if (stationMap && stationMap.getZoom() >= 10) { const c = stationMap.getCenter(); return { lat: c.lat, lon: c.lng }; }
+        return null;
+    }
+
+    async function searchStations() {
+        const input = document.getElementById('station-search-input');
+        const q = input ? input.value.trim() : '';
+        if (q.length < 2) { showToast('En az 2 karakter yazın'); return; }
+        if (stationSearchAbort) stationSearchAbort.abort();
+        const ctrl = new AbortController(); stationSearchAbort = ctrl;
+        setStationLoading(true);
+        setStationStatus('station-search-status', 'Aranıyor...');
+        try {
+            const params = { q, limit: 8 };
+            if (stationSearchMode === 'fuel') params.osm_tag = 'amenity:fuel';
+            const bias = getStationBias();
+            if (bias) { params.lat = bias.lat; params.lon = bias.lon; params.zoom = 12; }
+            const data = await photonFetch('/api', params, { signal: ctrl.signal });
+            if (stationSearchAbort !== ctrl) return;
+            let stations = dedupeStations((data.features || []).map(f => normalizePhotonFeature(f, bias)).filter(Boolean));
+            if (stationSearchMode === 'fuel') stations = stations.filter(s => s.isFuel);
+            if (bias) stations.sort((a, b) => (a.distance ?? 1e9) - (b.distance ?? 1e9));
+            renderStationResults(document.getElementById('station-list'), stations, 'Sonuç bulunamadı. Farklı bir ad deneyin veya manuel giriş yapın.');
+            setStationStatus('station-search-status', `${stations.length} sonuç · Photon/OpenStreetMap`);
+        } catch (err) {
+            if (stationSearchAbort !== ctrl) return;
+            console.warn('İstasyon araması hatası:', err);
+            setStationStatus('station-search-status', stationErrorMessage(err));
+            renderStationResults(document.getElementById('station-list'), [], 'Arama tamamlanamadı. Manuel giriş kullanabilirsiniz.');
+        } finally {
+            if (stationSearchAbort === ctrl) { stationSearchAbort = null; setStationLoading(false); }
+        }
+    }
+    function selectCustomAddressStation() {
+        const query = document.getElementById('station-search-input')?.value.trim();
+        if (query) confirmStation(query, null);
+        else showToast('Lütfen bir istasyon adı girin');
+    }
+
+    function stationIcon(kind) {
+        const color = kind === 'manual' ? '#e11d48' : kind === 'selected' ? '#0f172a' : '#059669';
+        return L.divIcon({
+            className: 'station-pin-wrap',
+            html: `<div style="width:30px;height:38px;position:relative;filter:drop-shadow(0 2px 3px rgba(15,23,42,.35))"><svg viewBox="0 0 30 38" width="30" height="38" xmlns="http://www.w3.org/2000/svg"><path d="M15 0C6.7 0 0 6.6 0 14.8 0 25.9 15 38 15 38s15-12.1 15-23.2C30 6.6 23.3 0 15 0z" fill="${color}"/><circle cx="15" cy="14" r="8" fill="white"/><path d="M11 9h7v10h-7zM18 12h2v4a1.5 1.5 0 0 0 3 0v-6l-2-2" stroke="${color}" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg></div>`,
+            iconSize: [30, 38], iconAnchor: [15, 38], popupAnchor: [0, -34]
+        });
+    }
+    function showSelectedStationOnMap() {
+        if (!stationMap) return;
+        if (stationSelectedMarker) { stationMap.removeLayer(stationSelectedMarker); stationSelectedMarker = null; }
+        if (selectedStationMeta && isFiniteCoord(selectedStationMeta.lat, selectedStationMeta.lon)) {
+            stationSelectedMarker = L.marker([selectedStationMeta.lat, selectedStationMeta.lon], { icon: stationIcon('selected') }).addTo(stationMap);
+            stationSelectedMarker.bindPopup(document.createTextNode(selectedStationName || 'Seçili istasyon'));
+        }
+    }
+    function ensureStationMap() {
+        const el = document.getElementById('station-leaflet-map');
+        if (!el) return null;
+        if (typeof L === 'undefined') { setStationStatus('station-map-status', 'Harita kütüphanesi yüklenemedi. Manuel giriş kullanabilirsiniz.'); return null; }
+        if (stationMap) { showSelectedStationOnMap(); return stationMap; }
+        stationMap = L.map(el, { zoomControl: true, attributionControl: true, worldCopyJump: true }).setView([39.0, 35.0], 6);
+        stationTileLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> katkıda bulunanlar'
+        }).addTo(stationMap);
+        stationTileLayer.on('tileerror', () => {
+            if (stationTileErrorShown) return;
+            stationTileErrorShown = true;
+            setStationStatus('station-map-status', 'Harita karoları yüklenemedi. İnterneti kontrol edin; manuel giriş kullanılabilir.');
+        });
+        stationMarkersLayer = L.layerGroup().addTo(stationMap);
+        stationMap.on('click', e => setManualPoint(e.latlng));
+        if (stationUserLocation) stationMap.setView([stationUserLocation.lat, stationUserLocation.lon], 15);
+        else if (selectedStationMeta && isFiniteCoord(selectedStationMeta.lat, selectedStationMeta.lon)) stationMap.setView([selectedStationMeta.lat, selectedStationMeta.lon], 16);
+        showSelectedStationOnMap();
+        setTimeout(() => stationMap && stationMap.invalidateSize(), 80);
+        return stationMap;
+    }
+    function invalidateStationMap() { setTimeout(() => { if (stationMap) stationMap.invalidateSize(); }, 80); }
+
+    function openStationPicker(mode) {
+        const modal = document.getElementById('station-modal');
+        if (!modal) return;
+        modal.classList.remove('hidden');
+        stationTileErrorShown = false;
+        setStationSearchMode(stationSearchMode);
+        switchStationTab(mode);
+    }
+    function closeStationPicker() {
+        const modal = document.getElementById('station-modal');
+        if (modal) modal.classList.add('hidden');
+        if (stationSearchAbort) stationSearchAbort.abort();
+        if (stationNearbyAbort) stationNearbyAbort.abort();
+        if (stationReverseAbort) stationReverseAbort.abort();
+        stationSearchAbort = stationNearbyAbort = stationReverseAbort = null;
+        setStationLoading(false);
+        stationPendingPoint = null;
+        const bar = document.getElementById('station-point-bar'); if (bar) bar.classList.add('hidden');
+    }
+    function switchStationTab(tab) {
+        const addrPane = document.getElementById('station-address-pane');
+        const mapPane = document.getElementById('station-map-pane');
+        const btnAddr = document.getElementById('tab-station-address');
+        const btnMap = document.getElementById('tab-station-map');
+        const active = 'flex-1 py-2 rounded-xl text-xs font-bold bg-slate-800 text-white';
+        const passive = 'flex-1 py-2 rounded-xl text-xs font-bold bg-white text-slate-600 border border-slate-200';
+        if (tab === 'map') {
+            if (addrPane) addrPane.classList.add('hidden');
+            if (mapPane) mapPane.classList.remove('hidden');
+            if (btnMap) btnMap.className = active;
+            if (btnAddr) btnAddr.className = passive;
+            ensureStationMap(); invalidateStationMap();
+        } else {
+            if (addrPane) addrPane.classList.remove('hidden');
+            if (mapPane) mapPane.classList.add('hidden');
+            if (btnAddr) btnAddr.className = active;
+            if (btnMap) btnMap.className = passive;
+            renderRecentStations();
+        }
+    }
+
+    function addUserLocationMarker(lat, lon, accuracy) {
+        if (!stationMap) return;
+        if (stationUserMarker) stationMap.removeLayer(stationUserMarker);
+        stationUserMarker = L.circleMarker([lat, lon], { radius: 7, color: '#2563eb', fillColor: '#3b82f6', fillOpacity: 0.9, weight: 2 }).addTo(stationMap);
+        stationUserMarker.bindPopup(document.createTextNode(Number.isFinite(accuracy) ? `Konumunuz (±${Math.round(accuracy)} m)` : 'Konumunuz'));
+    }
+    async function locateAndFindNearby() {
+        const btn = document.getElementById('station-locate-btn');
+        if (!navigator.geolocation) { setStationStatus('station-map-status', 'Bu tarayıcı konum desteklemiyor. Haritayı kaydırıp bu alanda arayın.'); return; }
+        if (btn) btn.disabled = true;
+        setStationStatus('station-map-status', 'Konum alınıyor...');
+        try {
+            const pos = await new Promise((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }));
+            const lat = pos.coords.latitude, lon = pos.coords.longitude;
+            if (!isFiniteCoord(lat, lon)) throw new Error('Geçersiz konum');
+            stationUserLocation = { lat, lon, accuracy: pos.coords.accuracy };
+            ensureStationMap();
+            if (stationMap) stationMap.setView([lat, lon], 15);
+            addUserLocationMarker(lat, lon, pos.coords.accuracy);
+            const radius = Number(document.getElementById('station-radius')?.value) || 5;
+            await findNearbyStations(lat, lon, radius, true);
+        } catch (err) {
+            const msg = err && err.code === 1 ? 'Konum izni verilmedi. Haritayı kaydırıp bu alanda arayabilir veya manuel giriş yapabilirsiniz.'
+                : err && err.code === 2 ? 'Konum alınamadı. Haritadan alan seçebilirsiniz.'
+                : err && err.code === 3 ? 'Konum isteği zaman aşımına uğradı. Tekrar deneyin veya haritadan alan seçin.'
+                : 'Konum alınamadı. Haritadan alan seçebilirsiniz.';
+            setStationStatus('station-map-status', msg);
+        } finally { if (btn) btn.disabled = false; }
+    }
+    function findNearbyMapArea() {
+        const map = ensureStationMap();
+        if (!map) return;
+        const c = map.getCenter();
+        const radius = Number(document.getElementById('station-radius')?.value) || 5;
+        findNearbyStations(c.lat, c.lng, radius, false);
+    }
+    async function findNearbyStations(lat, lon, radius, fromLocation) {
+        if (stationNearbyAbort) stationNearbyAbort.abort();
+        const ctrl = new AbortController(); stationNearbyAbort = ctrl;
+        setStationLoading(true);
+        setStationStatus('station-map-status', `${radius} km içinde istasyonlar aranıyor...`);
+        try {
+            const center = { lat, lon };
+            const params = { lat, lon, radius, osm_tag: 'amenity:fuel', limit: 30 };
+            const data = await photonFetch('/reverse', params, { signal: ctrl.signal });
+            if (stationNearbyAbort !== ctrl) return;
+            let stations = (data.features || []).map(f => normalizePhotonFeature(f, center)).filter(Boolean)
+                .filter(s => s.isFuel && Number.isFinite(s.distance) && s.distance <= radius + 0.05)
+                .sort((a, b) => a.distance - b.distance);
+            stations = dedupeStations(stations).slice(0, 30);
+            const map = ensureStationMap();
+            if (map) {
+                if (stationMarkersLayer) stationMarkersLayer.clearLayers();
+                if (stationRadiusCircle) map.removeLayer(stationRadiusCircle);
+                stationRadiusCircle = L.circle([lat, lon], { radius: radius * 1000, color: '#2563eb', weight: 1, fillColor: '#3b82f6', fillOpacity: 0.05 }).addTo(map);
+                stations.forEach(s => {
+                    const marker = L.marker([s.lat, s.lon], { icon: stationIcon('fuel') });
+                    const wrap = document.createElement('div'); wrap.className = 'text-xs space-y-1';
+                    const t = document.createElement('div'); t.className = 'font-bold text-slate-800'; t.textContent = s.name; wrap.appendChild(t);
+                    const a = document.createElement('div'); a.className = 'text-slate-500'; a.textContent = s.address || 'Adres bilgisi yok'; wrap.appendChild(a);
+                    if (Number.isFinite(s.distance)) { const d = document.createElement('div'); d.className = 'text-blue-600 font-semibold'; d.textContent = formatStationDistance(s.distance); wrap.appendChild(d); }
+                    const b = document.createElement('button'); b.type = 'button'; b.className = 'mt-1 bg-slate-800 text-white px-2.5 py-1 rounded-lg text-[11px] font-semibold'; b.textContent = 'Bu istasyonu seç';
+                    b.addEventListener('click', () => confirmStation(s.name, s)); wrap.appendChild(b);
+                    marker.bindPopup(wrap);
+                    stationMarkersLayer.addLayer(marker);
+                });
+                if (!fromLocation) map.setView([lat, lon], radius <= 3 ? 14 : 13);
+            }
+            renderStationResults(document.getElementById('station-map-list'), stations, 'Bu yarıçapta OSM kayıtlı istasyon bulunamadı. Yarıçapı artırın veya manuel giriş yapın.');
+            setStationStatus('station-map-status', stations.length ? `${stations.length} istasyon bulundu · Photon/OpenStreetMap` : 'Bu yarıçapta istasyon bulunamadı. Yarıçapı artırın veya manuel giriş yapın.');
+        } catch (err) {
+            if (stationNearbyAbort !== ctrl) return;
+            console.warn('Yakın istasyon hatası:', err);
+            setStationStatus('station-map-status', stationErrorMessage(err));
+            renderStationResults(document.getElementById('station-map-list'), [], 'İstasyonlar yüklenemedi. Manuel giriş kullanabilirsiniz.');
+        } finally {
+            if (stationNearbyAbort === ctrl) { stationNearbyAbort = null; setStationLoading(false); }
+        }
+    }
+
+    function setManualPoint(latlng) {
+        const lat = latlng.lat, lon = latlng.lng;
+        if (!isFiniteCoord(lat, lon)) return;
+        stationPendingPoint = { lat, lon, address: '', name: null };
+        if (stationMap) {
+            if (stationManualMarker) stationMap.removeLayer(stationManualMarker);
+            stationManualMarker = L.marker([lat, lon], { icon: stationIcon('manual') }).addTo(stationMap);
+        }
+        const bar = document.getElementById('station-point-bar'); if (bar) bar.classList.remove('hidden');
+        const label = document.getElementById('station-point-label'); if (label) label.textContent = `Seçilen nokta: ${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+    }
+    async function reverseSelectedPoint() {
+        if (!stationPendingPoint) return;
+        if (stationReverseAbort) stationReverseAbort.abort();
+        const ctrl = new AbortController(); stationReverseAbort = ctrl;
+        setStationLoading(true);
+        const { lat, lon } = stationPendingPoint;
+        try {
+            const data = await photonFetch('/reverse', { lat, lon, radius: 0.05, limit: 1 }, { signal: ctrl.signal });
+            if (stationReverseAbort !== ctrl) return;
+            const s = (data.features || []).map(f => normalizePhotonFeature(f, null)).filter(Boolean)[0];
+            if (s) {
+                stationPendingPoint.address = s.address; stationPendingPoint.name = s.name;
+                const label = document.getElementById('station-point-label');
+                if (label) label.textContent = `${s.name}${s.address ? ' — ' + s.address : ''}`;
+                showToast('Adres bulundu');
+            } else showToast('Adres bulunamadı; koordinat kullanılacak');
+        } catch (err) {
+            if (stationReverseAbort !== ctrl) return;
+            showToast(stationErrorMessage(err));
+        } finally {
+            if (stationReverseAbort === ctrl) { stationReverseAbort = null; setStationLoading(false); }
+        }
+    }
+    function confirmSelectedPoint() {
+        if (!stationPendingPoint) return;
+        const p = stationPendingPoint;
+        const name = p.name || `Harita noktası (${p.lat.toFixed(5)}, ${p.lon.toFixed(5)})`;
+        confirmStation(name, { lat: p.lat, lon: p.lon, address: p.address || '', source: 'harita-nokta' });
+    }
+
+    function updateSelectedStationDisplay() {
+        const disp = document.getElementById('selected-station-display');
+        const metaEl = document.getElementById('selected-station-meta');
+        if (disp) { disp.textContent = selectedStationName || 'Seçilmedi'; disp.title = selectedStationMeta?.address || selectedStationName || ''; }
+        if (metaEl) {
+            if (selectedStationMeta && isFiniteCoord(selectedStationMeta.lat, selectedStationMeta.lon)) {
+                metaEl.textContent = selectedStationMeta.address || `${selectedStationMeta.lat.toFixed(5)}, ${selectedStationMeta.lon.toFixed(5)}`;
+                metaEl.classList.remove('hidden');
+            } else { metaEl.textContent = ''; metaEl.classList.add('hidden'); }
+        }
+    }
+    function confirmStation(name, meta) {
+        selectedStationName = String(name || '').trim();
+        if (!selectedStationName) { showToast('Lütfen bir istasyon adı girin'); return; }
+        if (meta && isFiniteCoord(Number(meta.lat), Number(meta.lon))) {
+            selectedStationMeta = {
+                lat: Number(meta.lat), lon: Number(meta.lon), address: String(meta.address || '').slice(0, 300),
+                source: meta.source || 'photon', osmType: meta.osmType || null, osmId: meta.osmId || null, isFuel: !!meta.isFuel
+            };
+        } else selectedStationMeta = null;
+        updateSelectedStationDisplay();
+        saveRecentStation({ name: selectedStationName, address: selectedStationMeta?.address || '', lat: selectedStationMeta?.lat ?? null, lon: selectedStationMeta?.lon ?? null, source: selectedStationMeta?.source || 'manuel', osmType: selectedStationMeta?.osmType || null, osmId: selectedStationMeta?.osmId || null, isFuel: !!selectedStationMeta?.isFuel });
+        closeStationPicker();
+    }
+
+    function openReceiptModal() {
+        const modal = document.getElementById('receipt-modal');
+        if (modal) modal.classList.remove('hidden');
+    }
+
+    function processReceiptScan(e) {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        document.getElementById('receipt-modal').classList.add('hidden');
+        openRefuelModal({
+            liters: 42.5,
+            price: 81.60,
+            total: 3468.00,
+            odometer: getActiveVehicle().odometer + 620
+        });
+        showToast('Demo: örnek fiş verileri aktarıldı (OCR henüz bağlı değil)');
+    }
+
+    function openExpenseModal() {
+        const modal = document.getElementById('expense-modal');
+        if (!modal) return;
+        document.getElementById('expense-amount').value = '';
+        document.getElementById('expense-note').value = '';
+        document.getElementById('expense-date').value = todayKey();
+        modal.classList.remove('hidden');
+    }
+
+    function saveExpense() {
+        const amount = parseFloat(document.getElementById('expense-amount')?.value);
+        if (isNaN(amount) || amount <= 0) {
+            showToast('Lütfen geçerli tutar girin');
+            return;
+        }
+        const newExpense = {
+            id: 'e' + Date.now(),
+            vehicleId: getActiveVehicle().id,
+            category: document.getElementById('expense-category').value,
+            amount: amount,
+            date: document.getElementById('expense-date').value,
+            note: document.getElementById('expense-note').value.trim()
+        };
+        state.expenses.push(newExpense);
+        saveState();
+        document.getElementById('expense-modal').classList.add('hidden');
+        renderAll();
+        showToast('Maliyet eklendi');
+    }
+
+    function openTripModal() {
+        const modal = document.getElementById('trip-modal');
+        if (!modal) return;
+        const vehicle = getActiveVehicle();
+        document.getElementById('trip-title').value = '';
+        document.getElementById('trip-start').value = 'Ev / İstanbul';
+        document.getElementById('trip-end').value = 'Ofis / Ankara';
+        const now = new Date();
+        const dateStr = todayKey();
+        const timeStr = now.toTimeString().slice(0, 5);
+        document.getElementById('trip-start-date').value = dateStr;
+        document.getElementById('trip-start-time').value = timeStr;
+        document.getElementById('trip-end-date').value = dateStr;
+        document.getElementById('trip-end-time').value = timeStr;
+        document.getElementById('trip-start-odo').value = vehicle.odometer;
+        document.getElementById('trip-end-odo').value = vehicle.odometer + 100;
+        updateTripDistancePreview();
+        modal.classList.remove('hidden');
+    }
+
+    function updateTripDistancePreview() {
+        const startOdo = parseFloat(document.getElementById('trip-start-odo')?.value) || 0;
+        const endOdo = parseFloat(document.getElementById('trip-end-odo')?.value) || 0;
+        const dist = Math.max(0, endOdo - startOdo);
+        const distEl = document.getElementById('trip-calculated-dist');
+        if (distEl) distEl.textContent = dist + ' km';
+    }
+
+    function saveTrip() {
+        const start = document.getElementById('trip-start')?.value || 'Başlangıç';
+        const end = document.getElementById('trip-end')?.value || 'Bitiş';
+        const startOdo = parseFloat(document.getElementById('trip-start-odo')?.value) || 0;
+        const endOdo = parseFloat(document.getElementById('trip-end-odo')?.value) || 0;
+        const dist = Math.max(0, endOdo - startOdo);
+
+        const newTrip = {
+            id: 't' + Date.now(),
+            vehicleId: getActiveVehicle().id,
+            title: document.getElementById('trip-title')?.value.trim() || `${start} - ${end}`,
+            category: document.getElementById('trip-category')?.value || 'Kişisel',
+            start: start,
+            end: end,
+            startDate: document.getElementById('trip-start-date')?.value,
+            startTime: document.getElementById('trip-start-time')?.value,
+            endDate: document.getElementById('trip-end-date')?.value,
+            endTime: document.getElementById('trip-end-time')?.value,
+            startOdo: startOdo,
+            endOdo: endOdo,
+            distance: dist
+        };
+
+        state.trips.push(newTrip);
+        if (endOdo > getActiveVehicle().odometer) {
+            getActiveVehicle().odometer = endOdo;
+        }
+        saveState();
+        document.getElementById('trip-modal').classList.add('hidden');
+        renderAll();
+        showToast('Gezi kaydedildi');
+    }
+
+    function setTripMapOfflineState() {
+        const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+        const overlay = document.getElementById('trip-map-offline');
+        const iframe = document.getElementById('trip-google-map-iframe');
+        if (overlay) overlay.classList.toggle('hidden', !offline);
+        if (iframe && offline) iframe.src = 'about:blank';
+        return offline;
+    }
+    function loadTripMap(src) {
+        const iframe = document.getElementById('trip-google-map-iframe');
+        if (!iframe) return;
+        if (setTripMapOfflineState()) return;
+        iframe.src = src || iframe.dataset.src || 'about:blank';
+    }
+    function openTripMapPicker(target) {
+        activeTripMapTarget = target;
+        const modal = document.getElementById('trip-map-modal');
+        const titleEl = document.getElementById('trip-map-modal-title');
+        if (modal) modal.classList.remove('hidden');
+        if (titleEl) titleEl.textContent = target === 'start' ? 'Başlangıç Konumu Seç' : 'Bitiş Konumu Seç';
+        // Google Haritalar yalnızca kullanıcı bu seçiciyi açtığında yüklenir.
+        loadTripMap();
+    }
+
+    function closeTripMapPicker() {
+        const modal = document.getElementById('trip-map-modal');
+        if (modal) modal.classList.add('hidden');
+        const iframe = document.getElementById('trip-google-map-iframe');
+        if (iframe) iframe.src = 'about:blank'; // kapalıyken ağ isteği bırakma
+    }
+
+    function searchTripMapQuery() {
+        const query = document.getElementById('trip-map-search')?.value.trim();
+        if (query) {
+            const labelInput = document.getElementById('trip-map-selected-label');
+            if (labelInput) labelInput.value = query;
+            if (setTripMapOfflineState()) { showToast('Çevrimdışı: etiket kaydedildi, harita yüklenemedi'); return; }
+            loadTripMap(`https://maps.google.com/maps?q=${encodeURIComponent(query)}&z=13&output=embed`);
+        }
+    }
+
+    function useCurrentGpsForTripMap() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(pos => {
+                const { latitude, longitude } = pos.coords;
+                const labelInput = document.getElementById('trip-map-selected-label');
+                if (labelInput) labelInput.value = `Mevcut Konum (${latitude.toFixed(3)}, ${longitude.toFixed(3)})`;
+                if (setTripMapOfflineState()) { showToast('Konum etiketi alındı; harita çevrimdışı'); return; }
+                loadTripMap(`https://maps.google.com/maps?q=${latitude},${longitude}&z=14&output=embed`);
+            }, () => {
+                showToast('Konum alınamadı');
+            });
+        }
+    }
+    window.addEventListener('online', () => { const m = document.getElementById('trip-map-modal'); if (m && !m.classList.contains('hidden')) loadTripMap(); });
+    window.addEventListener('offline', () => { const m = document.getElementById('trip-map-modal'); if (m && !m.classList.contains('hidden')) setTripMapOfflineState(); });
+
+    function confirmTripMapLocation() {
+        const label = document.getElementById('trip-map-selected-label')?.value.trim() || 'Seçilen Konum';
+        if (activeTripMapTarget === 'start') {
+            const startInput = document.getElementById('trip-start');
+            if (startInput) startInput.value = label;
+        } else {
+            const endInput = document.getElementById('trip-end');
+            if (endInput) endInput.value = label;
+        }
+        closeTripMapPicker();
+    }
+
+    function addVehicle() {
+        const name = document.getElementById('new-vehicle-name')?.value.trim();
+        const odo = parseFloat(document.getElementById('new-vehicle-odo')?.value) || 0;
+        const tank = parseFloat(document.getElementById('new-vehicle-tank')?.value) || 50;
+        const fuel = document.getElementById('new-vehicle-fuel')?.value || 'Benzin';
+
+        if (!name) {
+            showToast('Lütfen araç adı girin');
+            return;
+        }
+
+        const newV = {
+            id: 'v' + Date.now(),
+            name: name,
+            odometer: odo,
+            fuelType: fuel,
+            tankCapacity: tank
+        };
+
+        state.vehicles.push(newV);
+        state.activeVehicleId = newV.id;
+        saveState();
+        document.getElementById('new-vehicle-name').value = '';
+        document.getElementById('new-vehicle-odo').value = '';
+        document.getElementById('new-vehicle-tank').value = '';
+        renderAll();
+        showToast('Araç eklendi');
+    }
+
+    function selectVehicle(id) {
+        state.activeVehicleId = id;
+        saveState();
+        renderAll();
+        showToast('Aktif araç değiştirildi');
+    }
+
+    function openEditVehicleModal(id) {
+        const v = state.vehicles.find(item => item.id === id);
+        if (!v) return;
+        document.getElementById('edit-vehicle-id').value = v.id;
+        document.getElementById('edit-vehicle-name').value = v.name;
+        document.getElementById('edit-vehicle-odo').value = v.odometer;
+        document.getElementById('edit-vehicle-tank').value = v.tankCapacity || 50;
+        document.getElementById('edit-vehicle-fuel').value = v.fuelType;
+        const delBtn = document.getElementById('delete-vehicle-btn');
+        if (delBtn) delBtn.style.display = state.vehicles.length > 1 ? 'block' : 'none';
+        document.getElementById('edit-vehicle-modal').classList.remove('hidden');
+    }
+
+    function saveVehicleEdit() {
+        const id = document.getElementById('edit-vehicle-id').value;
+        const v = state.vehicles.find(item => item.id === id);
+        if (!v) return;
+        v.name = document.getElementById('edit-vehicle-name').value.trim() || v.name;
+        v.odometer = parseFloat(document.getElementById('edit-vehicle-odo').value) || v.odometer;
+        v.tankCapacity = parseFloat(document.getElementById('edit-vehicle-tank').value) || v.tankCapacity;
+        v.fuelType = document.getElementById('edit-vehicle-fuel').value;
+        saveState();
+        document.getElementById('edit-vehicle-modal').classList.add('hidden');
+        renderAll();
+        showToast('Araç bilgileri güncellendi');
+    }
+
+    function deleteVehicle() {
+        const id = document.getElementById('edit-vehicle-id').value;
+        if (state.vehicles.length <= 1) {
+            showToast('Son aracı silemezsiniz');
+            return;
+        }
+        const v = state.vehicles.find(item => item.id === id);
+        if (!confirm(`"${v ? v.name : 'Araç'}" ve tüm dolum/gider/gezi kayıtları silinecek. Emin misiniz?`)) return;
+        // Silinen aracın dolumlarına bağlı fotoğrafları da temizle
+        const removedRefuels = state.refuels.filter(r => r.vehicleId === id);
+        const photoIds = collectIdbPhotoIds(removedRefuels);
+        photoIds.forEach(revokePhotoUrl);
+        idbDeletePhotos(photoIds).catch(e => console.warn('Fotoğraflar silinemedi:', e));
+        state.vehicles = state.vehicles.filter(v => v.id !== id);
+        // Yetim kayıtları da temizle
+        state.refuels = state.refuels.filter(r => r.vehicleId !== id);
+        state.expenses = state.expenses.filter(e => e.vehicleId !== id);
+        state.trips = state.trips.filter(t => t.vehicleId !== id);
+        state.activeVehicleId = state.vehicles[0].id;
+        saveState();
+        document.getElementById('edit-vehicle-modal').classList.add('hidden');
+        renderAll();
+        showToast('Araç silindi');
+    }
+
+    function downloadCSVReport() {
+        const vehicle = getActiveVehicle();
+        const vRefuels = state.refuels.filter(r => r.vehicleId === vehicle.id);
+        // BOM: Excel'de Türkçe karakterlerin doğru görünmesi için
+        const csvEscape = val => `"${String(val ?? '').replace(/"/g, '""')}"`;
+        let csv = '\uFEFF' + 'Tarih,Kilometre,Litre,Birim Fiyat (TL),Toplam Tutar (TL),Yakıt Tipi,İstasyon,İstasyon Adresi,Enlem,Boylam,Konum Kaynağı,Not\n';
+        [...vRefuels].sort(compareRefuelsAsc).forEach(r => {
+            csv += [r.date, r.odometer, r.liters, r.pricePerLiter, r.totalCost, r.fuelType, r.station || '', r.stationAddress || '', r.stationLat ?? '', r.stationLon ?? '', r.stationSource || '', r.note || ''].map(csvEscape).join(',') + '\n';
+        });
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${vehicle.name.toLowerCase().replace(/\s+/g, '_')}_rapor.csv`;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        showToast('CSV raporu indirildi');
+    }
+
+    function switchStatsTab(tabName) {
+        const panes = ['refuels', 'costs', 'distance'];
+        panes.forEach(pane => {
+            const el = document.getElementById('stats-pane-' + pane);
+            const btn = document.getElementById('stats-tab-' + pane);
+            if (el) el.classList.toggle('hidden', pane !== tabName);
+            if (btn) {
+                if (pane === tabName) {
+                    btn.className = 'py-2 rounded-xl text-xs font-bold bg-white text-slate-800 shadow-sm transition';
+                } else {
+                    btn.className = 'py-2 rounded-xl text-xs font-semibold text-slate-600 transition';
+                }
+            }
+        });
+    }
+
+    function renderAll() {
+        const vehicle = getActiveVehicle();
+        if (!vehicle) return;
+
+        const avatarEl = document.getElementById('active-vehicle-avatar');
+        const nameEl = document.getElementById('active-vehicle-name');
+        const odoEl = document.getElementById('active-vehicle-odo');
+        if (avatarEl) avatarEl.textContent = vehicle.name.charAt(0).toUpperCase();
+        if (nameEl) nameEl.textContent = vehicle.name;
+        if (odoEl) odoEl.textContent = vehicle.odometer.toLocaleString('tr-TR') + ' km';
+
+        const vRefuels = state.refuels.filter(r => r.vehicleId === vehicle.id);
+        const vExpenses = state.expenses.filter(e => e.vehicleId === vehicle.id);
+        const vTrips = state.trips.filter(t => t.vehicleId === vehicle.id);
+
+        // Tam-depo tüketim analizi (kısmi dolumlar doğru şekilde biriktirilir)
+        const consumptionAnalysis = analyzeConsumption(vRefuels);
+        const consByEndId = new Map(consumptionAnalysis.intervals.map(iv => [iv.endId, iv]));
+
+        const homeRefuelCount = document.getElementById('home-refuel-count');
+        const homeRefuelsList = document.getElementById('home-refuels-list');
+        if (homeRefuelCount) homeRefuelCount.textContent = `${vRefuels.length} kayıt`;
+        if (homeRefuelsList) {
+            const sortedRefuels = [...vRefuels].sort(compareRefuelsDesc);
+            const totalCount = sortedRefuels.length;
+            const latestRefuels = sortedRefuels.slice(0, 1);
+            homeRefuelsList.innerHTML = latestRefuels.map((r, idx) => {
+                const seqNum = totalCount - idx;
+                const prev = sortedRefuels[idx + 1];
+                let kmDiffText = '';
+                if (prev && r.odometer > prev.odometer) {
+                    kmDiffText = ` (+${(r.odometer - prev.odometer).toLocaleString('tr-TR')} km)`;
+                }
+                return `
+                    <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="text-[10px] font-bold bg-slate-200 text-slate-700 px-2 py-0.5 rounded-md">#${seqNum}</span>
+                                    <span class="inline-block bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider">${escapeHtml(vehicle.fuelType)}</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xl font-bold text-slate-800">${formatCurrency(r.pricePerLiter)}</span>
+                                    <span class="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">${r.liters.toFixed(2).replace('.', ',')} L</span>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-xs font-bold text-slate-800">${formatCurrency(r.totalCost)}</div>
+                                <div class="text-[11px] text-slate-400 mt-0.5">${escapeHtml(r.date)} · ${r.odometer.toLocaleString('tr-TR')} km<span class="text-emerald-600 font-semibold">${kmDiffText}</span></div>
+                            </div>
+                        </div>
+                        <div class="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+                            <span><i class="fa-solid fa-location-dot text-rose-400 mr-1"></i>${escapeHtml(r.station || 'Belirtilmedi')}</span>
+                            <div class="flex items-center gap-2">
+                                ${r.weather ? `<span class="text-[11px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">${escapeHtml(r.weather)}</span>` : ''}
+                                <span class="font-medium text-slate-700">${escapeHtml(r.note || '')}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('') || '<div class="bg-white rounded-2xl p-6 text-center text-xs text-slate-400 border border-slate-100">Henüz yakıt dolumu eklenmedi.</div>';
+        }
+
+        const nowMonth = thisMonthKey();
+        const nowYear = todayKey().slice(0, 4);
+        const prevMonth = lastMonthKey();
+
+        const thisMonthRefuels = vRefuels.filter(r => (r.date || '').startsWith(nowMonth));
+        const thisYearRefuels = vRefuels.filter(r => (r.date || '').startsWith(nowYear));
+        const lastMonthRefuels = vRefuels.filter(r => (r.date || '').startsWith(prevMonth));
+
+        const thisMonthFuel = thisMonthRefuels.reduce((sum, r) => sum + r.totalCost, 0);
+        const thisMonthOther = vExpenses
+            .filter(e => (e.date || '').startsWith(nowMonth))
+            .reduce((sum, e) => sum + e.amount, 0);
+        const lastMonthFuel = lastMonthRefuels.reduce((sum, r) => sum + r.totalCost, 0);
+        const lastMonthOther = vExpenses
+            .filter(e => (e.date || '').startsWith(prevMonth))
+            .reduce((sum, e) => sum + e.amount, 0);
+
+        const tmFuelEl = document.getElementById('home-this-month-fuel');
+        const tmOtherEl = document.getElementById('home-this-month-other');
+        const lmFuelEl = document.getElementById('home-last-month-fuel');
+        const lmOtherEl = document.getElementById('home-last-month-other');
+        if (tmFuelEl) tmFuelEl.textContent = formatCurrency(thisMonthFuel);
+        if (tmOtherEl) tmOtherEl.textContent = formatCurrency(thisMonthOther);
+        if (lmFuelEl) lmFuelEl.textContent = formatCurrency(lastMonthFuel);
+        if (lmOtherEl) lmOtherEl.textContent = formatCurrency(lastMonthOther);
+
+        const timelineCountEl = document.getElementById('timeline-count');
+        const timelineListEl = document.getElementById('timeline-list');
+        if (timelineCountEl) timelineCountEl.textContent = `${vRefuels.length} kayıt`;
+        if (timelineListEl) {
+            const sortedRefuelsTimeline = [...vRefuels].sort(compareRefuelsDesc);
+            const tlTotal = sortedRefuelsTimeline.length;
+            timelineListEl.innerHTML = sortedRefuelsTimeline.map((r, i) => {
+                const prev = sortedRefuelsTimeline[i + 1];
+                const isFull = r.fullTank !== false;
+                const iv = consByEndId.get(r.id);
+                let consText;
+                if (!isFull) {
+                    consText = '<span class="text-[11px] font-semibold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-md shrink-0">Kısmi dolum</span>';
+                } else if (iv) {
+                    consText = `<span class="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md shrink-0">${iv.l100.toFixed(1).replace('.', ',')} l/100km</span>`;
+                } else if (r.id === consumptionAnalysis.firstFullId) {
+                    consText = '<span class="text-[11px] font-medium text-slate-400">İlk tam dolum</span>';
+                } else {
+                    consText = '<span class="text-[11px] font-medium text-slate-400">Tam dolum</span>';
+                }
+                let kmDiffText = '';
+                if (prev && r.odometer > prev.odometer) {
+                    kmDiffText = ` (+${(r.odometer - prev.odometer).toLocaleString('tr-TR')} km)`;
+                }
+                const isMenuOpen = openTimelineMenuId === r.id;
+                const safeId = escapeHtml(r.id); // data-* özniteliğinde kullanılır
+                return `
+                    <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-100 space-y-2.5 relative">
+                        <div class="flex justify-between items-start gap-2">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                                <div class="w-9 h-9 rounded-full bg-slate-800 text-white flex items-center justify-center font-bold text-xs shrink-0">
+                                    #${tlTotal - i}
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="font-bold text-slate-800 text-sm truncate">Dolum · ${r.liters.toFixed(2).replace('.', ',')} L</div>
+                                    <div class="text-[11px] text-slate-400 truncate">${escapeHtml(r.date)} ${escapeHtml(r.time || '')} · ${r.odometer.toLocaleString('tr-TR')} km<span class="text-emerald-600 font-semibold">${kmDiffText}</span></div>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-1.5 shrink-0">
+                                <div class="text-right">
+                                    <div class="font-bold text-slate-800 text-sm">${formatCurrency(r.totalCost)}</div>
+                                    <div class="text-[11px] text-slate-400">${formatCurrency(r.pricePerLiter)}/L</div>
+                                </div>
+                                <div class="relative">
+                                    <button type="button" data-rid="${safeId}" onclick="toggleTimelineMenu(event, this.dataset.rid)" class="w-7 h-7 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-700 transition -mr-1">
+                                        <i class="fa-solid fa-ellipsis-vertical text-xs"></i>
+                                    </button>
+                                    ${isMenuOpen ? `
+                                        <div onclick="event.stopPropagation()" class="absolute right-0 top-8 w-32 bg-white rounded-xl shadow-lg border border-slate-200/80 py-1 z-30 text-xs overflow-hidden">
+                                            <button type="button" data-rid="${safeId}" onclick="openEditRefuelModal(this.dataset.rid)" class="w-full px-3.5 py-2 text-left text-slate-700 hover:bg-slate-50 flex items-center gap-2 font-medium transition">
+                                                <i class="fa-solid fa-pen text-[11px] text-slate-500 w-3.5"></i>
+                                                <span>Düzenle</span>
+                                            </button>
+                                            <button type="button" data-rid="${safeId}" onclick="deleteRefuelRecord(this.dataset.rid)" class="w-full px-3.5 py-2 text-left text-rose-600 hover:bg-rose-50 flex items-center gap-2 font-medium transition">
+                                                <i class="fa-solid fa-trash text-[11px] w-3.5"></i>
+                                                <span>Sil</span>
+                                            </button>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 text-[11px] text-slate-500">
+                            <span class="truncate max-w-[140px]"><i class="fa-solid fa-location-dot text-rose-400 mr-1"></i>${escapeHtml(r.station || 'Belirtilmedi')}</span>
+                            <div class="flex items-center gap-2 ml-auto">
+                                ${r.weather ? `<span class="bg-slate-100 px-2 py-0.5 rounded-md">${escapeHtml(r.weather)}</span>` : ''}
+                                ${consText}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('') || '<div class="text-center text-xs text-slate-400 py-8">Henüz kayıt bulunmuyor.</div>';
+        }
+
+        const totalSpent = vRefuels.reduce((s, r) => s + r.totalCost, 0) + vExpenses.reduce((s, e) => s + e.amount, 0);
+        const totalLiters = vRefuels.reduce((s, r) => s + r.liters, 0);
+        
+        const currentYearStr = String(new Date().getFullYear());
+        const lastYearStr = String(new Date().getFullYear() - 1);
+        const nowMonthStr = thisMonthKey();
+        // Ayın 31'inde setMonth taşmasını önlemek için ayın 1'i üzerinden hesapla
+        const lastMonthStr = lastMonthKey();
+
+        const thisYearAll = [...vRefuels.filter(r => (r.date || '').startsWith(currentYearStr)), ...vExpenses.filter(e => (e.date || '').startsWith(currentYearStr))];
+        const lastYearAll = [...vRefuels.filter(r => (r.date || '').startsWith(lastYearStr)), ...vExpenses.filter(e => (e.date || '').startsWith(lastYearStr))];
+        const thisMonthAll = [...vRefuels.filter(r => (r.date || '').startsWith(nowMonthStr)), ...vExpenses.filter(e => (e.date || '').startsWith(nowMonthStr))];
+        const lastMonthAll = [...vRefuels.filter(r => (r.date || '').startsWith(lastMonthStr)), ...vExpenses.filter(e => (e.date || '').startsWith(lastMonthStr))];
+
+        const costYearVal = thisYearAll.reduce((s, x) => s + (x.totalCost || x.amount || 0), 0);
+        const costLastYearVal = lastYearAll.reduce((s, x) => s + (x.totalCost || x.amount || 0), 0);
+        const costMonthVal = thisMonthAll.reduce((s, x) => s + (x.totalCost || x.amount || 0), 0);
+        const costLastMonthVal = lastMonthAll.reduce((s, x) => s + (x.totalCost || x.amount || 0), 0);
+
+        const statCostYear = document.getElementById('stat-cost-year');
+        const statCostLastYear = document.getElementById('stat-cost-last-year');
+        const statCostMonth = document.getElementById('stat-cost-month');
+        const statCostLastMonth = document.getElementById('stat-cost-last-month');
+        if (statCostYear) statCostYear.textContent = formatCurrency(costYearVal);
+        if (statCostLastYear) statCostLastYear.textContent = formatCurrency(costLastYearVal);
+        if (statCostMonth) statCostMonth.textContent = formatCurrency(costMonthVal);
+        if (statCostLastMonth) statCostLastMonth.textContent = formatCurrency(costLastMonthVal);
+
+        const maxInvoiceEl = document.getElementById('stat-max-invoice');
+        const minInvoiceEl = document.getElementById('stat-min-invoice');
+        if (vRefuels.length > 0) {
+            const maxR = [...vRefuels].reduce((max, r) => r.totalCost > max.totalCost ? r : max, vRefuels[0]);
+            const minR = [...vRefuels].reduce((min, r) => r.totalCost < min.totalCost ? r : min, vRefuels[0]);
+            if (maxInvoiceEl) maxInvoiceEl.textContent = formatCurrency(maxR.totalCost);
+            if (minInvoiceEl) minInvoiceEl.textContent = formatCurrency(minR.totalCost);
+        } else {
+            if (maxInvoiceEl) maxInvoiceEl.textContent = '₺0,00';
+            if (minInvoiceEl) minInvoiceEl.textContent = '₺0,00';
+        }
+
+        const bestPriceEl = document.getElementById('stat-best-price');
+        const worstPriceEl = document.getElementById('stat-worst-price');
+        if (vRefuels.length > 0) {
+            const bestP = Math.min(...vRefuels.map(r => r.pricePerLiter));
+            const worstP = Math.max(...vRefuels.map(r => r.pricePerLiter));
+            if (bestPriceEl) bestPriceEl.textContent = formatCurrency(bestP) + '/L';
+            if (worstPriceEl) worstPriceEl.textContent = formatCurrency(worstP) + '/L';
+        } else {
+            if (bestPriceEl) bestPriceEl.textContent = '₺0,00';
+            if (worstPriceEl) worstPriceEl.textContent = '₺0,00';
+        }
+
+        const statCostPerKm = document.getElementById('stat-cost-per-km');
+        const bestCostKmEl = document.getElementById('stat-best-cost-km');
+        const worstCostKmEl = document.getElementById('stat-worst-cost-km');
+
+        let totalKmCovered = 0;
+        if (vRefuels.length >= 2) {
+            const sorted = [...vRefuels].sort(compareRefuelsAsc);
+            totalKmCovered = sorted[sorted.length - 1].odometer - sorted[0].odometer;
+        }
+        const overallCostPerKm = totalKmCovered > 0 ? totalSpent / totalKmCovered : 0;
+        if (statCostPerKm) statCostPerKm.textContent = '₺' + overallCostPerKm.toFixed(2).replace('.', ',');
+
+        // Km başına maliyet: tam depolar arası geçerli aralıklardan (kısmi dolumlar dahil edilerek)
+        const costPerKmList = consumptionAnalysis.intervals.map(iv => iv.costPerKm);
+        if (costPerKmList.length > 0) {
+            const bestCPK = Math.min(...costPerKmList);
+            const worstCPK = Math.max(...costPerKmList);
+            if (bestCostKmEl) bestCostKmEl.textContent = '₺' + bestCPK.toFixed(2).replace('.', ',') + ' /km';
+            if (worstCostKmEl) worstCostKmEl.textContent = '₺' + worstCPK.toFixed(2).replace('.', ',') + ' /km';
+        } else {
+            if (bestCostKmEl) bestCostKmEl.textContent = '₺0,00 /km';
+            if (worstCostKmEl) worstCostKmEl.textContent = '₺0,00 /km';
+        }
+
+        const avgDailyCostEl = document.getElementById('stat-avg-daily-cost');
+        const avgMonthlyCostEl = document.getElementById('stat-avg-monthly-cost');
+        if (vRefuels.length >= 2) {
+            const sorted = [...vRefuels].sort(compareRefuelsAsc);
+            const firstDate = parseDateKey(sorted[0].date);
+            const lastDate = parseDateKey(sorted[sorted.length - 1].date);
+            const diffDays = Math.max(1, Math.round((lastDate - firstDate) / (1000 * 60 * 60 * 24)));
+            const dailyCost = totalSpent / diffDays;
+            const monthlyCost = dailyCost * 30;
+
+            if (avgDailyCostEl) avgDailyCostEl.textContent = formatCurrency(dailyCost);
+            if (avgMonthlyCostEl) avgMonthlyCostEl.textContent = formatCurrency(monthlyCost);
+        } else {
+            if (avgDailyCostEl) avgDailyCostEl.textContent = '₺0,00';
+            if (avgMonthlyCostEl) avgMonthlyCostEl.textContent = '₺0,00';
+        }
+
+        const yearLiters = thisYearRefuels.reduce((s, r) => s + r.liters, 0);
+        const monthLiters = thisMonthRefuels.reduce((s, r) => s + r.liters, 0);
+
+        const statYearRefuels = document.getElementById('stat-year-refuels');
+        const statYearLiters = document.getElementById('stat-year-liters');
+        const statMonthRefuels = document.getElementById('stat-month-refuels');
+        const statMonthLiters = document.getElementById('stat-month-liters');
+        const statSpentEl = document.getElementById('stat-total-spent');
+
+        if (statYearRefuels) statYearRefuels.textContent = `${thisYearRefuels.length} dolum`;
+        if (statYearLiters) statYearLiters.textContent = `${yearLiters.toFixed(1).replace('.', ',')} L`;
+        if (statMonthRefuels) statMonthRefuels.textContent = `${thisMonthRefuels.length} dolum`;
+        if (statMonthLiters) statMonthLiters.textContent = `${monthLiters.toFixed(1).replace('.', ',')} L`;
+        if (statSpentEl) statSpentEl.textContent = formatCurrency(totalSpent);
+
+        const minRefuelEl = document.getElementById('stat-min-refuel');
+        const maxRefuelEl = document.getElementById('stat-max-refuel');
+        if (vRefuels.length > 0) {
+            const minR = [...vRefuels].reduce((min, r) => r.liters < min.liters ? r : min, vRefuels[0]);
+            const maxR = [...vRefuels].reduce((max, r) => r.liters > max.liters ? r : max, vRefuels[0]);
+            if (minRefuelEl) minRefuelEl.textContent = `${minR.liters.toFixed(1).replace('.', ',')} L / ${formatCurrency(minR.totalCost)}`;
+            if (maxRefuelEl) maxRefuelEl.textContent = `${maxR.liters.toFixed(1).replace('.', ',')} L / ${formatCurrency(maxR.totalCost)}`;
+        } else {
+            if (minRefuelEl) minRefuelEl.textContent = '0 L / ₺0';
+            if (maxRefuelEl) maxRefuelEl.textContent = '0 L / ₺0';
+        }
+
+        const avgDailyEl = document.getElementById('stat-avg-daily-km');
+        const avgMonthlyEl = document.getElementById('stat-avg-monthly-km');
+
+        const avgConsEl = document.getElementById('stat-avg-consumption');
+        const bestConsEl = document.getElementById('stat-best-consumption');
+        const worstConsEl = document.getElementById('stat-worst-consumption');
+
+        // Tüketim istatistikleri: yalnızca tam depolar arası geçerli aralıklar
+        const consumptions = consumptionAnalysis.intervals.map(iv => iv.l100);
+
+        if (consumptions.length > 0) {
+            const avgC = consumptions.reduce((a, b) => a + b, 0) / consumptions.length;
+            const bestC = Math.min(...consumptions);
+            const worstC = Math.max(...consumptions);
+
+            if (avgConsEl) avgConsEl.textContent = avgC.toFixed(1).replace('.', ',') + ' L';
+            if (bestConsEl) bestConsEl.textContent = bestC.toFixed(1).replace('.', ',') + ' L';
+            if (worstConsEl) worstConsEl.textContent = worstC.toFixed(1).replace('.', ',') + ' L';
+        } else {
+            if (avgConsEl) avgConsEl.textContent = '0,0 L';
+            if (bestConsEl) bestConsEl.textContent = '0,0 L';
+            if (worstConsEl) worstConsEl.textContent = '0,0 L';
+        }
+
+        const chronologicalRefuels = [...vRefuels].sort(compareRefuelsAsc);
+        const nowObj = new Date();
+        const curYear = nowObj.getFullYear();
+        const prevYear = curYear - 1;
+        const curMonthStr = thisMonthKey();
+        const prevMonthStr = lastMonthKey();
+
+        let calcTotalDist = 0;
+        let distThisYear = 0;
+        let distLastYear = 0;
+        let distThisMonth = 0;
+        let distLastMonth = 0;
+
+        if (chronologicalRefuels.length >= 2) {
+            for (let i = 1; i < chronologicalRefuels.length; i++) {
+                const pRef = chronologicalRefuels[i - 1];
+                const cRef = chronologicalRefuels[i];
+                const delta = cRef.odometer - pRef.odometer;
+                if (delta > 0) {
+                    calcTotalDist += delta;
+                    const rYear = parseDateKey(cRef.date).getFullYear();
+                    const rMonthStr = (cRef.date || '').slice(0, 7);
+
+                    if (rYear === curYear) distThisYear += delta;
+                    if (rYear === prevYear) distLastYear += delta;
+                    if (rMonthStr === curMonthStr) distThisMonth += delta;
+                    if (rMonthStr === prevMonthStr) distLastMonth += delta;
+                }
+            }
+        } else if (vTrips.length > 0) {
+            vTrips.forEach(t => {
+                const tDist = t.distance || 0;
+                const tDateStr = t.startDate || t.date || '';
+                const tYear = tDateStr ? parseDateKey(tDateStr).getFullYear() : curYear;
+                const tMonthStr = tDateStr.slice(0, 7);
+
+                calcTotalDist += tDist;
+                if (tYear === curYear) distThisYear += tDist;
+                if (tYear === prevYear) distLastYear += tDist;
+                if (tMonthStr === curMonthStr) distThisMonth += tDist;
+                if (tMonthStr === prevMonthStr) distLastMonth += tDist;
+            });
+        }
+
+        const statTotalDistEl = document.getElementById('stat-total-dist');
+        const statLastOdoEl = document.getElementById('stat-last-odo');
+        const statDistThisYearEl = document.getElementById('stat-dist-this-year');
+        const statDistLastYearEl = document.getElementById('stat-dist-last-year');
+        const statDistThisMonthEl = document.getElementById('stat-dist-this-month');
+        const statDistLastMonthEl = document.getElementById('stat-dist-last-month');
+
+        if (statTotalDistEl) statTotalDistEl.textContent = `${calcTotalDist.toLocaleString('tr-TR')} km`;
+        if (statLastOdoEl) statLastOdoEl.textContent = `${vehicle.odometer.toLocaleString('tr-TR')} km`;
+        if (statDistThisYearEl) statDistThisYearEl.textContent = `${distThisYear.toLocaleString('tr-TR')} km`;
+        if (statDistLastYearEl) statDistLastYearEl.textContent = `${distLastYear.toLocaleString('tr-TR')} km`;
+        if (statDistThisMonthEl) statDistThisMonthEl.textContent = `${distThisMonth.toLocaleString('tr-TR')} km`;
+        if (statDistLastMonthEl) statDistLastMonthEl.textContent = `${distLastMonth.toLocaleString('tr-TR')} km`;
+
+        if (vRefuels.length >= 2) {
+            const sorted = [...vRefuels].sort(compareRefuelsAsc);
+            const firstDate = parseDateKey(sorted[0].date);
+            const lastDate = parseDateKey(sorted[sorted.length - 1].date);
+            const diffDays = Math.max(1, Math.round((lastDate - firstDate) / (1000 * 60 * 60 * 24)));
+            const totalKm = sorted[sorted.length - 1].odometer - sorted[0].odometer;
+            const dailyKm = totalKm / diffDays;
+            const monthlyKm = dailyKm * 30;
+
+            if (avgDailyEl) avgDailyEl.textContent = `${Math.round(dailyKm)} km`;
+            if (avgMonthlyEl) avgMonthlyEl.textContent = `${Math.round(monthlyKm)} km`;
+        } else {
+            if (avgDailyEl) avgDailyEl.textContent = '0 km';
+            if (avgMonthlyEl) avgMonthlyEl.textContent = '0 km';
+        }
+
+        const tripsListEl = document.getElementById('trips-list');
+        if (tripsListEl) {
+            tripsListEl.innerHTML = vTrips.length
+                ? vTrips.map(t => `
+                    <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-100 space-y-2">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="font-bold text-slate-800 text-sm">${escapeHtml(t.title || `${t.start} → ${t.end}`)}</span>
+                                    ${t.category ? `<span class="text-[10px] font-semibold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md">${escapeHtml(t.category)}</span>` : ''}
+                                </div>
+                                <div class="text-xs text-slate-600 mt-1">${escapeHtml(t.start)} → ${escapeHtml(t.end)}</div>
+                            </div>
+                            <span class="font-bold text-sm text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-xl">${t.distance.toLocaleString('tr-TR')} km</span>
+                        </div>
+                        <div class="pt-1.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+                            <span>${escapeHtml(t.startDate || t.date || '')} ${escapeHtml(t.startTime || '')} → ${escapeHtml(t.endTime || '')}</span>
+                            ${t.startOdo !== undefined && t.endOdo !== undefined ? `<span>${t.startOdo.toLocaleString('tr-TR')} - ${t.endOdo.toLocaleString('tr-TR')} km</span>` : ''}
+                        </div>
+                    </div>
+                `).join('')
+                : '<div class="bg-white rounded-2xl p-6 text-center text-xs text-slate-400 border border-slate-100">Henüz kaydedilmiş bir gezi yok.</div>';
+        }
+
+        const reportBox = document.getElementById('report-summary-box');
+        if (reportBox) {
+            reportBox.innerHTML = `
+                <div class="flex justify-between"><span>Araç:</span><strong>${escapeHtml(vehicle.name)}</strong></div>
+                <div class="flex justify-between"><span>Güncel Kilometre:</span><strong>${vehicle.odometer.toLocaleString('tr-TR')} km</strong></div>
+                <div class="flex justify-between"><span>Toplam Dolum Sayısı:</span><strong>${vRefuels.length}</strong></div>
+                <div class="flex justify-between"><span>Toplam Yakıt:</span><strong>${totalLiters.toFixed(2)} L</strong></div>
+                <div class="flex justify-between"><span>Toplam Maliyet:</span><strong>${formatCurrency(totalSpent)}</strong></div>
+            `;
+        }
+
+        const vehiclesListEl = document.getElementById('vehicles-list');
+        if (vehiclesListEl) {
+            vehiclesListEl.innerHTML = state.vehicles.map(v => `
+                <div data-vid="${escapeHtml(v.id)}" onclick="selectVehicle(this.dataset.vid)" class="bg-white rounded-2xl p-3.5 shadow-sm border ${v.id === vehicle.id ? 'border-slate-800 ring-1 ring-slate-800' : 'border-slate-100'} flex items-center justify-between cursor-pointer">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-full bg-slate-800 text-white font-bold flex items-center justify-center text-sm">${escapeHtml(v.name.charAt(0).toUpperCase())}</div>
+                        <div>
+                            <div class="font-bold text-slate-800 text-sm">${escapeHtml(v.name)}</div>
+                            <div class="text-[11px] text-slate-500">${v.odometer.toLocaleString('tr-TR')} km · ${escapeHtml(v.fuelType)}${v.tankCapacity ? ` · ${v.tankCapacity} L depo` : ''}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button type="button" data-vid="${escapeHtml(v.id)}" onclick="event.stopPropagation(); openEditVehicleModal(this.dataset.vid)" title="Düzenle" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition">
+                            <i class="fa-solid fa-pen text-xs"></i>
+                        </button>
+                        ${v.id === vehicle.id ? '<i class="fa-solid fa-circle-check text-slate-800"></i>' : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        calculateTrip();
+    }
+
+    window.addEventListener('click', () => {
+        if (openTimelineMenuId !== null) {
+            openTimelineMenuId = null;
+            renderAll();
+        }
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+        renderAll();
+        initPhotonBaseSetting();
+        window.addEventListener('resize', () => {
+            const pane = document.getElementById('station-map-pane');
+            if (stationMap && pane && !pane.classList.contains('hidden')) stationMap.invalidateSize();
+        });
+        // Fotoğraf deposunu başlat: eski base64'leri taşı, yetimleri temizle
+        photoInitPromise = (async () => {
+            try {
+                await openPhotoDb();
+                const migrated = await migratePhotosToIndexedDb();
+                const orphans = await cleanupOrphanPhotos();
+                if (migrated > 0 || orphans > 0) renderAll();
+                if (orphans > 0) console.info(`${orphans} yetim fotoğraf temizlendi`);
+            } catch (e) {
+                console.warn('Fotoğraf deposu başlatılamadı (base64 yedek modu):', e);
+            }
+            updateStorageInfo();
+        })();
+    });
+
+
+</script>
+</body>
+</html>
