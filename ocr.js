@@ -1,7 +1,7 @@
-/* Yakıt Takip v6 — Gerçek OCR (Tesseract.js, tamamen yerel/çevrimdışı)
+/* Yakıt Takip v9 — Gerçek OCR (Tesseract.js, tamamen yerel/çevrimdışı)
  * - Motor ve Türkçe model aynı klasörden yüklenir, CDN yoktur.
  * - Görüntü cihazdan çıkmaz; işleme WebWorker içinde yapılır.
- * - Çıkarılan alanlar: litre, birim fiyat, toplam tutar, tarih.
+ * - Çıkarılan alanlar: yakıt türü, litre, birim fiyat, toplam tutar, tarih, saat.
  * - Sonuçlar kullanıcıya düzenlenebilir şekilde gösterilir, onaylanmadan kaydedilmez.
  */
 (function () {
@@ -169,6 +169,119 @@
     return out[0] || null;
   }
 
+  // ------------------------------------------------------------------
+  // v9: Yakıt türü ve saat
+  // ------------------------------------------------------------------
+  const REFUEL_FUEL_TYPES = ['Kurşunsuz 95', 'Kurşunsuz 97/98', 'Motorin (Dizel)', 'LPG'];
+  const FUEL_TYPE_PATTERNS = [
+    { value: 'LPG', re: /\bLPG\b|OTOGAZ|AUTOGAS|PROPAN|PROPANE/ },
+    { value: 'Motorin (Dizel)', re: /MOTOR[Iİ]N|MOTORIN|D[Iİ]ZEL|DIZEL|DIESEL|EURODI|EUROD[Iİ]|EXCELLIUM|V-?MAX/ },
+    { value: 'Kurşunsuz 97/98', re: /(?:KURSUNSUZ|KURŞUNSUZ|BENZ[Iİ]N|GASOLINE|UNLEADED|S[UÜ]PER|OKTAN|RON)\s*(?:97|98)|97\s*\/\s*98|S[UÜ]PER\s*PLUS/ },
+    { value: 'Kurşunsuz 95', re: /(?:KURSUNSUZ|KURŞUNSUZ|BENZ[Iİ]N|GASOLINE|UNLEADED|SUPER|OKTAN|RON)\s*95|95\s*OKTAN|RON\s*95|EURO\s*SUPER|\bBENZ[Iİ]N\b|\bKURSUNSUZ\b|\bKURŞUNSUZ\b/ }
+  ];
+  function extractFuelType(lines) {
+    let best = null;
+    (lines || []).forEach((line, idx) => {
+      const U = trUpper(line);
+      if (KDV_LINE.test(U) || /\bTOPLAM\b|\bNAK[Iİ]T\b|KART/.test(U)) return;
+      let priority = 2;
+      if (/(?:YAKIT|FUEL|ÜRÜN|URUN|PRODUCT)\s*(?:T[Iİ]P[Iİ]|TÜRÜ|TURU|CINSI|ADI|TYPE|NAME)?\s*[:=]?/.test(U)) priority = 0;
+      else if (/[0-9][0-9.,]*\s*(?:TL|₺)|[*x×%]\s*[0-9]|[0-9][0-9.,]*\s*LT\s*[X×*]/.test(U)) priority = 1;
+      for (const p of FUEL_TYPE_PATTERNS) {
+        if (!p.re.test(U)) continue;
+        const cand = { value: p.value, source: line.trim(), priority, line: idx, verified: priority === 0 };
+        if (!best || priority < best.priority) best = cand;
+        break;
+      }
+    });
+    return best;
+  }
+
+  const TIME_TOKEN = /(^|[^\d])([01]?\d|2[0-3])\s*[:;.]\s*([0-5]\d)(?!\d)/g;
+  function normalizeTime(h, m) {
+    h = +h; m = +m;
+    if (!Number.isFinite(h) || !Number.isFinite(m) || h < 0 || h > 23 || m < 0 || m > 59) return null;
+    return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+  }
+  function extractTime(text) {
+    const lines = String(text || '').split(/\r?\n/);
+    const out = [];
+    lines.forEach((line, idx) => {
+      const U = trUpper(line);
+      const labeled = /SAAT|TIME|ZAMAN/.test(U);
+      if (!labeled && (KDV_LINE.test(U) || /\bTOPLAM\b|\bNAK[Iİ]T\b|KART|\bLT\s*[X×*]|\bZ\s*NO\b|\bEKÜ\b/.test(U))) return;
+      const hasDate = /\d{1,2}[./-]\d{1,2}[./-]\d{2,4}/.test(U);
+      const pri = labeled ? 0 : hasDate ? 1 : 2;
+      let m; TIME_TOKEN.lastIndex = 0;
+      while ((m = TIME_TOKEN.exec(U)) !== null) {
+        const val = normalizeTime(m[2], m[3]);
+        if (!val) continue;
+        out.push({ value: val, source: line.trim(), raw: m[0].trim(), priority: pri, line: idx, verified: labeled });
+      }
+    });
+    out.sort((a, b) => a.priority - b.priority || a.line - b.line);
+    return out[0] || null;
+  }
+
+  function parseTsvRows(tsv) {
+    return String(tsv || '').split(/\r?\n/)
+      .map(l => l.split('\t'))
+      .filter(c => c.length >= 12 && c[11] && c[11].trim())
+      .map(c => ({ level: +c[0], block: +c[2], par: +c[3], line: +c[4], left: +c[6], top: +c[7], width: +c[8], height: +c[9], conf: +c[10], text: c[11].trim() }));
+  }
+
+  /* Saat küçük yazıldığında OCR "01:09" yerine "0:09" okuyabilir.
+   * TSV'den saat/tarih kutusunu bulup yalnız o bölgeyi PSM 7 + rakam whitelist
+   * ile yeniden okur. Böylece tam fiş yeniden işlenmez, küçük bir kırpma yeterli. */
+  async function verifyTimeWithCrop(worker, imageBlob, parsed) {
+    try {
+      const rows = parsed && parsed._tsvRows || [];
+      if (!rows.length || !worker || !imageBlob) return parsed;
+      const dateRow = rows.find(r => r.level === 5 && extractDate(r.text));
+      const timeRow = rows.find(r => r.level === 5 && /^\d{1,2}[:;.]\d{2}$/.test(r.text) && dateRow && Math.abs(r.top - dateRow.top) < 200 && r.left > dateRow.left);
+      let rect = null;
+      if (timeRow) {
+        rect = { x: timeRow.left - 25, y: timeRow.top - 25, w: timeRow.width + 50, h: timeRow.height + 50 };
+      } else if (dateRow) {
+        const lineRow = rows.find(r => r.level === 4 && r.block === dateRow.block && r.par === dateRow.par && r.line === dateRow.line);
+        if (lineRow) {
+          const x = Math.round(lineRow.left + lineRow.width * 0.62);
+          rect = { x, y: lineRow.top - 15, w: lineRow.left + lineRow.width - x - 5, h: lineRow.height + 30 };
+        }
+      }
+      if (!rect || rect.w < 10 || rect.h < 10) return parsed;
+      const bitmap = await loadBitmap(imageBlob);
+      rect.x = Math.max(0, Math.min(Math.round(rect.x), bitmap.width - 1));
+      rect.y = Math.max(0, Math.min(Math.round(rect.y), bitmap.height - 1));
+      rect.w = Math.max(1, Math.min(Math.round(rect.w), bitmap.width - rect.x));
+      rect.h = Math.max(1, Math.min(Math.round(rect.h), bitmap.height - rect.y));
+      const c = document.createElement('canvas');
+      c.width = rect.w * 3; c.height = rect.h * 3;
+      const ctx = c.getContext('2d');
+      ctx.imageSmoothingEnabled = true;
+      if ('imageSmoothingQuality' in ctx) ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(bitmap, rect.x, rect.y, rect.w, rect.h, 0, 0, c.width, c.height);
+      if (bitmap.close) bitmap.close();
+      const blob = await new Promise(res => c.toBlob(res, 'image/png'));
+      if (!blob) return parsed;
+      await worker.setParameters({ tessedit_pageseg_mode: '7', tessedit_char_whitelist: '0123456789:' });
+      let rr;
+      try { rr = await worker.recognize(blob); }
+      finally { await worker.setParameters({ tessedit_pageseg_mode: '6', tessedit_char_whitelist: '' }); }
+      const t = extractTime(rr && rr.data && rr.data.text || '');
+      if (!t) return parsed;
+      const old = parsed.fields.time;
+      const oldConf = timeRow ? timeRow.conf : 0;
+      const newConf = Number(rr && rr.data && rr.data.confidence) || 0;
+      const oldSingle = old && /^\d:\d{2}$/.test(String(old.raw || old.value));
+      if (!old || oldSingle || newConf >= oldConf + 5 || (t.value !== old.value && newConf > oldConf)) {
+        parsed.fields.time = { value: t.value, source: `Saat bölgesi yeniden okundu: ${t.value}`, verified: newConf >= 80, raw: t.raw, confidence: Math.round(newConf) };
+        parsed.foundCount = ['liters', 'price', 'total', 'date', 'fuelType', 'time'].filter(k => parsed.fields[k]).length;
+      }
+    } catch (e) { console.warn('Saat doğrulama başarısız:', e); }
+    return parsed;
+  }
+
   /* Adayları çapraz doğrulayarak en tutarlı üçlüyü seçer:
    * litre × birim fiyat ≈ toplam
    */
@@ -260,15 +373,17 @@
         if (!f || f.value == null) return;
         // Hesaplanmış değerler gerçek OCR okumasından daha az güvenilir
         const weight = f.computed ? 0.4 : (f.corrected ? 0.9 : 1);
-        const k = key === 'date' ? String(f.value) : Number(f.value).toFixed(key === 'total' ? 2 : 3);
+        const numeric = key === 'liters' || key === 'price' || key === 'total';
+        const k = numeric ? Number(f.value).toFixed(key === 'total' ? 2 : 3) : String(f.value);
         const prev = map.get(k);
         if (prev) { prev.votes += weight; if (weight > prev.weight) { prev.field = f; prev.weight = weight; prev.pass = ri; } }
-        else map.set(k, { value: key === 'date' ? f.value : Number(f.value), field: f, votes: weight, weight, pass: ri });
+        else map.set(k, { value: numeric ? Number(f.value) : f.value, field: f, votes: weight, weight, pass: ri });
       });
       return [...map.values()].sort((a, b) => b.votes - a.votes);
     }
 
     const L = gather('liters'), P = gather('price'), T = gather('total'), D = gather('date');
+    const F = gather('fuelType'), TT = gather('time');
 
     // En tutarlı (L, P, T) üçlüsünü bul: çarpım toplamı doğrulamalı ve oy yüksek olmalı
     let best = null;
@@ -312,8 +427,16 @@
       fields.date = Object.assign({}, D[0].field);
       if (D.length > 1 && D[0].votes > D[1].votes) fields.date.verified = true;
     }
+    if (F[0]) {
+      fields.fuelType = Object.assign({}, F[0].field);
+      if (F[0].votes >= valid.length || (F.length > 1 && F[0].votes > F[1].votes)) fields.fuelType.verified = true;
+    }
+    if (TT[0]) {
+      fields.time = Object.assign({}, TT[0].field);
+      if (TT[0].votes >= valid.length || (TT.length > 1 && TT[0].votes > TT[1].votes)) fields.time.verified = true;
+    }
 
-    const foundCount = ['liters', 'price', 'total', 'date'].filter(k => fields[k]).length;
+    const foundCount = ['liters', 'price', 'total', 'date', 'fuelType', 'time'].filter(k => fields[k]).length;
     const correctedCount = ['liters', 'price', 'total'].filter(k => fields[k] && fields[k].corrected).length;
     // Ham metinleri birleştir: kullanıcı hangi geçişte ne okunduğunu görebilsin
     const raw = valid.map((r, i) => `--- ${i + 1}. okuma ---\n${r.raw || ''}`).join('\n\n');
@@ -345,6 +468,8 @@
     if (productTotal) totals.push(productTotal);
 
     const date = extractDate(raw);
+    const fuelType = extractFuelType(lines);
+    const time = extractTime(raw);
 
     const combo = chooseConsistent(liters, prices, totals);
     const pick = (arr) => arr.length ? arr[0] : null;
@@ -357,7 +482,9 @@
       liters: L ? { value: +L.value.toFixed(2), source: L.text, verified: !!combo } : null,
       price: P ? { value: +P.value.toFixed(2), source: P.text, verified: !!combo } : null,
       total: T ? { value: +T.value.toFixed(2), source: T.text, verified: !!combo } : null,
-      date: date ? { value: date.key, source: date.repaired ? `OCR "${date.raw}" okudu; yıl onarıldı` : date.raw, verified: date.priority === 0 && !date.repaired, repaired: !!date.repaired } : null
+      date: date ? { value: date.key, source: date.repaired ? `OCR "${date.raw}" okudu; yıl onarıldı` : date.raw, verified: date.priority === 0 && !date.repaired, repaired: !!date.repaired } : null,
+      fuelType: fuelType ? { value: fuelType.value, source: fuelType.source, verified: fuelType.verified } : null,
+      time: time ? { value: time.value, source: time.source, verified: time.verified, raw: time.raw } : null
     };
 
     // Toplam yoksa litre×fiyattan hesapla (kullanıcıya "hesaplandı" olarak işaretlenir)
@@ -403,7 +530,7 @@
       }
     }
 
-    const foundCount = ['liters', 'price', 'total', 'date'].filter(k => fields[k]).length;
+    const foundCount = ['liters', 'price', 'total', 'date', 'fuelType', 'time'].filter(k => fields[k]).length;
     const correctedCount = ['liters', 'price', 'total'].filter(k => fields[k] && fields[k].corrected).length;
     return { fields, foundCount, correctedCount, consistent: !!combo, raw, lines };
   }
@@ -609,22 +736,27 @@
       setProgress('Görüntü iyileştiriliyor', 5);
       const pre1 = await pre(file, { variant: 'plain', targetShort: 1500 });
       setProgress('Fiş okunuyor', 12);
-      const r1 = await worker.recognize(pre1);
+      const r1 = await worker.recognize(pre1, {}, { text: true, tsv: true });
       const p1 = parseReceipt(r1 && r1.data && r1.data.text || '');
       p1.confidence = r1 && r1.data && Number.isFinite(r1.data.confidence) ? Math.round(r1.data.confidence) : null;
+      p1._tsvRows = parseTsvRows(r1 && r1.data && r1.data.tsv);
+      await verifyTimeWithCrop(worker, pre1, p1);
       passes.push(p1);
 
-      // Yeterli mi? 4 alan bulundu ve tutarlar birbirini doğruluyorsa bitir.
-      const goodEnough = p1.foundCount === 4 && p1.consistent;
+      // Yeterli mi? 6 alan bulundu ve tutarlar birbirini doğruluyorsa bitir.
+      const numericOk = p1.consistent && ['liters', 'price', 'total', 'date'].every(k => p1.fields[k]);
+      const goodEnough = numericOk && p1.fields.fuelType && p1.fields.time;
       const forceSecond = o.passes === 2;
       if (!goodEnough || forceSecond) {
         setProgress('İkinci okuma (doğrulama)', 55);
         try {
           const pre2 = await pre(file, { variant: 'stretch', targetShort: 2000 });
           setProgress('Fiş yeniden okunuyor', 62);
-          const r2 = await worker.recognize(pre2);
+          const r2 = await worker.recognize(pre2, {}, { text: true, tsv: true });
           const p2 = parseReceipt(r2 && r2.data && r2.data.text || '');
           p2.confidence = r2 && r2.data && Number.isFinite(r2.data.confidence) ? Math.round(r2.data.confidence) : null;
+          p2._tsvRows = parseTsvRows(r2 && r2.data && r2.data.tsv);
+          await verifyTimeWithCrop(worker, pre2, p2);
           passes.push(p2);
         } catch (e) {
           console.warn('İkinci geçiş başarısız, ilk sonuç kullanılıyor:', e);
@@ -679,7 +811,27 @@
     hideProgress();
   }
 
+  function fuelBadge(f) {
+    return !f ? '<span class="text-[9px] font-bold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded">bulunamadı</span>'
+      : f.verified ? '<span class="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">doğrulandı</span>'
+      : '<span class="text-[9px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">kontrol edin</span>';
+  }
+  function fuelFieldRow() {
+    const f = state.lastResult && state.lastResult.fields.fuelType;
+    const opts = ['', ...REFUEL_FUEL_TYPES].map(v =>
+      `<option value="${escapeAttr(v)}" ${f && f.value === v ? 'selected' : ''}>${escapeHtml(v || 'Seçilmedi / elle seçin')}</option>`).join('');
+    return `
+      <div class="bg-white rounded-xl border border-slate-200 p-2.5 space-y-1">
+        <div class="flex items-center justify-between">
+          <label class="text-[11px] font-semibold text-slate-600" for="ocr-f-fuelType">Yakıt türü</label>
+          ${fuelBadge(f)}
+        </div>
+        <select id="ocr-f-fuelType" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-sm font-bold text-slate-800 focus:outline-none focus:border-slate-800">${opts}</select>
+        ${f && f.source ? `<div class="text-[9px] text-slate-400 truncate" title="${escapeAttr(f.source)}">${escapeHtml(f.source)}</div>` : ''}
+      </div>`;
+  }
   function fieldRow(key, label, unit, step) {
+    if (key === 'fuelType') return fuelFieldRow();
     const f = state.lastResult && state.lastResult.fields[key];
     const val = f ? (key === 'date' ? f.value : String(f.value).replace('.', ',')) : '';
     const badge = !f ? '<span class="text-[9px] font-bold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded">bulunamadı</span>'
@@ -688,8 +840,8 @@
       : f.computed ? '<span class="text-[9px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">hesaplandı</span>'
       : f.verified ? '<span class="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">doğrulandı</span>'
       : '<span class="text-[9px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">kontrol edin</span>';
-    const type = key === 'date' ? 'date' : 'text';
-    const inputMode = key === 'date' ? '' : 'inputmode="decimal"';
+    const type = key === 'date' ? 'date' : key === 'time' ? 'time' : 'text';
+    const inputMode = (key === 'date' || key === 'time') ? '' : 'inputmode="decimal"';
     return `
       <div class="bg-white rounded-xl border border-slate-200 p-2.5 space-y-1">
         <div class="flex items-center justify-between">
@@ -713,10 +865,13 @@
     const box = $('ocr-fields');
     if (box) {
       box.innerHTML =
-        fieldRow('liters', 'Litre', 'L') +
-        fieldRow('price', 'Birim Fiyat', '₺/L') +
+        fieldRow('fuelType', 'Yakıt türü', '') +
+        fieldRow('liters', 'Litre (fişteki birim)', 'L') +
+        fieldRow('price', 'Birim fiyat (fişteki birim)', '₺/L') +
         fieldRow('total', 'Toplam Tutar', '₺') +
-        fieldRow('date', 'Tarih', '');
+        fieldRow('date', 'Tarih', '') +
+        fieldRow('time', 'Saat', '') +
+        '<div class="text-[10px] text-slate-400 leading-relaxed">Fiş litre ve TL/L olarak okunur; dolum formuna aktarınca seçtiğiniz hacim birimine çevrilir.</div>';
     }
     const raw = $('ocr-raw-text');
     if (raw) raw.textContent = parsed.raw || '(metin bulunamadı)';
@@ -724,8 +879,8 @@
     if (conf) {
       const extra = parsed.correctedCount ? ` · ${parsed.correctedCount} alan çapraz hesapla düzeltildi` : '';
       conf.textContent = parsed.confidence != null
-        ? `OCR güveni: %${parsed.confidence} · ${parsed.foundCount}/4 alan bulundu${parsed.consistent ? ' · tutarlar uyumlu' : ''}${extra}`
-        : `${parsed.foundCount}/4 alan bulundu${extra}`;
+        ? `OCR güveni: %${parsed.confidence} · ${parsed.foundCount}/6 alan bulundu${parsed.consistent ? ' · tutarlar uyumlu' : ''}${extra}`
+        : `${parsed.foundCount}/6 alan bulundu${extra}`;
     }
     showResult();
     if (parsed.foundCount === 0) {
@@ -764,6 +919,8 @@
     const v = el.value.trim();
     if (!v) return null;
     if (key === 'date') return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null;
+    if (key === 'time') return /^\d{2}:\d{2}$/.test(v) ? v : null;
+    if (key === 'fuelType') return REFUEL_FUEL_TYPES.includes(v) ? v : null;
     const n = parseTrNumber(v);
     return Number.isFinite(n) ? n : null;
   }
@@ -773,16 +930,26 @@
     const price = readField('price');
     const total = readField('total');
     const date = readField('date');
+    const time = readField('time');
+    const fuelType = readField('fuelType');
     if (!liters && !total) {
       setStatus('En az litre veya toplam tutar girilmeli.', 'error');
       return;
     }
     closeReceiptModal();
     if (typeof window.openRefuelModal === 'function') {
-      window.openRefuelModal({ liters: liters || '', price: price || '', total: total || '' });
+      window.openRefuelModal({ liters: liters || '', price: price || '', total: total || '', date: date || '', time: time || '', fuelType: fuelType || '' });
       if (date) {
         const d = $('refuel-date');
         if (d) d.value = date;
+      }
+      if (time) {
+        const t = $('refuel-time');
+        if (t) t.value = time;
+      }
+      if (fuelType) {
+        const ft = $('refuel-type');
+        if (ft && Array.from(ft.options).some(o => o.value === fuelType)) ft.value = fuelType;
       }
       // Birim fiyat boşsa toplam/litreden türet
       const priceEl = $('refuel-price');
@@ -839,6 +1006,8 @@
   window.YakitOCR = {
     mergeResults,
     parseReceipt, parseTrNumber, parseTrNumberCandidates, extractDate,
+    extractFuelType, extractTime, normalizeTime, parseTsvRows, verifyTimeWithCrop,
+    REFUEL_FUEL_TYPES,
     recognizeFile, ensureWorker, terminate, warmUp,
     openReceiptModal, closeReceiptModal, applyToRefuel, handleFile,
     state, preprocessImage
