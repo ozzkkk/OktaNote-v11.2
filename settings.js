@@ -1,4 +1,4 @@
-/* Yakıt Takip v10.4 — Ayarlar, birimler, dosya yedekleme + uygulama içi otomatik yedek
+/* Yakıt Takip v10.5 — Ayarlar, birimler, dosya yedekleme + uygulama içi otomatik yedek
  * Bağımsız modül: window.YakitSettings
  * Veri modeli: state.settings (localStorage içinde, ana state ile birlikte)
  */
@@ -19,7 +19,8 @@
     lastBackupAt: null,
     autoLocalBackup: true,     // uygulama açılışında günde 1 otomatik yedek
     localBackupKeep: 7,        // saklanacak yedek sayısı: 7 | 14 | 30
-    dataGuards: true           // v10.2: veri giriş uyarıları (mükerrer/sayaç/tüketim)
+    dataGuards: true,          // v10.2: veri giriş uyarıları (mükerrer/sayaç/tüketim)
+    language: 'tr'             // v10.5: arayüz dili — 'tr' | 'en'
   };
 
   var CURRENCIES = {
@@ -33,6 +34,7 @@
 
   var DATE_FORMATS = ['YYYY-MM-DD', 'DD.MM.YYYY', 'DD/MM/YYYY', 'MM/DD/YYYY', 'D MMM YYYY'];
   var TR_MONTHS = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
+  var EN_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
   var VEHICLE_ICONS = [
     { id: 'car', label: 'Otomobil' },
@@ -93,6 +95,7 @@
     if ([7, 14, 30].indexOf(Number(settings.localBackupKeep)) < 0) settings.localBackupKeep = 7;
     settings.localBackupKeep = Number(settings.localBackupKeep);
     settings.dataGuards = settings.dataGuards !== false;
+    settings.language = settings.language === 'en' ? 'en' : 'tr';
     return settings;
   }
 
@@ -225,7 +228,7 @@
       case 'DD.MM.YYYY': return d + '.' + mo + '.' + y;
       case 'DD/MM/YYYY': return d + '/' + mo + '/' + y;
       case 'MM/DD/YYYY': return mo + '/' + d + '/' + y;
-      case 'D MMM YYYY': return parseInt(d, 10) + ' ' + TR_MONTHS[parseInt(mo, 10) - 1] + ' ' + y;
+      case 'D MMM YYYY': return parseInt(d, 10) + ' ' + (settings.language === 'en' ? EN_MONTHS : TR_MONTHS)[parseInt(mo, 10) - 1] + ' ' + y;
       default: return y + '-' + mo + '-' + d;
     }
   }
@@ -283,7 +286,7 @@
       format: 'yakit-takip-backup',
       version: 7,
       createdAt: new Date().toISOString(),
-      appVersion: '10.4.0',
+      appVersion: '10.5.0',
       settings: get(),
       state: JSON.parse(JSON.stringify(st)),
       photos: {},

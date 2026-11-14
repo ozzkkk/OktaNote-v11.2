@@ -21,6 +21,7 @@
     <script src="./ocr.js" defer></script>
     <script src="./guards.js"></script>
     <script src="./settings.js"></script>
+    <script src="./i18n.js"></script>
     <script src="./settings-ui.js" defer></script>
     <script src="./maintenance.js" defer></script>
     <style>
@@ -3207,7 +3208,10 @@
         // BOM: Excel'de Türkçe karakterlerin doğru görünmesi için
         const csvEscape = val => `"${String(val ?? '').replace(/"/g, '""')}"`;
         const curCode = window.YakitSettings ? window.YakitSettings.get().currency : 'TRY';
-        let csv = '\uFEFF' + `Tarih,Saat,Mesafe (km),Hacim (L),Birim Fiyat (${curCode}/L),Toplam Tutar (${curCode}),Yakıt Tipi,İstasyon,İstasyon Adresi,Enlem,Boylam,Konum Kaynağı,Not\n`;
+        const en = window.YakitI18n && window.YakitI18n.getLang() === 'en';
+        let csv = '\uFEFF' + (en
+            ? `Date,Time,Distance (km),Volume (L),Unit Price (${curCode}/L),Total (${curCode}),Fuel Type,Station,Station Address,Latitude,Longitude,Location Source,Note\n`
+            : `Tarih,Saat,Mesafe (km),Hacim (L),Birim Fiyat (${curCode}/L),Toplam Tutar (${curCode}),Yakıt Tipi,İstasyon,İstasyon Adresi,Enlem,Boylam,Konum Kaynağı,Not\n`);
         [...vRefuels].sort(compareRefuelsAsc).forEach(r => {
             csv += [r.date, r.time || '', r.odometer, r.liters, r.pricePerLiter, r.totalCost, r.fuelType, r.station || '', r.stationAddress || '', r.stationLat ?? '', r.stationLon ?? '', r.stationSource || '', r.note || ''].map(csvEscape).join(',') + '\n';
         });
@@ -3215,7 +3219,7 @@
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${vehicle.name.toLowerCase().replace(/\s+/g, '_')}_rapor.csv`;
+        a.download = `${vehicle.name.toLowerCase().replace(/\s+/g, '_')}_${en ? 'report' : 'rapor'}.csv`;
         a.click();
         setTimeout(() => URL.revokeObjectURL(url), 1000);
         showToast('CSV raporu indirildi');

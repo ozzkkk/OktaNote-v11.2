@@ -1,17 +1,17 @@
-YAKIT TAKİP v10.4 — OCR DOĞRULUK İYİLEŞTİRMESİ
-==============================================
+YAKIT TAKİP v10.5 — İKİ DİL DESTEĞİ (TÜRKÇE / ENGLISH)
+=====================================================
 
 BU ZIP NE İŞE YARAR?
-Fiş tarama doğruluğunu artırır: POS/kart slipinde tutar+tarih+saat okunur, litre
-uydurulmaz; karanlık/eğri fişlerde ek okuma yapılır; tarih/yıl/tutar hataları onarılır.
-Motor ve Türkçe model AYNI kalır; fotoğraflar cihazdan çıkmaz.
+Uygulamaya Türkçe/English dil seçeneği ekler. Ayarlar > Dil'den seçilir, kalıcıdır,
+tüm arayüz anında değişir. Kayıtlarınız, birimleriniz ve OCR motorunuz AYNEN kalır.
 
 GÜNCELLEME (mevcut siteniz varsa — önerilen)
 1. ZIP'i telefonda/bilgisayarda açın (klasör yok, dosyalar kökte).
 2. Tarayıcıdan github.com > ozzkkk/yakit deposunu açın (main dalı).
 3. Add file > Upload files'a dokunun.
 4. ZIP'ten çıkan şu dosyaları seçip yükleyin:
-   ocr.js          (üzerine yazar)
+   i18n.js         (YENİ dosya)
+   index.html      (üzerine yazar)
    settings.js     (üzerine yazar)
    settings-ui.js  (üzerine yazar)
    sw.js           (üzerine yazar)
@@ -20,19 +20,29 @@ GÜNCELLEME (mevcut siteniz varsa — önerilen)
 5. Commit changes deyin.
 6. https://ozzkkk.github.io/yakit/ adresini bir kez yenileyin.
 
-TAM PAKET ZIP'i kullanıyorsanız: içindeki 32 dosyanın tamamını yükleyin.
+TAM PAKET ZIP'i kullanıyorsanız: içindeki 33 dosyanın tamamını yükleyin.
 serve.py gerekmez (yalnızca yerel test sunucusu).
 
 VERİLERİM SİLİNİR Mİ?
 Hayır. Kayıtlarınız tarayıcının localStorage/IndexedDB alanında durur.
 Dosya değiştirmek verileri silmez. OCR motoru da yeniden inmez (5,6 MB korunur).
+Dil seçimi ayrı bir ayardır; kayıtlarınızı etkilemez.
+
+DİL NASIL DEĞİŞTİRİLİR?
+- Ayarlar > Ana tercihler > Dil satırına dokunun.
+- Türkçe veya English seçin. Arayüz anında değişir, sayfa yenilenmez.
+- Seçim hatırlanır; uygulamayı tekrar açtığınızda aynı dil gelir.
+- Varsayılan Türkçe'dir. English seçerseniz başlık "Fuel Tracker" olur.
 
 KONTROL
-- Ayarlar > Hakkında: "Sürüm 10.4.0" ve v10.4 yazmalı.
-- Bir POS/kart slipi taratın: tutar, tarih, saat gelmeli; litre/fiyat boş kalmalı.
-- Bir yakıt fişi taratın: yakıt türü, litre, fiyat, toplam, tarih, saat gelmeli.
-- Sonuç ekranında değerleri kontrol edip "Dolum formuna aktar" deyin; Kaydet'e siz basarsınız.
+- Ayarlar > Hakkında: "Sürüm 10.5.0" ve v10.5 yazmalı.
+- Ayarlar > Dil: Türkçe / English seçenekleri görünmeli.
+- English seçin: menüler, formlar, uyarılar, bakım, yedekleme İngilizce olmalı.
+- Araç adınız, istasyon etiketleriniz ve notlarınız DEĞİŞMEMELİ.
+- Yakıt türü açılır kutusunda değer aynı kalır (örn. Motorin (Dizel)), etiket Diesel görünür.
+- Tekrar Türkçe'ye dönün: her şey eski hâline gelmeli, kayıtlar korunmalı.
 
 SORUN OLURSA
 - Eski sürüm görünüyorsa: bir kez daha yenileyin; service worker güncellemeyi alır.
-- Çok silik/kırışık fişte eksik alan olursa kutulardan elle düzeltin; bu beklenen durumdur.
+- Dil değişmediyse: Ayarlar > Dil'den tekrar seçin; gerekirse sayfayı yenileyin.
+- Bir metin Türkçe kaldıysa: bu bir kullanıcı verisi (araç/istasyon/not) olabilir; bu doğrudur.

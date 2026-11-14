@@ -1,3 +1,53 @@
+# Yakıt Takip v10.5 — İki Dil Desteği (Türkçe / English)
+
+Bu sürüm uygulamayı **iki dilli** yapar: **Türkçe ve English**. Ayarlar'dan dil seçilir,
+seçim kalıcıdır ve uygulama yeniden yüklenmeden tüm arayüz anında değişir.
+**Kayıtlarınıza, birim/para birimi ayarlarınıza ve OCR motoruna dokunulmaz.**
+
+## v10.5'te yeni olanlar
+
+### Dil seçimi (`i18n.js` — yeni dosya)
+- **Ayarlar → Ana tercihler → Dil**: `Türkçe` / `English`. Varsayılan **Türkçe**'dir;
+  mevcut kullanıcıların arayüzü kendiliğinden değişmez.
+- Seçim `localStorage` + ayarlar içinde saklanır; uygulama açılışında hatırlanır.
+- Dil değişince **tüm ekranlar, formlar, modallar, uyarılar, bildirimler, bakım
+  hatırlatıcıları, yedekleme listesi, PWA/OCR durum metinleri ve CSV başlıkları** anında
+  yeniden çizilir; sayfa yenilemesi gerekmez.
+- `<html lang>` ve sekme başlığı da dile göre güncellenir (`Yakıt Takip` / `Fuel Tracker`).
+
+### Veri güvenliği (çeviri yalnızca görünen metne uygulanır)
+- Araç adları, istasyon/adres etiketleri, notlar, yakıt türü **değerleri** ve tüm kayıt
+  alanları **olduğu gibi kalır**. Çeviri katmanı yalnızca ekrandaki etiket/metni değiştirir;
+- `<input>` değerleri, `<option value>` ve veri modeline **dokunmaz**. Örn. yakıt türü
+  değeri `Motorin (Dizel)` kalır, ekranda `Diesel` görünür.
+- OCR ayrıştırıcı anahtarları (`TOPLAM`, `TUTAR`, `LT`, `KDV`, yakıt kısaltmaları)
+  **çevrilmez**; fiş okuma mantığı aynen çalışır. Ham OCR metni çeviri dışıdır.
+- Türkçe seçiliyken katman tamamen pasiftir; DOM'a hiç dokunmaz.
+
+### Bağımsız ayarlar
+- Dil; mesafe/hacim/tüketim birimi, para birimi, tarih biçimi ve hafta başlangıcından
+  **bağımsızdır**. English arayüz + km/L + ₺ + TR tarih biçimi birlikte kullanılabilir.
+- Tarih biçimi `D MMM YYYY` seçiliyse ay kısaltmaları dile göre (Oca→Jan vb.) gösterilir.
+
+### Ölçüm
+- **955/955** test yeşil (24 paket): 22 mevcut regresyon paketi (867) + yeni i18n
+  tarayıcı testi (38) + yeni i18n birim testi (50).
+- EN modunda tüm ekran/modal/picker tarandı: çevrilmemiş arayüz metni kalmadı
+  (kalan tek Türkçe, demo istasyon adı gibi **kullanıcı verisi** — doğru davranış).
+- TR varsayılanında eski testlerin tamamı değişmeden geçer.
+
+### v10.5 kurulumu (ZIP)
+- `yakit-takip-v10-5-guncelleme.zip` → değişen/yeni **5 dosya** (`i18n.js` **yeni**,
+  `index.html`, `settings.js`, `settings-ui.js`, `sw.js`) + README + KURULUM.txt
+- `yakit-takip-v10-5-tam-paket.zip` → uygulamanın **33 dosyasının tamamı** (OCR motoru dahil)
+
+GitHub'da **Add file → Upload files** ile ZIP'ten çıkan dosyaları yükleyin; aynı adlı
+dosyalar üzerine yazılır, `i18n.js` yeni eklenir. Kayıtlarınız tarayıcıda kaldığı için
+**veri kaybı olmaz**. OCR motor önbelleği korunur (`OCR_VERSION 6.0.0`), 5,6 MB yeniden inmez.
+Dili değiştirmek için: **Ayarlar → Dil → English** (veya Türkçe).
+
+---
+
 # Yakıt Takip v10.4 — OCR Doğruluk İyileştirmesi
 
 Bu sürüm **fiş okuma (OCR) doğruluğuna** odaklanır. Motor ve Türkçe model aynı kalır

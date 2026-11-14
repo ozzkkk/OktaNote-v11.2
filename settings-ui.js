@@ -1,4 +1,4 @@
-/* Yakıt Takip v10.4 — Ayarlar ekranı (Fuelio tarzı gruplu liste)
+/* Yakıt Takip v10.5 — Ayarlar ekranı (Fuelio tarzı gruplu liste)
  * window.YakitSettingsUI
  */
 (function () {
@@ -13,6 +13,7 @@
     });
   }
   function toast(msg) { if (window.showToast) window.showToast(msg); }
+  function loc() { return (S && S.get().language === 'en') ? 'en-GB' : 'tr-TR'; }
 
   // ---------- yeniden kullanılabilir satırlar ----------
   function row(opts) {
@@ -54,12 +55,14 @@
     var cur = S.CURRENCIES[s.currency] || S.CURRENCIES.TRY;
 
     var lastBackup = s.lastBackupAt
-      ? new Date(s.lastBackupAt).toLocaleString('tr-TR', { dateStyle: 'medium', timeStyle: 'short' })
+      ? new Date(s.lastBackupAt).toLocaleString(loc(), { dateStyle: 'medium', timeStyle: 'short' })
       : 'Henüz yedek alınmadı';
 
     var html = '';
 
     html += group('Ana tercihler', [
+      row({ icon: 'sliders', iconBg: '#e0e7ff', iconFg: '#4f46e5', title: 'Dil',
+            desc: 'Arayüz dili / Interface language', badge: s.language === 'en' ? 'English' : 'Türkçe', action: 'language', arrow: true }),
       row({ icon: 'ruler-combined', iconBg: '#dbeafe', iconFg: '#2563eb', title: 'Mesafe birimi',
             desc: 'Kilometre veya mil', badge: S.distanceLabel(), action: 'units', arrow: true }),
       row({ icon: 'fill-drip', iconBg: '#e0f2fe', iconFg: '#0284c7', title: 'Hacim birimi',
@@ -118,7 +121,7 @@
     ].join(''));
 
     html += group('Hakkında', [
-      row({ icon: 'circle-info', iconBg: '#e0e7ff', iconFg: '#4f46e5', title: 'Yakıt Takip', desc: 'Sürüm 10.4.0', badge: 'v10.4' }),
+      row({ icon: 'circle-info', iconBg: '#e0e7ff', iconFg: '#4f46e5', title: 'Yakıt Takip', desc: 'Sürüm 10.5.0', badge: 'v10.5' }),
       row({ icon: 'shield-halved', iconBg: '#dcfce7', iconFg: '#059669', title: 'Gizlilik',
             desc: 'Veriler cihazınızda kalır. Sunucuya hiçbir şey gönderilmez.' }),
       row({ icon: 'file-lines', iconBg: '#f1f5f9', iconFg: '#64748b', title: 'Açık kaynak lisansları',
@@ -149,7 +152,7 @@
     if (!S || !S.getAutoBackupStatus) return '';
     var st = S.getAutoBackupStatus();
     if (!st || st.ok !== false || !S.get().autoLocalBackup) return '';
-    var when = st.at ? new Date(st.at).toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' }) : '';
+    var when = st.at ? new Date(st.at).toLocaleString(loc(), { dateStyle: 'short', timeStyle: 'short' }) : '';
     return '<div class="mb-2 bg-rose-50 border border-rose-200 rounded-xl p-2.5 text-[11px] text-rose-800">' +
       '<div class="font-bold flex items-center gap-1.5"><i class="fa-solid fa-triangle-exclamation"></i> Otomatik yedek alınamadı</div>' +
       '<div class="mt-0.5 text-rose-700">' + esc(st.error || 'Bilinmeyen hata') + (when ? ' · ' + esc(when) : '') + '</div>' +
@@ -169,7 +172,7 @@
       }
       box.innerHTML = errHtml + '<div class="text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-2">Son yedekler (' + list.length + ')</div>' +
         list.map(function (m) {
-          var when = new Date(m.createdAt).toLocaleString('tr-TR', { dateStyle: 'medium', timeStyle: 'short' });
+          var when = new Date(m.createdAt).toLocaleString(loc(), { dateStyle: 'medium', timeStyle: 'short' });
           var sum = m.summary || {};
           return '<div class="flex items-center gap-2 py-2 border-t border-slate-100">' +
             '<span class="flex-1 min-w-0">' +
@@ -240,6 +243,15 @@
   async function handle(action, id) {
     var s = S.get();
     switch (action) {
+      case 'language':
+        openPicker('Dil', [
+          { value: 'tr', label: 'Türkçe', desc: 'Arayüz dili' },
+          { value: 'en', label: 'English', desc: 'Interface language' }
+        ], s.language, function (v) {
+          if (window.YakitI18n && window.YakitI18n.setLang) window.YakitI18n.setLang(v);
+          else { S.set('language', v); toast(v === 'en' ? 'Language updated' : 'Dil güncellendi'); }
+        });
+        break;
       case 'units':
         openPicker('Mesafe birimi', [
           { value: 'km', label: 'Kilometre (km)', desc: 'Tüketim: L/100km veya km/L' },
