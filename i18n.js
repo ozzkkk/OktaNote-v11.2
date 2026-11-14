@@ -532,6 +532,8 @@
     'Henüz kaydedilmiş bir gezi yok.': 'No saved trips yet.',
     'Fiş bölgesi kırpılarak okunuyor': 'Reading cropped receipt region',
     'Dördüncü geçiş başarısız:': 'Fourth pass failed:',
+    'Kontrast ve eğiklik düzeltilerek okunuyor': 'Reading with contrast and skew correction',
+    'Beşinci geçiş başarısız:': 'Fifth pass failed:',
     'Toplam ÷ birim fiyat ile hesaplandı': 'Computed as total ÷ unit price',
     'katkıda bulunanlar': 'contributors',
     '1 araç': '1 vehicle', '1 dolum': '1 fill-up', '1 fotoğraf': '1 photo', '1 kayıt': '1 record',

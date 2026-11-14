@@ -1,11 +1,19 @@
-YAKIT TAKİP v10.6 — OCR DOĞRULUK İYİLEŞTİRMESİ (2. TUR)
-======================================================
+YAKIT TAKİP v10.7 — ZOR FOTOĞRAFLAR İÇİN AGRESİF ÖN İŞLEME (3. TUR)
+==================================================================
 
 BU ZIP NE İŞE YARAR?
-Fiş okuma doğruluğunu artırır: akıllı çapraz düzeltme (bozuk litre mi fiyat mı?),
-eksik litre hesaplama, zor görüntüde fiş bölgesi kırpma, binlik ':' ve tarih onarımı.
+Karanlık, gölgeli, soluk baskılı veya hafif eğri fişlerde okuma doğruluğunu artırır:
+- CLAHE: fotoğrafı bölgelere ayırıp kontrastı yerel olarak açar (soluk ürün satırı okunur).
+- Eğiklik düzeltme: yalnızca 1,5° ve üzeri eğiklikte görüntüyü döndürür.
+- 5. okuma geçişi: sadece önceki geçişler zayıfsa çalışır; fiş olmayan fotoğrafta atlanır.
+- Boşluklu ondalık onarımı: "8 560 LT X 41,06" -> 8,56 litre, 41,06 TL; "500 . 00" -> 500,00.
+Ölçüm (12 gerçek görüntü, 72 alan): 57/72 -> 61/72 (%85). Hiçbir doğru alan kaybedilmedi.
 İki dil (Türkçe/English) desteği AYNEN korunur. Motor ve Türkçe model aynı; fotoğraflar
 cihazdan çıkmaz.
+
+SÜRE NOTU
+Temiz fişler yine ~2 saniye. Çok zor fotoğraflarda ek geçiş yüzünden süre uzayabilir
+(masaüstünde 15-19 sn, telefonda daha fazla). Ekranda hangi aşamada olunduğu yazar.
 
 GÜNCELLEME (mevcut siteniz varsa — önerilen)
 1. ZIP'i telefonda/bilgisayarda açın (klasör yok, dosyalar kökte).
@@ -31,9 +39,10 @@ Dosya değiştirmek verileri silmez. OCR motoru da yeniden inmez (5,6 MB korunur
 Dil seçiminiz (Türkçe/English) korunur.
 
 KONTROL
-- Ayarlar > Hakkında: "Sürüm 10.6.0" ve v10.6 yazmalı.
+- Ayarlar > Hakkında: "Sürüm 10.7.0" ve v10.7 yazmalı.
 - Ayarlar > Dil: Türkçe / English hâlâ çalışmalı.
 - Soluk ürün satırlı bir fiş taratın: litre + birim fiyat + toplam gelmeli.
+- Karanlık/gölgeli bir fiş taratın: "Kontrast ve eğiklik düzeltilerek okunuyor" aşamasını görmelisiniz.
 - POS/kart slipi taratın: tutar (binlik dahil) + tarih gelmeli; litre uydurulmaz.
 - Sonuç ekranında değerleri kontrol edip "Dolum formuna aktar" deyin; Kaydet'e siz basarsınız.
 

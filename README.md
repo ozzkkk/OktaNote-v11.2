@@ -1,3 +1,83 @@
+# Yakıt Takip v10.7 — Zor Fotoğraflar için Agresif Ön İşleme (3. tur)
+
+Bu sürüm, v10.6'nın tüm kazanımlarını ve **iki dil (Türkçe/English)** desteğini korur;
+okunması zor fişlerde (karanlık, gölgeli, soluk baskı, hafif eğri) doğruluğu artırır.
+Motor ve Türkçe model yine aynı (`OCR_VERSION 6.0.0`, önbellek korunur).
+**Fotoğraflar hiçbir sunucuya gönderilmez; tüm işlem cihazda yapılır.**
+
+## v10.7'de yeni olanlar (`ocr.js`)
+
+### CLAHE — bölgesel kontrast dengeleme
+Fotoğraf tek bir eşikle karartılmak yerine **8×8 bölgeye** ayrılır; her bölgenin
+kontrastı kendi histogramına göre açılır (clip 2.5, bölgeler arası yumuşak geçiş).
+Böylece fişin bir köşesi gölgede, diğer köşesi parlak olsa bile soluk ürün satırı
+okunabilir hâle gelir. Eski "adaptive" eşikleme ile üst üste bindirilmez — ölçümde
+ikisini birlikte kullanmak daha kötü sonuç verdi.
+
+### Eğiklik düzeltme (deskew)
+Görüntü −12°…+12° aralığında taranır, metin satırlarının en düzgün hizalandığı açı
+bulunur ve **yalnızca ≥1,5° eğiklik varsa** döndürme uygulanır. Düz fotoğraflarda
+hiçbir şey yapılmaz (boşuna bulanıklaştırma yok).
+
+### 5. okuma geçişi — yalnızca gerektiğinde
+İlk dört geçişten sonra litre/fiyat hâlâ eksikse veya tutarlar uyuşmuyorsa
+CLAHE + eğiklik düzeltmesi uygulanmış görüntüyle bir kez daha okunur.
+**İki koruma vardır:**
+- İlk dört geçişte **hiçbir alan bulunamadıysa** (fiş olmayan fotoğraf, ör. gösterge
+  paneli) 5. geçiş hiç çalışmaz — boşuna zaman harcanmaz.
+- Temiz fişlerde (FIS1/FIS2 gibi) 2.–5. geçişler zaten çalışmaz; süre ~2 sn'de kalır.
+
+### Boşluklu ondalık ve ürün satırı toplamı
+Termal yazıcı baskısında OCR ondalık noktayı boşluk olarak görebiliyor:
+- `8 560 LT X 41,06` → litre adayı **8,56** (8560 değil), birim fiyat 41,06.
+- `500 . 00` → **500,00**.
+- Ürün satırının sonundaki tutar (`… X 41,06 *352,29`) artık toplam adayı olur.
+Normal yazılmış sayılar (`41,80`, `1.989,12`) etkilenmez; litre × fiyat ≈ toplam
+çapraz kontrolü yine son sözü söyler.
+
+## Ölçüm (12 gerçek görüntü, 72 alan — tarayıcıda, gerçek OCR ile)
+
+| | v10.3 | v10.4 | v10.6 | **v10.7** |
+|---|---|---|---|---|
+| Toplam doğru alan | 37/72 (%51) | 52/72 (%72) | 57/72 (%79) | **61/72 (%85)** |
+| W3-POS (POS slipi, saat) | 4/6 | 4/6 | 5/6 | **6/6** |
+| W1-AYTEMIZ (çok silik) | 0/6 | 0/6 | 0/6 | **1/6** |
+| W5-TOTAL (kırışık + gölge) | 0/6 | 0/6 | 0/6 | **2/6** |
+| U3-AKAR (soluk ürün satırı) | 0/6 | 4/6 | 6/6 | **6/6** |
+| U2-POS / W2-LPG / W4-TP | 15/18 | 17/18 | 18/18 | **18/18** |
+| FIS1–FIS3 (temiz fişler) | 18/18 | 18/18 | 18/18 | **18/18** |
+| NEG-DASH (fiş olmayan fotoğraf) | 6/6 | 6/6 | 6/6 | **6/6** |
+
+Kazanımlar: W3 saati `10:44`, W1 toplamı `500,00`, W5 yakıt türü `Motorin` +
+litre `8,53` (gerçek 8,58). **Hiçbir doğru alan kaybedilmedi.**
+
+### Süre (dürüst not)
+Temiz fişler yine **~1,7–2 sn**. Zor fotoğraflarda 5. geçiş ek maliyet getirir:
+masaüstü tarayıcıda W3 ~15 sn, W5 ~19 sn. Telefonda daha uzun sürebilir; ekranda
+hangi aşamada olunduğu yazılı olarak gösterilir. Fiş olmayan fotoğraflarda
+5. geçiş atlandığı için süre v10.6 ile aynıdır (~6 sn).
+
+### Hâlâ okunamayanlar
+- **W1-AYTEMIZ:** litre/fiyat/tarih/saat hâlâ yok (aşırı silik baskı).
+- **W5-TOTAL:** birim fiyat `41,90` (gerçek 41,06), toplam `357,20` (gerçek 352,29),
+  tarih `2004-07-01` (gerçek 2024-05-12) — yani **yanlış okunan alanlar var.**
+Bu yüzden sonuç ekranı her zaman açılır: **değerleri görmeden, onaylamadan kayıt
+oluşmaz.** Uyarılar kaydetmeyi engellemez, yalnızca sizi bilgilendirir.
+
+Test paketi: **1009/1009 yeşil, 27 paket** (yeni: v10.7 ayrıştırıcı testleri, v10.7 dil
+kapsama testi ve korpus testinde W1/W3/W5 kazanım kilitleri — korpus eşiği 60/72'ye çıkarıldı).
+
+### v10.7 kurulumu (ZIP)
+- `yakit-takip-v10-7-guncelleme.zip` → değişen **5 dosya** (`ocr.js`, `i18n.js`,
+  `settings.js`, `settings-ui.js`, `sw.js`) + README + KURULUM.txt
+- `yakit-takip-v10-7-tam-paket.zip` → uygulamanın **33 dosyasının tamamı** (OCR motoru dahil)
+
+GitHub'da **Add file → Upload files** ile ZIP'ten çıkan dosyaları yükleyin; aynı adlı
+dosyalar üzerine yazılır. Kayıtlarınız tarayıcıda kaldığı için **veri kaybı olmaz**.
+OCR motor önbelleği korunur (`OCR_VERSION 6.0.0`), 5,6 MB yeniden inmez.
+
+---
+
 # Yakıt Takip v10.6 — OCR Doğruluk İyileştirmesi (2. tur)
 
 Bu sürüm, v10.5'in **iki dil (Türkçe/English)** desteğini aynen korur ve **fiş okuma

@@ -1,4 +1,4 @@
-/* Yakıt Takip v10.6 — Gerçek OCR (Tesseract.js, tamamen yerel/çevrimdışı)
+/* Yakıt Takip v10.7 — Gerçek OCR (Tesseract.js, tamamen yerel/çevrimdışı)
  * - Motor ve Türkçe model aynı klasörden yüklenir, CDN yoktur.
  * - Görüntü cihazdan çıkmaz; işleme WebWorker içinde yapılır.
  * - Çıkarılan alanlar: yakıt türü, litre, birim fiyat, toplam tutar, tarih, saat.
@@ -32,7 +32,8 @@
    */
   function parseTrNumberCandidates(raw) {
     if (raw == null) return [];
-    let s = String(raw).trim().replace(/\s/g, '').replace(/[₺]|TL|TRY/gi, '');
+    const spaced = String(raw).trim();
+    let s = spaced.replace(/\s/g, '').replace(/[₺]|TL|TRY/gi, '');
     // OCR binlik ayracı olarak ':' okuyabilir: 1:989.12 -> 1989.12 (saat 10:44 bozulmaz)
     s = s.replace(/(\d):(\d{3})(?=[.,\d]|$)/g, '$1$2');
     if (!s) return [];
@@ -55,6 +56,11 @@
     } else {
       push(parseFloat(s));
     }
+    // OCR ondalık ayracı yerine boşluk bırakabilir: "8 560" -> 8.560, "500 . 00" -> 500.00
+    const sp = spaced.replace(/[₺]|TL|TRY/gi, '').replace(/\s*\.\s*/g, '.').replace(/\s+/g, ' ');
+    let m2;
+    if ((m2 = sp.match(/^(\d{1,3}) (\d{3})$/))) { const v = parseFloat(m2[1] + '.' + m2[2]); if (Number.isFinite(v) && !out.some(x => Math.abs(x - v) < 1e-9)) out.push(v); }
+    if ((m2 = sp.match(/^(\d{1,3}) (\d{2})$/))) { const v = parseFloat(m2[1] + '.' + m2[2]); if (Number.isFinite(v) && !out.some(x => Math.abs(x - v) < 1e-9)) out.push(v); }
     return out.filter(Number.isFinite);
   }
 
@@ -96,7 +102,7 @@
   // Miktar ve fiyat daima ondalıklı yazılır (23,920 / 41,80). OCR birimi
   // 'LT', 'LI', 'TAX', '1T' diye bozabilir; birimi esnek tut, ondalığı şart koş.
   const QTY_PRICE_RE = new RegExp(
-    '([0-9]+[.,][0-9]{1,3})\\s*(?:[A-Z0-9]{0,3}\\s*)?[X×*#]\\s*([0-9]+[.,][0-9]{1,3})'
+    '([0-9]+[., ][0-9]{1,3})\\s*(?:[A-Z0-9]{0,3}\\s*)?[X×*#]\\s*([0-9]+[., ][0-9]{1,3})'
   );
 
   const LITER_PATTERNS = [
@@ -535,6 +541,12 @@
       if (p !== undefined && !out.price) {
         out.price = { value: p, line: idx, priority: -1, raw: m[2], text: line.trim() };
       }
+      // Satır sonundaki tutar (ürün satırı toplamı): "8,560 LT X 41,06 *352,29"
+      if (!out.total) {
+        const rest = U.slice(m.index + m[0].length);
+        const tm = rest.match(/([0-9][0-9., ]*[.,][0-9]{2})\s*$/);
+        if (tm) { const tv = parseTrNumberCandidates(fixDigits(tm[1])).find(v => v >= 5 && v <= 500000); if (tv !== undefined) out.total = { value: tv, line: idx, priority: 1, raw: tm[1], text: line.trim() }; }
+      }
       if (out.liters && out.price) break;
     }
     return out;
@@ -702,6 +714,7 @@
     // Miktar×fiyat satırından gelenler en yüksek öncelikli (priority -1)
     if (qtyPrice.liters) liters.unshift(qtyPrice.liters);
     if (qtyPrice.price) prices.unshift(qtyPrice.price);
+    if (qtyPrice.total) totals.push(qtyPrice.total);
     // Ürün satırındaki tutar (MOTORİN %20 *410,00) toplam için güçlü adaydır
     const productTotal = extractProductTotal(lines);
     if (productTotal) totals.push(Object.assign({}, productTotal, { priority: 1 }));
@@ -827,6 +840,53 @@
     return thr;
   }
 
+  // CLAHE: kontrast sınırlı uyarlamalı histogram eşitleme (soluk/karanlık fiş)
+  function clahe(gray, w, h, tiles, clip) {
+    tiles = tiles || 8; clip = clip || 2.5;
+    const tw = Math.ceil(w / tiles), th = Math.ceil(h / tiles);
+    const maps = [];
+    for (let ty = 0; ty < tiles; ty++) for (let tx = 0; tx < tiles; tx++) {
+      const x0 = tx * tw, y0 = ty * th, x1 = Math.min(w, x0 + tw), y1 = Math.min(h, y0 + th);
+      const hist = new Uint32Array(256); let cnt = 0;
+      for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) { hist[gray[y * w + x]]++; cnt++; }
+      const limit = Math.max(1, Math.round(clip * cnt / 256));
+      let excess = 0; for (let i = 0; i < 256; i++) if (hist[i] > limit) { excess += hist[i] - limit; hist[i] = limit; }
+      const add = Math.floor(excess / 256); let rem = excess - add * 256;
+      for (let i = 0; i < 256; i++) { hist[i] += add; if (rem > 0) { hist[i]++; rem--; } }
+      const map = new Uint8ClampedArray(256); let acc = 0; const scale = 255 / Math.max(1, cnt);
+      for (let i = 0; i < 256; i++) { acc += hist[i]; map[i] = Math.round(acc * scale); }
+      maps.push(map);
+    }
+    const out = new Uint8ClampedArray(w * h);
+    for (let y = 0; y < h; y++) {
+      const fy = y / th - 0.5; let ty0 = Math.max(0, Math.min(tiles - 1, Math.floor(fy))); const fy1 = fy - Math.floor(fy); const ty1 = Math.min(tiles - 1, ty0 + 1);
+      for (let x = 0; x < w; x++) {
+        const fx = x / tw - 0.5; let tx0 = Math.max(0, Math.min(tiles - 1, Math.floor(fx))); const fx1 = fx - Math.floor(fx); const tx1 = Math.min(tiles - 1, tx0 + 1);
+        const v = gray[y * w + x];
+        const a = maps[ty0 * tiles + tx0][v] + (maps[ty0 * tiles + tx1][v] - maps[ty0 * tiles + tx0][v]) * fx1;
+        const bb = maps[ty1 * tiles + tx0][v] + (maps[ty1 * tiles + tx1][v] - maps[ty1 * tiles + tx0][v]) * fx1;
+        out[y * w + x] = a + (bb - a) * fy1;
+      }
+    }
+    return out;
+  }
+  // Deskew: uyarlamalı ikili görüntü üzerinde izdüşüm profili ile eğiklik açısı tahmini
+  function estimateSkew(gray, w, h) {
+    const dw = 480, dh = Math.max(1, Math.round(h * dw / w));
+    const small = new Uint8ClampedArray(dw * dh);
+    for (let y = 0; y < dh; y++) for (let x = 0; x < dw; x++) small[y * dw + x] = gray[Math.round(y * h / dh) * w + Math.round(x * w / dw)];
+    // yerel ortalama ile metni izole et (karanlık arka planı değil)
+    const r = 12; const integ = new Float64Array((dw + 1) * (dh + 1));
+    for (let y = 0; y < dh; y++) { let row = 0; for (let x = 0; x < dw; x++) { row += small[y * dw + x]; integ[(y + 1) * (dw + 1) + (x + 1)] = integ[y * (dw + 1) + (x + 1)] + row; } }
+    const bin = new Uint8Array(dw * dh);
+    for (let j = 0; j < small.length; j++) { const x = j % dw, y = (j / dw) | 0; const x0 = Math.max(0, x - r), y0 = Math.max(0, y - r), x1 = Math.min(dw - 1, x + r), y1 = Math.min(dh - 1, y + r); const area = (x1 - x0 + 1) * (y1 - y0 + 1); const s = integ[(y1 + 1) * (dw + 1) + (x1 + 1)] - integ[y0 * (dw + 1) + (x1 + 1)] - integ[(y1 + 1) * (dw + 1) + x0] + integ[y0 * (dw + 1) + x0]; bin[j] = small[j] < s / area - 6 ? 1 : 0; }
+    const score = (ang) => { const t = Math.tan(ang * Math.PI / 180), cx = dw / 2; const proj = new Float64Array(dh + 40); for (let y = 0; y < dh; y++) for (let x = 0; x < dw; x++) if (bin[y * dw + x]) { const yy = Math.round(y + t * (x - cx)) + 20; if (yy >= 0 && yy < proj.length) proj[yy]++; } let s = 0; for (let i = 0; i < proj.length; i++) s += proj[i] * proj[i]; return s; };
+    let best = 0, bs = -1;
+    for (let a = -12; a <= 12; a += 1) { const sc = score(a); if (sc > bs) { bs = sc; best = a; } }
+    for (let a = best - 1; a <= best + 1; a += 0.25) { const sc = score(a); if (sc > bs) { bs = sc; best = a; } }
+    return best;
+  }
+
   async function preprocessImage(file, opts) {
     const o = opts || {};
     const variant = o.variant || 'plain';
@@ -882,6 +942,21 @@
     ctx.imageSmoothingEnabled = true;
     if ('imageSmoothingQuality' in ctx) ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(bitmap, sx, sy, sw, sh, 0, 0, w, h);
+    // Deskew: belirgin eğiklik varsa görüntüyü döndür
+    if (o.deskew) {
+      try {
+        const g0 = ctx.getImageData(0, 0, w, h).data;
+        const gg = new Uint8ClampedArray(w * h);
+        for (let i = 0, j = 0; i < g0.length; i += 4, j++) gg[j] = (g0[i] * 0.299 + g0[i + 1] * 0.587 + g0[i + 2] * 0.114) | 0;
+        const ang = estimateSkew(gg, w, h);
+        if (Math.abs(ang) >= 1.5) {
+          ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h);
+          ctx.translate(w / 2, h / 2); ctx.rotate(-ang * Math.PI / 180);
+          ctx.drawImage(bitmap, sx, sy, sw, sh, -w / 2, -h / 2, w, h);
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+        }
+      } catch (e) { /* deskew başarısız: döndürme */ }
+    }
     if (bitmap.close) bitmap.close();
 
     try {
@@ -914,7 +989,10 @@
         if (hi - lo < 240) stretch(lo, hi);
       };
 
-      if (variant === 'stretch') {
+      if (variant === 'clahe') {
+        const eq = clahe(gray, w, h, o.tiles || 8, o.clip || 2.5);
+        for (let j = 0; j < n; j++) gray[j] = eq[j];
+      } else if (variant === 'stretch') {
         percentileStretch(0.02);
       } else if (variant === 'otsu' || variant === 'adaptive' || variant === 'sharpen' || variant === 'receipt') {
         if (variant !== 'receipt') percentileStretch(0.01);
@@ -1134,6 +1212,24 @@
           await verifyNumericCrops(worker, pre4, p4);
           passes.push(p4);
         } catch (e) { console.warn('Dördüncü geçiş başarısız:', e); }
+      }
+
+      // --- 5. geçiş: hâlâ zayıfsa CLAHE + deskew (agresif ön işleme) ---
+      let m3 = passes.length > 1 ? mergeResults(passes) : p1;
+      // 4 geçişte hiçbir alan bulunamadıysa (fiş olmayan fotoğraf) 5. geçiş zaman kaybıdır.
+      const weak5 = m3.foundCount > 0 && (!m3.fields.liters || !m3.fields.price || !m3.consistent);
+      if ((weak5 || o.passes === 5) && passes.length < 5) {
+        setProgress('Kontrast ve eğiklik düzeltilerek okunuyor', 90);
+        try {
+          const pre5 = await pre(file, { variant: 'clahe', targetShort: 3000, deskew: true });
+          const r5 = await worker.recognize(pre5, {}, { text: true, tsv: true });
+          const p5 = parseReceipt(r5 && r5.data && r5.data.text || '');
+          p5.confidence = r5 && r5.data && Number.isFinite(r5.data.confidence) ? Math.round(r5.data.confidence) : null;
+          p5._tsvRows = parseTsvRows(r5 && r5.data && r5.data.tsv);
+          await verifyTimeWithCrop(worker, pre5, p5);
+          await verifyNumericCrops(worker, pre5, p5);
+          passes.push(p5);
+        } catch (e) { console.warn('Beşinci geçiş başarısız:', e); }
       }
 
       setProgress('Sonuçlar birleştiriliyor', 92);
