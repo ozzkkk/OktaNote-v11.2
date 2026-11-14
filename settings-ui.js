@@ -1,4 +1,4 @@
-/* Yakıt Takip v10 — Ayarlar ekranı (Fuelio tarzı gruplu liste)
+/* Yakıt Takip v10.1 — Ayarlar ekranı (Fuelio tarzı gruplu liste)
  * window.YakitSettingsUI
  */
 (function () {
@@ -114,7 +114,7 @@
     ].join(''));
 
     html += group('Hakkında', [
-      row({ icon: 'circle-info', iconBg: '#e0e7ff', iconFg: '#4f46e5', title: 'Yakıt Takip', desc: 'Sürüm 10.0.0', badge: 'v10' }),
+      row({ icon: 'circle-info', iconBg: '#e0e7ff', iconFg: '#4f46e5', title: 'Yakıt Takip', desc: 'Sürüm 10.1.0', badge: 'v10.1' }),
       row({ icon: 'shield-halved', iconBg: '#dcfce7', iconFg: '#059669', title: 'Gizlilik',
             desc: 'Veriler cihazınızda kalır. Sunucuya hiçbir şey gönderilmez.' }),
       row({ icon: 'file-lines', iconBg: '#f1f5f9', iconFg: '#64748b', title: 'Açık kaynak lisansları',
@@ -135,23 +135,42 @@
     return n + ' B';
   }
 
+  function kindBadge(kind) {
+    if (kind === 'safety') return '<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-700">güvenlik</span>';
+    if (kind === 'manual') return '<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">elle</span>';
+    return '<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">otomatik</span>';
+  }
+
+  function autoBackupErrorHtml() {
+    if (!S || !S.getAutoBackupStatus) return '';
+    var st = S.getAutoBackupStatus();
+    if (!st || st.ok !== false || !S.get().autoLocalBackup) return '';
+    var when = st.at ? new Date(st.at).toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' }) : '';
+    return '<div class="mb-2 bg-rose-50 border border-rose-200 rounded-xl p-2.5 text-[11px] text-rose-800">' +
+      '<div class="font-bold flex items-center gap-1.5"><i class="fa-solid fa-triangle-exclamation"></i> Otomatik yedek alınamadı</div>' +
+      '<div class="mt-0.5 text-rose-700">' + esc(st.error || 'Bilinmeyen hata') + (when ? ' · ' + esc(when) : '') + '</div>' +
+      '<button type="button" data-action="retry-auto-backup" class="mt-2 bg-rose-600 text-white text-[11px] font-semibold px-2.5 py-1.5 rounded-lg">Tekrar dene</button>' +
+      '</div>';
+  }
+
   async function refreshLocalBackups() {
     var box = document.getElementById('local-backup-list');
     if (!box || !S || !S.listLocalBackups) return;
     try {
       var list = await S.listLocalBackups();
+      var errHtml = autoBackupErrorHtml();
       if (!list.length) {
-        box.innerHTML = 'Henüz uygulama içi yedek yok. “Şimdi yedek al” ile ilk yedeği oluşturabilirsiniz.';
+        box.innerHTML = errHtml + 'Henüz uygulama içi yedek yok. “Şimdi yedek al” ile ilk yedeği oluşturabilirsiniz.';
         return;
       }
-      box.innerHTML = '<div class="text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-2">Son yedekler (' + list.length + ')</div>' +
+      box.innerHTML = errHtml + '<div class="text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-2">Son yedekler (' + list.length + ')</div>' +
         list.map(function (m) {
           var when = new Date(m.createdAt).toLocaleString('tr-TR', { dateStyle: 'medium', timeStyle: 'short' });
           var sum = m.summary || {};
           return '<div class="flex items-center gap-2 py-2 border-t border-slate-100">' +
             '<span class="flex-1 min-w-0">' +
             '<span class="block text-[12px] font-semibold text-slate-700">' + esc(when) +
-            ' <span class="text-[9px] font-bold px-1.5 py-0.5 rounded ' + (m.kind === 'auto' ? 'bg-slate-100 text-slate-500' : 'bg-blue-50 text-blue-600') + '">' + (m.kind === 'auto' ? 'otomatik' : 'elle') + '</span></span>' +
+            ' ' + kindBadge(m.kind) + '</span>' +
             '<span class="block text-[10px] text-slate-400">' + (sum.refuels || 0) + ' dolum · ' + (sum.vehicles || 0) + ' araç · ' + (sum.photos || 0) + ' fotoğraf · ' + fmtBytes(m.bytes) + '</span>' +
             '</span>' +
             '<button type="button" data-action="local-restore" data-id="' + esc(m.id) + '" class="shrink-0 text-[11px] font-semibold text-blue-600 bg-blue-50 px-2.5 py-1.5 rounded-lg">Geri yükle</button>' +
@@ -294,6 +313,7 @@
         });
         break;
       case 'local-backup-now': await doLocalBackup(); break;
+      case 'retry-auto-backup': await retryAutoBackup(); break;
       case 'local-restore': await pickLocalRestore(id); break;
       case 'local-delete': await doLocalDelete(id); break;
       case 'backup-download': await doBackup('download'); break;
@@ -349,6 +369,21 @@
     }
   }
 
+  async function retryAutoBackup() {
+    try {
+      toast('Otomatik yedek tekrar deneniyor…');
+      var r = await S.retryAutoBackup();
+      if (r) toast('Otomatik yedek alındı ✓ ' + fmtBytes(r.bytes));
+      else {
+        var st = S.getAutoBackupStatus && S.getAutoBackupStatus();
+        toast('Yedek alınamadı: ' + (st && st.error ? st.error : 'bilinmeyen hata'));
+      }
+      refreshLocalBackups(); renderReminder(); render();
+    } catch (e) {
+      toast('Yedek alınamadı: ' + (e.message || e));
+    }
+  }
+
   async function pickLocalRestore(id) {
     if (!id) return;
     try {
@@ -380,7 +415,9 @@
         .map(function (p) {
           return '<div class="bg-slate-50 rounded-lg px-2.5 py-1.5 flex justify-between"><span class="text-slate-500">' +
             p[0] + '</span><b class="text-slate-800">' + p[1] + '</b></div>';
-        }).join('') + '</div>';
+        }).join('') + '</div>' +
+      '<div class="mt-2 text-[10px] text-slate-500 flex items-start gap-1.5"><i class="fa-solid fa-shield-halved mt-0.5 text-emerald-600"></i>' +
+      '<span>Onaylarsanız önce mevcut verilerinizin <b>güvenlik yedeği</b> alınır, sonra bu yedek geri yüklenir.</span></div>';
     document.getElementById('settings-restore-modal').classList.remove('hidden');
   }
 
@@ -410,11 +447,14 @@
       var r = await S.restoreBackup(pendingBackup, { photos: true });
       document.getElementById('settings-restore-modal').classList.add('hidden');
       pendingBackup = null;
-      toast('Geri yüklendi: ' + r.summary.refuels + ' dolum, ' + r.photoCount + ' fotoğraf');
+      var msg = 'Geri yüklendi: ' + r.summary.refuels + ' dolum, ' + r.photoCount + ' fotoğraf';
+      if (r.safetyBackupId) msg += ' · önceki durum güvenlik yedeğinde';
+      toast(msg);
       if (window.renderAll) window.renderAll();
-      render();
+      refreshLocalBackups(); renderReminder(); render();
     } catch (e) {
       toast('Geri yüklenemedi: ' + (e.message || e));
+      refreshLocalBackups(); renderReminder();
     } finally {
       btn.disabled = false; btn.textContent = 'Geri yükle';
     }
@@ -492,6 +532,18 @@
   function renderReminder() {
     var box = document.getElementById('backup-reminder');
     if (!box) return;
+    var st = S && S.getAutoBackupStatus ? S.getAutoBackupStatus() : null;
+    var s0 = S.get();
+    if (st && st.ok === false && s0.autoLocalBackup) {
+      box.innerHTML = '<div class="bg-rose-50 border border-rose-200 rounded-2xl p-3 flex items-center gap-3">' +
+        '<i class="fa-solid fa-triangle-exclamation text-rose-500"></i>' +
+        '<div class="flex-1 min-w-0"><div class="text-[12px] font-semibold text-rose-900">Otomatik yedek alınamadı</div>' +
+        '<div class="text-[10px] text-rose-700">' + esc(st.error || 'Bilinmeyen hata') + '</div></div>' +
+        '<button type="button" onclick="YakitSettingsUI.retryAutoBackup()" class="shrink-0 bg-rose-600 text-white text-[11px] font-semibold px-3 py-1.5 rounded-lg">Tekrar dene</button>' +
+        '</div>';
+      box.classList.remove('hidden');
+      return;
+    }
     if (backupReminderDue()) {
       var s = S.get();
       box.innerHTML = '<div class="bg-amber-50 border border-amber-200 rounded-2xl p-3 flex items-center gap-3">' +
@@ -521,13 +573,18 @@
     document.getElementById('settings-restore-confirm').onclick = confirmRestore;
     document.getElementById('settings-restore-cancel').onclick = cancelRestore;
     initIconPicker();
+    // v10.1: Android saat seçicide saniye göstermesin (HH:MM)
+    ['refuel-time', 'trip-start-time', 'trip-end-time'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.setAttribute('step', '60');
+    });
     render();
-    // v10: otomatik uygulama içi yedek (günde 1, sessiz)
+    // v10: otomatik uygulama içi yedek (günde 1); hata olursa görünür uyarı
     if (S && S.maybeAutoBackup) {
       setTimeout(function () {
-        S.maybeAutoBackup().then(function (r) {
-          if (r) { refreshLocalBackups(); renderReminder(); }
-        }).catch(function () {});
+        S.maybeAutoBackup().then(function () {
+          refreshLocalBackups(); renderReminder();
+        }).catch(function () { renderReminder(); });
       }, 1500);
     }
   }
@@ -537,7 +594,7 @@
     openIconPicker: openIconPicker,
     renderReminder: renderReminder, backupReminderDue: backupReminderDue,
     quickBackup: quickBackup, closePicker: closePicker,
-    refreshLocalBackups: refreshLocalBackups
+    refreshLocalBackups: refreshLocalBackups, retryAutoBackup: retryAutoBackup
   };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
