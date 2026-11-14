@@ -424,6 +424,7 @@
             <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
                 <p class="text-xs text-slate-500 leading-relaxed">Aracınıza ait tüm yakıt dolumlarını, tüketim verilerini ve diğer harcamaları özet rapor olarak görüntüleyebilir veya CSV dosyası olarak indirebilirsiniz.</p>
                 <div id="report-summary-box" class="bg-slate-50 rounded-xl p-3 space-y-1.5 text-xs text-slate-700 border border-slate-200/70"></div>
+                <div id="report-week-box" class="bg-slate-50 rounded-xl p-3 space-y-1.5 text-xs text-slate-700 border border-slate-200/70"></div>
                 <div class="flex items-center justify-between bg-slate-50 rounded-xl px-3 py-2.5 border border-slate-200/70">
                     <span class="text-[11px] text-slate-500 flex items-center gap-1.5"><i class="fa-solid fa-database text-slate-400"></i> Fotoğraf Deposu</span>
                     <span id="report-storage-info" class="text-[11px] font-semibold text-slate-700">Hesaplanıyor...</span>
@@ -999,7 +1000,7 @@
                     </div>
                     <div>
                         <h3 class="font-bold text-slate-800 text-base">Fiş Fotoğrafı Yükle</h3>
-                        <p class="text-xs text-slate-500 mt-1 leading-relaxed">Fişin fotoğrafını seçin; litre, birim fiyat, toplam tutar ve tarih okunup size gösterilir. Onaylamadan kayıt oluşmaz.</p>
+                        <p class="text-xs text-slate-500 mt-1 leading-relaxed">Fişin fotoğrafını seçin; yakıt türü, litre, birim fiyat, toplam tutar, tarih ve saat okunup size gösterilir. Onaylamadan kayıt oluşmaz.</p>
                     </div>
                     <label class="w-full bg-slate-800 text-white font-semibold py-3 rounded-2xl text-sm cursor-pointer shadow text-center">
                         Fotoğraf Seç / Çek
@@ -1324,13 +1325,14 @@
     function priceDisplayFromLiter(ppl) {
         const S = window.YakitSettings;
         if (!S) return Number(ppl || 0);
-        return S.litersToDisplay(1) * Number(ppl || 0);
+        const per = S.litersToDisplay(1); // 1 L'nin seçilen hacim birimindeki karşılığı
+        return per ? Number(ppl || 0) / per : Number(ppl || 0);
     }
     function priceLiterFromDisplay(v) {
         const S = window.YakitSettings;
         if (!S) return Number(v || 0);
         const per = S.litersToDisplay(1);
-        return per ? Number(v || 0) / per : Number(v || 0);
+        return per ? Number(v || 0) * per : Number(v || 0);
     }
     function readPriceInput(id) {
         const el = document.getElementById(id);
@@ -1342,6 +1344,21 @@
         if (!el) return;
         if (ppl === '' || ppl === null || ppl === undefined || !isFinite(ppl)) { el.value = ''; return; }
         el.value = +priceDisplayFromLiter(ppl).toFixed(2);
+    }
+    // v9: hesaplayıcı girdileri birim değişince fiziksel değeri koruyarak çevrilir
+    let lastCalcCanonical = null;
+    let lastCalcSig = '';
+    function vehicleFuelToRefuelType(ft) {
+        if (ft === 'Dizel') return 'Motorin (Dizel)';
+        if (ft === 'LPG') return 'LPG';
+        if (ft === 'Benzin') return 'Kurşunsuz 95';
+        return 'Kurşunsuz 95';
+    }
+    function setRefuelFuelType(ft) {
+        const el = document.getElementById('refuel-type');
+        if (!el) return;
+        const allowed = Array.from(el.options).map(o => o.value);
+        el.value = allowed.includes(ft) ? ft : 'Kurşunsuz 95';
     }
     // Etiketleri güncelle
     function updateUnitLabels() {
@@ -1371,6 +1388,14 @@
         if (np) np.placeholder = d === 'km' ? 'Güncel Km' : 'Güncel Mil';
         const nt = document.getElementById('new-vehicle-tank');
         if (nt) nt.placeholder = `Tank (${v})`;
+        const sig = [S.get().distanceUnit, S.get().volumeUnit, S.get().consumptionUnit].join('|');
+        if (lastCalcSig && sig !== lastCalcSig && lastCalcCanonical) {
+            writeDistInput('calc-distance', lastCalcCanonical.distance, 3);
+            writePriceInput('calc-price', lastCalcCanonical.pricePerLiter);
+            const ce = document.getElementById('calc-consumption');
+            if (ce) ce.value = +S.consumptionFromL100(lastCalcCanonical.consumptionL100).toFixed(4);
+        }
+        lastCalcSig = sig;
     }
 
     // --- Güvenlik: HTML kaçışı (XSS önleme) ---
@@ -1809,11 +1834,11 @@
         const vehicle = getActiveVehicle();
         document.getElementById('edit-refuel-id').value = record.id;
         document.getElementById('refuel-modal-title').textContent = 'Dolumu Düzenle';
-        document.getElementById('refuel-odo').value = record.odometer;
+        writeDistInput('refuel-odo', record.odometer);
         document.getElementById('refuel-last-odo-hint').textContent = `Son değer: ${fmtDistance(vehicle.odometer, 0)}`;
-        document.getElementById('refuel-liters').value = record.liters;
-        document.getElementById('refuel-type').value = record.fuelType || 'Kurşunsuz 95';
-        document.getElementById('refuel-price').value = record.pricePerLiter;
+        writeVolInput('refuel-liters', record.liters);
+        setRefuelFuelType(record.fuelType);
+        writePriceInput('refuel-price', record.pricePerLiter);
         document.getElementById('refuel-total').value = record.totalCost;
         document.getElementById('refuel-date').value = record.date || '';
         document.getElementById('refuel-time').value = record.time || '';
@@ -1867,13 +1892,14 @@
         writeVolInput('refuel-liters', prefill.liters || '');
         writePriceInput('refuel-price', prefill.price || (lastRefuel ? lastRefuel.pricePerLiter : 81.60));
         document.getElementById('refuel-total').value = prefill.total || '';
+        setRefuelFuelType(prefill.fuelType || (lastRefuel && lastRefuel.fuelType) || vehicleFuelToRefuelType(vehicle.fuelType));
         document.getElementById('refuel-full').checked = true;
         const tankCapEl = document.getElementById('refuel-tank-capacity');
         if (tankCapEl) writeVolInput('refuel-tank-capacity', vehicle.tankCapacity || '');
 
         const now = new Date();
-        document.getElementById('refuel-date').value = todayKey();
-        document.getElementById('refuel-time').value = now.toTimeString().slice(0, 5);
+        document.getElementById('refuel-date').value = prefill.date || todayKey();
+        document.getElementById('refuel-time').value = prefill.time || now.toTimeString().slice(0, 5);
         document.getElementById('refuel-note').value = '';
 
         selectedStationName = '';
@@ -2114,7 +2140,7 @@
             }
         }
 
-        const tankCapVal = parseFloat(document.getElementById('refuel-tank-capacity')?.value);
+        const tankCapVal = readVolInput('refuel-tank-capacity');
         if (!isNaN(tankCapVal) && tankCapVal > 0) {
             vehicle.tankCapacity = tankCapVal;
         }
@@ -2153,6 +2179,7 @@
         const price = S ? priceLiterFromDisplay(parseFloat(priceEl.value) || 0) : (parseFloat(priceEl.value) || 0);
         const consVal = parseFloat(consEl.value) || 0;
         const consumption = S ? S.consumptionToL100(consVal) : consVal;
+        lastCalcCanonical = { distance: distance, pricePerLiter: price, consumptionL100: consumption };
 
         const neededLiters = (distance * consumption) / 100;
         const totalCost = neededLiters * price;
@@ -2972,9 +2999,10 @@
         const vRefuels = state.refuels.filter(r => r.vehicleId === vehicle.id);
         // BOM: Excel'de Türkçe karakterlerin doğru görünmesi için
         const csvEscape = val => `"${String(val ?? '').replace(/"/g, '""')}"`;
-        let csv = '\uFEFF' + 'Tarih,Kilometre,Litre,Birim Fiyat (TL),Toplam Tutar (TL),Yakıt Tipi,İstasyon,İstasyon Adresi,Enlem,Boylam,Konum Kaynağı,Not\n';
+        const curCode = window.YakitSettings ? window.YakitSettings.get().currency : 'TRY';
+        let csv = '\uFEFF' + `Tarih,Saat,Mesafe (km),Hacim (L),Birim Fiyat (${curCode}/L),Toplam Tutar (${curCode}),Yakıt Tipi,İstasyon,İstasyon Adresi,Enlem,Boylam,Konum Kaynağı,Not\n`;
         [...vRefuels].sort(compareRefuelsAsc).forEach(r => {
-            csv += [r.date, r.odometer, r.liters, r.pricePerLiter, r.totalCost, r.fuelType, r.station || '', r.stationAddress || '', r.stationLat ?? '', r.stationLon ?? '', r.stationSource || '', r.note || ''].map(csvEscape).join(',') + '\n';
+            csv += [r.date, r.time || '', r.odometer, r.liters, r.pricePerLiter, r.totalCost, r.fuelType, r.station || '', r.stationAddress || '', r.stationLat ?? '', r.stationLon ?? '', r.stationSource || '', r.note || ''].map(csvEscape).join(',') + '\n';
         });
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
@@ -3222,8 +3250,8 @@
         if (vRefuels.length > 0) {
             const bestP = Math.min(...vRefuels.map(r => r.pricePerLiter));
             const worstP = Math.max(...vRefuels.map(r => r.pricePerLiter));
-            if (bestPriceEl) bestPriceEl.textContent = formatCurrency(bestP) + '/L';
-            if (worstPriceEl) worstPriceEl.textContent = formatCurrency(worstP) + '/L';
+            if (bestPriceEl) bestPriceEl.textContent = (window.YakitSettings ? window.YakitSettings.pricePerVolume(bestP) : formatCurrency(bestP)) + '/' + volLabel();
+            if (worstPriceEl) worstPriceEl.textContent = (window.YakitSettings ? window.YakitSettings.pricePerVolume(worstP) : formatCurrency(worstP)) + '/' + volLabel();
         } else {
             if (bestPriceEl) bestPriceEl.textContent = '₺0,00';
             if (worstPriceEl) worstPriceEl.textContent = '₺0,00';
@@ -3293,8 +3321,8 @@
             if (minRefuelEl) minRefuelEl.textContent = `${fmtVolume(minR.liters, 1)} / ${formatCurrency(minR.totalCost)}`;
             if (maxRefuelEl) maxRefuelEl.textContent = `${fmtVolume(maxR.liters, 1)} / ${formatCurrency(maxR.totalCost)}`;
         } else {
-            if (minRefuelEl) minRefuelEl.textContent = '0 L / ₺0';
-            if (maxRefuelEl) maxRefuelEl.textContent = '0 L / ₺0';
+            if (minRefuelEl) minRefuelEl.textContent = '0 ' + volLabel() + ' / ' + formatCurrency(0);
+            if (maxRefuelEl) maxRefuelEl.textContent = '0 ' + volLabel() + ' / ' + formatCurrency(0);
         }
 
         const avgDailyEl = document.getElementById('stat-avg-daily-km');
@@ -3316,9 +3344,9 @@
             if (bestConsEl) bestConsEl.textContent = fmtConsumption(bestC, 1);
             if (worstConsEl) worstConsEl.textContent = fmtConsumption(worstC, 1);
         } else {
-            if (avgConsEl) avgConsEl.textContent = '0,0 L';
-            if (bestConsEl) bestConsEl.textContent = '0,0 L';
-            if (worstConsEl) worstConsEl.textContent = '0,0 L';
+            if (avgConsEl) avgConsEl.textContent = '0,0 ' + consLabel();
+            if (bestConsEl) bestConsEl.textContent = '0,0 ' + consLabel();
+            if (worstConsEl) worstConsEl.textContent = '0,0 ' + consLabel();
         }
 
         const chronologicalRefuels = [...vRefuels].sort(compareRefuelsAsc);
@@ -3425,8 +3453,25 @@
                 <div class="flex justify-between"><span>Araç:</span><strong>${escapeHtml(vehicle.name)}</strong></div>
                 <div class="flex justify-between"><span>Güncel Kilometre:</span><strong>${fmtDistance(vehicle.odometer, 0)}</strong></div>
                 <div class="flex justify-between"><span>Toplam Dolum Sayısı:</span><strong>${vRefuels.length}</strong></div>
-                <div class="flex justify-between"><span>Toplam Yakıt:</span><strong>${totalLiters.toFixed(2)} L</strong></div>
+                <div class="flex justify-between"><span>Toplam Yakıt:</span><strong>${fmtVolume(totalLiters, 2)}</strong></div>
                 <div class="flex justify-between"><span>Toplam Maliyet:</span><strong>${formatCurrency(totalSpent)}</strong></div>
+            `;
+        }
+
+        const weekBox = document.getElementById('report-week-box');
+        if (weekBox && window.YakitSettings) {
+            const range = window.YakitSettings.weekRange(new Date());
+            const weekRefuels = vRefuels.filter(r => window.YakitSettings.inWeekRange(r.date, range));
+            const weekLiters = weekRefuels.reduce((a, r) => a + (Number(r.liters) || 0), 0);
+            const weekCost = weekRefuels.reduce((a, r) => a + (Number(r.totalCost) || 0), 0);
+            weekBox.innerHTML = `
+                <div class="flex items-center justify-between gap-2">
+                    <span class="font-semibold text-slate-700">Bu hafta</span>
+                    <span class="text-[10px] text-slate-400 text-right">${escapeHtml(window.YakitSettings.weekStartLabel())} başlangıçlı · ${fmtDate(range.startKey)} – ${fmtDate(range.endKey)}</span>
+                </div>
+                <div class="flex justify-between"><span>Dolum sayısı:</span><strong>${weekRefuels.length}</strong></div>
+                <div class="flex justify-between"><span>Yakıt:</span><strong>${fmtVolume(weekLiters, 2)}</strong></div>
+                <div class="flex justify-between"><span>Dolum maliyeti:</span><strong>${formatCurrency(weekCost)}</strong></div>
             `;
         }
 
@@ -3491,4 +3536,4 @@
 
 </script>
 </body>
-</html>
+    </html>
