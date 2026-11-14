@@ -1,4 +1,4 @@
-# Yakıt Takip v10.2 — Veri Giriş Korumaları
+# Yakıt Takip v10.3 — Bakım Hatırlatıcıları
 
 Bu sürümde **fiş tarama artık gerçek**: fotoğraf çekiyorsunuz, uygulama yazıyı telefonun
 kendi işlemcisinde okuyor ve **yakıt türü, litre, birim fiyat, toplam tutar, tarih, saat** alanlarını dolum
@@ -6,6 +6,33 @@ formuna aktarıyor. v9 ayrıca **yakıt türü** ve **saat** okur. Önceki sür�
 
 **Fotoğraflar hiçbir sunucuya gönderilmez.** OCR motoru (Tesseract.js + Türkçe dil modeli)
 sitenizin kendi dosyaları arasındadır; ilk indirmeden sonra **internet olmadan** çalışır.
+
+## v10.3'te yeni olanlar
+
+### Bakım hatırlatıcıları (`maintenance.js`)
+- **Türler:** Yağ / Servis, Muayene, Sigorta / Kasko, Lastik, Diğer.
+- **Hedef:** tarih veya km. İkisi birden girilirse **hangisi önce gelirse** uyarır.
+- **Durumlar:** Planlandı · Yaklaşıyor (≤14 gün veya ≤500 km) · Gecikti · Tamamlandı.
+- **Ana ekran kartı:** yaklaşan/geciken hatırlatıcıları gösterir, “Bakım” düğmesiyle ekrana gider.
+- **Bakım ekranı:** menüde ve Ayarlar → Veri altında; ekle / düzenle / sil / tamamlandı.
+- **Tekrar:** “her X km” ve/veya “her X ay” girilirse Tamamlandı sonrası yeni hedef otomatik kurulur;
+  boşsa hatırlatıcı kapanır.
+- **Gider ilişkilendirme:** Bakım/Servis, Sigorta/Kasko veya Lastik gideri kaydedilince ilgili
+  hatırlatıcıyı tamamlandı olarak işaretlemek isteyip istemediğinizi sorar.
+- Veriler `state.reminders` içinde tutulur; **yedeklere dahildir**, geri yüklemede korunur.
+- İnternet / push bildirimi yoktur; uygulama içi uyarı, çevrimdışı çalışır.
+
+Test paketi: **817/817** yeşil; üç gerçek fişte OCR hâlâ **18/18** alan.
+
+### v10.3 kurulumu (ZIP)
+- `yakit-takip-v10-3-guncelleme.zip` → değişen **5 dosya** + `maintenance.js` (yeni) + README + KURULUM.txt
+- `yakit-takip-v10-3-tam-paket.zip` → uygulamanın **32 dosyasının tamamı** (OCR motoru dahil)
+
+GitHub'da **Add file → Upload files** ile ZIP'ten çıkan dosyaları yükleyin; aynı adlı dosyalar
+üzerine yazılır, `maintenance.js` yeni eklenir. Kayıtlarınız tarayıcıda kaldığı için **veri kaybı olmaz**.
+OCR motor önbelleği korunur (`OCR_VERSION 6.0.0`), 5,6 MB yeniden inmez.
+
+---
 
 ## v10.2'de yeni olanlar
 

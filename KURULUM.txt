@@ -1,27 +1,27 @@
-YAKIT TAKİP v10.2 — VERİ GİRİŞ KORUMALARI
-=========================================
+YAKIT TAKİP v10.3 — BAKIM HATIRLATICILARI
+==========================================
 
 BU ZIP NE İŞE YARAR?
-Kaydetmeden önce üç kontrol yapar: mükerrer dolum, sayaç (km) hatası, tüketim sapması.
-Kayıt ENGELLEMEZ; uyarır. "Yine de kaydet" ile devam edebilirsiniz.
-Ayarlar > Ana tercihler > Veri giriş uyarıları ile kapatılabilir.
+Yağ / servis, muayene, sigorta, lastik için tarih veya km hedefli hatırlatıcılar ekler.
+Ana ekranda yaklaşan/geciken bakım kartı çıkar. Menüde "Bakım" ekranı vardır.
+Gider kaydedince ilgili hatırlatıcıyı tamamlandı olarak işaretlemeyi önerir.
+İnternet/push yoktur; uygulama içi uyarır. Yedeklere dahildir.
 
 GÜNCELLEME (mevcut siteniz varsa — önerilen)
 1. ZIP'i telefonda/bilgisayarda açın (klasör yok, dosyalar kökte).
 2. Tarayıcıdan github.com > ozzkkk/yakit deposunu açın (main dalı).
 3. Add file > Upload files'a dokunun.
 4. ZIP'ten çıkan şu dosyaları seçip yükleyin:
-   guards.js      (YENİ dosya)
-   index.html     (üzerine yazar)
-   settings.js    (üzerine yazar)
-   settings-ui.js (üzerine yazar)
-   sw.js          (üzerine yazar)
-   tailwind.css   (üzerine yazar)
-   README.md      (isteğe bağlı)
+   maintenance.js  (YENİ dosya)
+   index.html      (üzerine yazar)
+   settings.js     (üzerine yazar)
+   settings-ui.js  (üzerine yazar)
+   sw.js           (üzerine yazar)
+   README.md       (isteğe bağlı)
 5. Commit changes deyin.
 6. https://ozzkkk.github.io/yakit/ adresini bir kez yenileyin.
 
-TAM PAKET ZIP'i kullanıyorsanız: içindeki 31 dosyanın tamamını yükleyin.
+TAM PAKET ZIP'i kullanıyorsanız: içindeki 32 dosyanın tamamını yükleyin.
 serve.py gerekmez (yalnızca yerel test sunucusu).
 
 VERİLERİM SİLİNİR Mİ?
@@ -29,10 +29,11 @@ Hayır. Kayıtlarınız tarayıcının localStorage/IndexedDB alanında durur.
 Dosya değiştirmek verileri silmez. OCR motoru da yeniden inmez (5,6 MB korunur).
 
 KONTROL
-- Ayarlar > Hakkında: "Sürüm 10.2.0" ve v10.2 yazmalı.
-- Ayarlar > Ana tercihler: "Veri giriş uyarıları" satırı görünmeli.
-- Aynı fişi iki kez kaydetmeyi deneyin: uyarı çıkmalı.
+- Ayarlar > Hakkında: "Sürüm 10.3.0" ve v10.3 yazmalı.
+- Menüde "Bakım" satırı görünmeli.
+- Ayarlar > Veri: "Bakım hatırlatıcıları" satırı görünmeli.
+- Bakım ekranında "Yeni" ile hatırlatıcı ekleyin; km hedefi yakınsa ana ekranda kart çıkar.
 
 SORUN OLURSA
-- Uyarı hiç çıkmıyorsa: Ayarlar'da anahtarın açık olduğundan emin olun, sayfayı yenileyin.
+- Bakım ekranı boşsa: araç seçili olduğundan emin olun, sayfayı yenileyin.
 - Eski sürüm görünüyorsa: bir kez daha yenileyin; service worker güncellemeyi alır.

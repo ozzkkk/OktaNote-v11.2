@@ -22,6 +22,7 @@
     <script src="./guards.js"></script>
     <script src="./settings.js"></script>
     <script src="./settings-ui.js" defer></script>
+    <script src="./maintenance.js" defer></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -118,6 +119,7 @@
         <!-- 1. ANA SAYFA GÖRÜNÜMÜ -->
         <section id="view-home" class="space-y-4 pt-1">
             <div id="backup-reminder" class="hidden"></div>
+            <div id="maintenance-home"></div>
             <!-- Yakıt Bölümü -->
             <div>
                 <div class="flex items-center justify-between mb-2 px-1">
@@ -489,6 +491,15 @@
         </section>
 
         <!-- 8. AYARLAR GÖRÜNÜMÜ (v7) -->
+        <section id="view-maintenance" class="hidden space-y-3 pt-1">
+            <div class="flex items-center justify-between px-1">
+                <button type="button" onclick="switchView('home')" aria-label="Geri" class="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-600"><i class="fa-solid fa-arrow-left text-sm"></i></button>
+                <h2 class="font-bold text-slate-800 text-base">Bakım Hatırlatıcıları</h2>
+                <div class="w-8"></div>
+            </div>
+            <div id="maintenance-body" class="space-y-3"></div>
+        </section>
+
         <section id="view-settings" class="hidden space-y-3 pt-1">
             <div class="flex items-center gap-2 px-1">
                 <button type="button" onclick="switchView('home')" aria-label="Geri" class="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-600"><i class="fa-solid fa-arrow-left text-sm"></i></button>
@@ -573,6 +584,10 @@
             <button onclick="switchView('calculator'); toggleDrawer(false)" class="w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl hover:bg-slate-50 text-slate-700 font-medium">
                 <i class="fa-solid fa-calculator w-5 text-center text-slate-500"></i>
                 <span>Yolculuk Hesaplayıcı</span>
+            </button>
+            <button onclick="switchView('maintenance'); toggleDrawer(false)" class="w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl hover:bg-slate-50 text-slate-700 font-medium">
+                <i class="fa-solid fa-gears w-5 text-center text-slate-500"></i>
+                <span class="text-sm">Bakım</span>
             </button>
             <button onclick="switchView('vehicles'); toggleDrawer(false)" class="w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl hover:bg-slate-50 text-slate-700 font-medium">
                 <i class="fa-solid fa-car w-5 text-center text-slate-500"></i>
@@ -1081,6 +1096,59 @@
         </div>
     </div>
 
+    <!-- v10.3: BAKIM HATIRLATICI DÜZENLEYİCİ -->
+    <div id="maintenance-modal" class="hidden absolute inset-0 bg-white z-50 flex flex-col">
+        <div class="px-4 py-3 flex items-center justify-between border-b border-slate-100">
+            <button type="button" id="maint-cancel-btn" class="w-9 h-9 rounded-full hover:bg-slate-100 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+            <span id="maint-title" class="font-bold text-slate-800 text-sm">Yeni hatırlatıcı</span>
+            <button type="button" id="maint-save-btn" class="w-9 h-9 rounded-full bg-slate-800 text-white flex items-center justify-center"><i class="fa-solid fa-check"></i></button>
+        </div>
+        <div class="flex-1 overflow-y-auto no-scrollbar p-4 space-y-3">
+            <input type="hidden" id="maint-edit-id">
+            <div>
+                <label class="block text-xs font-medium text-slate-500 mb-1">Tür</label>
+                <select id="maint-type" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-semibold">
+                    <option value="oil">Yağ / Servis</option>
+                    <option value="inspection">Muayene</option>
+                    <option value="insurance">Sigorta / Kasko</option>
+                    <option value="tires">Lastik</option>
+                    <option value="custom">Diğer</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-500 mb-1">Başlık (isteğe bağlı)</label>
+                <input type="text" id="maint-name" placeholder="Örn: Yağ + filtre" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1">Tarih hedefi</label>
+                    <input type="date" id="maint-due-date" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1">Km hedefi</label>
+                    <input type="number" id="maint-due-km" placeholder="Örn: 15000" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold">
+                    <div id="maint-odo-hint" class="text-[10px] text-slate-400 mt-1"></div>
+                </div>
+            </div>
+            <p class="text-[10px] text-slate-400 leading-relaxed">Tarih veya km’den en az biri gerekli. İkisi birden girilirse hangisi önce gelirse uyarır.</p>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1">Tekrar: her X km</label>
+                    <input type="number" id="maint-interval-km" placeholder="Örn: 10000" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1">Tekrar: her X ay</label>
+                    <input type="number" id="maint-interval-months" placeholder="Örn: 12" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold">
+                </div>
+            </div>
+            <p class="text-[10px] text-slate-400 leading-relaxed">Tekrar alanları doluysa “Tamamlandı” sonrası yeni hedef otomatik belirlenir; boşsa hatırlatıcı kapanır.</p>
+            <div>
+                <label class="block text-xs font-medium text-slate-500 mb-1">Not</label>
+                <input type="text" id="maint-note" placeholder="İsteğe bağlı" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs">
+            </div>
+        </div>
+    </div>
+
     <!-- ARAÇ DÜZENLE MODALI -->
     <div id="edit-vehicle-modal" class="hidden absolute inset-0 bg-white z-50 flex flex-col">
         <div class="px-4 py-3 flex items-center justify-between border-b border-slate-100">
@@ -1225,7 +1293,8 @@
             }
         ],
         expenses: [],
-        trips: []
+        trips: [],
+        reminders: []
     };
 
     let state = loadState();
@@ -1250,7 +1319,8 @@
                         vehicles: Array.isArray(parsed.vehicles) && parsed.vehicles.length ? parsed.vehicles : JSON.parse(JSON.stringify(defaultState.vehicles)),
                         refuels: Array.isArray(parsed.refuels) ? parsed.refuels : [],
                         expenses: Array.isArray(parsed.expenses) ? parsed.expenses : [],
-                        trips: Array.isArray(parsed.trips) ? parsed.trips : []
+                        trips: Array.isArray(parsed.trips) ? parsed.trips : [],
+                        reminders: Array.isArray(parsed.reminders) ? parsed.reminders : []
                     };
                     merged.vehicles = merged.vehicles.filter(v => v && typeof v.id === 'string' && typeof v.name === 'string')
                         .map(v => ({ ...v, odometer: Number(v.odometer) || 0, tankCapacity: Number(v.tankCapacity) || 50, fuelType: v.fuelType || 'Benzin', icon: typeof v.icon === 'string' ? v.icon : 'car', color: typeof v.color === 'string' ? v.color : 'slate' }));
@@ -1261,6 +1331,13 @@
                         .map(e => ({ ...e, amount: Number(e.amount) || 0 }));
                     merged.trips = merged.trips.filter(t => t && typeof t.id === 'string')
                         .map(t => ({ ...t, distance: Number(t.distance) || 0, startOdo: Number(t.startOdo) || 0, endOdo: Number(t.endOdo) || 0 }));
+                    merged.reminders = merged.reminders.filter(m => m && typeof m.id === 'string' && typeof m.vehicleId === 'string')
+                        .map(m => ({ ...m, type: typeof m.type === 'string' ? m.type : 'custom', title: typeof m.title === 'string' ? m.title : '',
+                            dueDate: typeof m.dueDate === 'string' ? m.dueDate : '',
+                            dueKm: m.dueKm == null || m.dueKm === '' ? null : Number(m.dueKm) || 0,
+                            intervalKm: m.intervalKm == null || m.intervalKm === '' ? null : Number(m.intervalKm) || 0,
+                            intervalMonths: m.intervalMonths == null || m.intervalMonths === '' ? null : Number(m.intervalMonths) || 0,
+                            done: !!m.done, note: typeof m.note === 'string' ? m.note : '' }));
                     if (!merged.vehicles.some(v => v.id === merged.activeVehicleId)) merged.activeVehicleId = merged.vehicles[0].id;
                     return merged;
                 }
@@ -1762,7 +1839,7 @@
 
     function switchView(viewName) {
         openTimelineMenuId = null;
-        const views = ['home', 'timeline', 'calculator', 'stats', 'trips', 'reports', 'vehicles', 'settings'];
+        const views = ['home', 'timeline', 'calculator', 'stats', 'trips', 'reports', 'vehicles', 'maintenance', 'settings'];
         views.forEach(v => {
             const el = document.getElementById('view-' + v);
             if (el) el.classList.toggle('hidden', v !== viewName);
@@ -1786,6 +1863,7 @@
         renderAll();
         if (viewName === 'reports') updateStorageInfo();
         if (viewName === 'settings' && window.YakitSettingsUI) window.YakitSettingsUI.render();
+        if (viewName === 'maintenance' && window.YakitMaintenance) window.YakitMaintenance.renderView();
     }
 
     function toggleDrawer(open) {
@@ -2838,6 +2916,7 @@
         document.getElementById('expense-modal').classList.add('hidden');
         renderAll();
         showToast('Maliyet eklendi');
+        if (window.YakitMaintenance) window.YakitMaintenance.onExpenseSaved(newExpense);
     }
 
     function openTripModal() {
@@ -3178,6 +3257,7 @@
         if (odoEl) odoEl.textContent = fmtDistance(vehicle.odometer, 0);
         // v7: yedek hatırlatması + simge düğmeleri + birim etiketleri
         if (window.YakitSettingsUI) window.YakitSettingsUI.renderReminder();
+        if (window.YakitMaintenance) window.YakitMaintenance.renderHome();
         renderNewVehicleIconBtn();
         updateUnitLabels();
 

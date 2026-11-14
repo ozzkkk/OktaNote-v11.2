@@ -1,4 +1,4 @@
-/* Yakıt Takip v10.2 — Ayarlar ekranı (Fuelio tarzı gruplu liste)
+/* Yakıt Takip v10.3 — Ayarlar ekranı (Fuelio tarzı gruplu liste)
  * window.YakitSettingsUI
  */
 (function () {
@@ -108,6 +108,8 @@
     ].join(''));
 
     html += group('Veri', [
+      row({ icon: 'gears', iconBg: '#e0e7ff', iconFg: '#4f46e5', title: 'Bakım hatırlatıcıları',
+            desc: 'Yağ, muayene, sigorta, lastik — tarih veya km', action: 'maintenance', arrow: true }),
       row({ icon: 'file-csv', iconBg: '#dcfce7', iconFg: '#059669', title: 'CSV raporu indir',
             desc: 'Dolumları tablo olarak dışa aktar', action: 'csv', arrow: true }),
       row({ icon: 'database', iconBg: '#f1f5f9', iconFg: '#64748b', title: 'Depolama', desc: '…', action: 'storage' }),
@@ -116,7 +118,7 @@
     ].join(''));
 
     html += group('Hakkında', [
-      row({ icon: 'circle-info', iconBg: '#e0e7ff', iconFg: '#4f46e5', title: 'Yakıt Takip', desc: 'Sürüm 10.2.0', badge: 'v10.2' }),
+      row({ icon: 'circle-info', iconBg: '#e0e7ff', iconFg: '#4f46e5', title: 'Yakıt Takip', desc: 'Sürüm 10.3.0', badge: 'v10.3' }),
       row({ icon: 'shield-halved', iconBg: '#dcfce7', iconFg: '#059669', title: 'Gizlilik',
             desc: 'Veriler cihazınızda kalır. Sunucuya hiçbir şey gönderilmez.' }),
       row({ icon: 'file-lines', iconBg: '#f1f5f9', iconFg: '#64748b', title: 'Açık kaynak lisansları',
@@ -187,7 +189,7 @@
   function viewLabel(v) {
     return { home: 'Ana sayfa', timeline: 'Kilometre günlüğü', stats: 'İstatistikler',
              vehicles: 'Taşıtlar', trips: 'Yolculuk kaydı', calculator: 'Hesaplayıcı',
-             reports: 'Raporlar' }[v] || 'Ana sayfa';
+             reports: 'Raporlar', maintenance: 'Bakım' }[v] || 'Ana sayfa';
   }
 
   async function refreshStorage() {
@@ -333,6 +335,7 @@
         }
         break;
       case 'ocr-status': refreshOcr(); toast('Durum yenilendi'); break;
+      case 'maintenance': if (window.switchView) window.switchView('maintenance'); break;
       case 'csv': if (window.downloadCSVReport) window.downloadCSVReport(); break;
       case 'reset': if (window.resetDemoData) window.resetDemoData(); break;
       case 'licenses': window.open('./LICENSES.txt', '_blank'); break;
