@@ -1,4 +1,4 @@
-/* Yakıt Takip v9 — Ayarlar ekranı (Fuelio tarzı gruplu liste)
+/* Yakıt Takip v10 — Ayarlar ekranı (Fuelio tarzı gruplu liste)
  * window.YakitSettingsUI
  */
 (function () {
@@ -88,6 +88,16 @@
             desc: '30 gün geçtiyse ana ekranda uyarı göster', toggle: true, value: s.autoBackupReminder, action: 'toggle-reminder' })
     ].join(''));
 
+    html += group('Uygulama içi yedekler', [
+      row({ icon: 'clock-rotate-left', iconBg: '#dcfce7', iconFg: '#059669', title: 'Otomatik yedek',
+            desc: 'Uygulama açılışında günde 1 kez, internet gerekmez', toggle: true, value: s.autoLocalBackup, action: 'toggle-local-backup' }),
+      row({ icon: 'floppy-disk', iconBg: '#e0e7ff', iconFg: '#4f46e5', title: 'Saklanacak yedek sayısı',
+            desc: 'Eskiler otomatik silinir', badge: String(s.localBackupKeep), action: 'local-keep', arrow: true }),
+      row({ icon: 'camera', iconBg: '#dbeafe', iconFg: '#2563eb', title: 'Şimdi yedek al',
+            desc: 'Tüm kayıtlar ve fotoğraflar cihaz içinde saklanır', action: 'local-backup-now', arrow: true }),
+      '<div id="local-backup-list" class="px-3.5 py-3 text-[11px] text-slate-400">Yedekler yükleniyor…</div>'
+    ].join(''));
+
     html += group('Fiş okuma (OCR)', [
       row({ icon: 'receipt', iconBg: '#f3e8ff', iconFg: '#7c3aed', title: 'OCR motoru durumu',
             desc: 'Çevrimdışı fiş okuma dosyaları', badge: '…', action: 'ocr-status' }),
@@ -104,7 +114,7 @@
     ].join(''));
 
     html += group('Hakkında', [
-      row({ icon: 'circle-info', iconBg: '#e0e7ff', iconFg: '#4f46e5', title: 'Yakıt Takip', desc: 'Sürüm 9.0.0', badge: 'v9' }),
+      row({ icon: 'circle-info', iconBg: '#e0e7ff', iconFg: '#4f46e5', title: 'Yakıt Takip', desc: 'Sürüm 10.0.0', badge: 'v10' }),
       row({ icon: 'shield-halved', iconBg: '#dcfce7', iconFg: '#059669', title: 'Gizlilik',
             desc: 'Veriler cihazınızda kalır. Sunucuya hiçbir şey gönderilmez.' }),
       row({ icon: 'file-lines', iconBg: '#f1f5f9', iconFg: '#64748b', title: 'Açık kaynak lisansları',
@@ -114,6 +124,43 @@
     host.innerHTML = html;
     refreshStorage();
     refreshOcr();
+    refreshLocalBackups();
+  }
+
+  // ---------- uygulama içi yedek listesi ----------
+  function fmtBytes(n) {
+    n = Number(n) || 0;
+    if (n >= 1048576) return (n / 1048576).toFixed(1) + ' MB';
+    if (n >= 1024) return Math.round(n / 1024) + ' KB';
+    return n + ' B';
+  }
+
+  async function refreshLocalBackups() {
+    var box = document.getElementById('local-backup-list');
+    if (!box || !S || !S.listLocalBackups) return;
+    try {
+      var list = await S.listLocalBackups();
+      if (!list.length) {
+        box.innerHTML = 'Henüz uygulama içi yedek yok. “Şimdi yedek al” ile ilk yedeği oluşturabilirsiniz.';
+        return;
+      }
+      box.innerHTML = '<div class="text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-2">Son yedekler (' + list.length + ')</div>' +
+        list.map(function (m) {
+          var when = new Date(m.createdAt).toLocaleString('tr-TR', { dateStyle: 'medium', timeStyle: 'short' });
+          var sum = m.summary || {};
+          return '<div class="flex items-center gap-2 py-2 border-t border-slate-100">' +
+            '<span class="flex-1 min-w-0">' +
+            '<span class="block text-[12px] font-semibold text-slate-700">' + esc(when) +
+            ' <span class="text-[9px] font-bold px-1.5 py-0.5 rounded ' + (m.kind === 'auto' ? 'bg-slate-100 text-slate-500' : 'bg-blue-50 text-blue-600') + '">' + (m.kind === 'auto' ? 'otomatik' : 'elle') + '</span></span>' +
+            '<span class="block text-[10px] text-slate-400">' + (sum.refuels || 0) + ' dolum · ' + (sum.vehicles || 0) + ' araç · ' + (sum.photos || 0) + ' fotoğraf · ' + fmtBytes(m.bytes) + '</span>' +
+            '</span>' +
+            '<button type="button" data-action="local-restore" data-id="' + esc(m.id) + '" class="shrink-0 text-[11px] font-semibold text-blue-600 bg-blue-50 px-2.5 py-1.5 rounded-lg">Geri yükle</button>' +
+            '<button type="button" data-action="local-delete" data-id="' + esc(m.id) + '" title="Sil" class="shrink-0 w-8 h-8 rounded-lg bg-rose-50 text-rose-500 flex items-center justify-center"><i class="fa-solid fa-trash text-[11px]"></i></button>' +
+            '</div>';
+        }).join('');
+    } catch (e) {
+      box.innerHTML = 'Yedek listesi okunamadı: ' + esc(e.message || e);
+    }
   }
 
   function viewLabel(v) {
@@ -167,7 +214,7 @@
   }
 
   // ---------- eylemler ----------
-  async function handle(action) {
+  async function handle(action, id) {
     var s = S.get();
     switch (action) {
       case 'units':
@@ -232,6 +279,23 @@
         break;
       case 'toggle-reminder':
         S.set('autoBackupReminder', !s.autoBackupReminder); render(); break;
+      case 'toggle-local-backup':
+        S.set('autoLocalBackup', !s.autoLocalBackup); render();
+        toast(S.get().autoLocalBackup ? 'Otomatik yedek açık' : 'Otomatik yedek kapalı'); break;
+      case 'local-keep':
+        openPicker('Saklanacak yedek sayısı', [
+          { value: '7', label: '7 yedek', desc: 'Yaklaşık 1 hafta' },
+          { value: '14', label: '14 yedek', desc: 'Yaklaşık 2 hafta' },
+          { value: '30', label: '30 yedek', desc: 'Yaklaşık 1 ay' }
+        ], String(s.localBackupKeep), function (v) {
+          S.set('localBackupKeep', Number(v));
+          if (S.pruneLocalBackups) S.pruneLocalBackups(Number(v)).then(refreshLocalBackups);
+          toast('En fazla ' + v + ' yedek saklanacak');
+        });
+        break;
+      case 'local-backup-now': await doLocalBackup(); break;
+      case 'local-restore': await pickLocalRestore(id); break;
+      case 'local-delete': await doLocalDelete(id); break;
       case 'backup-download': await doBackup('download'); break;
       case 'backup-share': await doBackup('share'); break;
       case 'backup-restore': pickRestoreFile(); break;
@@ -273,6 +337,53 @@
     }
   }
 
+  async function doLocalBackup() {
+    try {
+      toast('Yedek alınıyor…');
+      var r = await S.createLocalBackup('manual');
+      if (r.warning) toast('⚠️ ' + r.warning);
+      else toast('Yedek alındı ✓ ' + fmtBytes(r.bytes) + ' · ' + r.photoCount + ' fotoğraf');
+      render();
+    } catch (e) {
+      toast('Yedek alınamadı: ' + (e.message || e));
+    }
+  }
+
+  async function pickLocalRestore(id) {
+    if (!id) return;
+    try {
+      var obj = await S.getLocalBackup(id);
+      if (!obj) { toast('Yedek bulunamadı'); return; }
+      pendingBackup = obj;
+      showRestoreSummary(obj);
+    } catch (e) { toast('Yedek okunamadı: ' + (e.message || e)); }
+  }
+
+  async function doLocalDelete(id) {
+    if (!id) return;
+    if (!window.confirm('Bu yedek silinsin mi?')) return;
+    try {
+      await S.deleteLocalBackup(id);
+      toast('Yedek silindi');
+      refreshLocalBackups();
+    } catch (e) { toast('Silinemedi: ' + (e.message || e)); }
+  }
+
+  // Dosya ve uygulama içi yedek aynı özet/onay akışını kullanır
+  function showRestoreSummary(obj) {
+    var sum = S.summarizeBackup(obj);
+    var when = sum.createdAt ? new Date(sum.createdAt).toLocaleString('tr-TR') : 'bilinmiyor';
+    document.getElementById('settings-restore-summary').innerHTML =
+      '<div class="text-[11px] text-slate-500 mb-2">Yedek tarihi: <b>' + esc(when) + '</b></div>' +
+      '<div class="grid grid-cols-2 gap-2 text-[11px]">' +
+      [['Araç', sum.vehicles], ['Dolum', sum.refuels], ['Gider', sum.expenses], ['Yolculuk', sum.trips], ['Fotoğraf', sum.photos]]
+        .map(function (p) {
+          return '<div class="bg-slate-50 rounded-lg px-2.5 py-1.5 flex justify-between"><span class="text-slate-500">' +
+            p[0] + '</span><b class="text-slate-800">' + p[1] + '</b></div>';
+        }).join('') + '</div>';
+    document.getElementById('settings-restore-modal').classList.remove('hidden');
+  }
+
   function pickRestoreFile() {
     var inp = document.getElementById('settings-restore-input');
     inp.value = '';
@@ -285,17 +396,7 @@
     try {
       var obj = await S.readBackupFile(file);
       pendingBackup = obj;
-      var sum = S.summarizeBackup(obj);
-      var when = sum.createdAt ? new Date(sum.createdAt).toLocaleString('tr-TR') : 'bilinmiyor';
-      document.getElementById('settings-restore-summary').innerHTML =
-        '<div class="text-[11px] text-slate-500 mb-2">Yedek tarihi: <b>' + esc(when) + '</b></div>' +
-        '<div class="grid grid-cols-2 gap-2 text-[11px]">' +
-        [['Araç', sum.vehicles], ['Dolum', sum.refuels], ['Gider', sum.expenses], ['Yolculuk', sum.trips], ['Fotoğraf', sum.photos]]
-          .map(function (p) {
-            return '<div class="bg-slate-50 rounded-lg px-2.5 py-1.5 flex justify-between"><span class="text-slate-500">' +
-              p[0] + '</span><b class="text-slate-800">' + p[1] + '</b></div>';
-          }).join('') + '</div>';
-      document.getElementById('settings-restore-modal').classList.remove('hidden');
+      showRestoreSummary(obj);
     } catch (err) {
       toast('⚠️ ' + err.message);
     }
@@ -413,7 +514,7 @@
     if (!host) return;
     host.addEventListener('click', function (e) {
       var el = e.target.closest('[data-action]');
-      if (el) handle(el.dataset.action);
+      if (el) handle(el.dataset.action, el.dataset.id);
     });
     document.getElementById('settings-picker-close').onclick = closePicker;
     document.getElementById('settings-restore-input').addEventListener('change', onRestoreFile);
@@ -421,13 +522,22 @@
     document.getElementById('settings-restore-cancel').onclick = cancelRestore;
     initIconPicker();
     render();
+    // v10: otomatik uygulama içi yedek (günde 1, sessiz)
+    if (S && S.maybeAutoBackup) {
+      setTimeout(function () {
+        S.maybeAutoBackup().then(function (r) {
+          if (r) { refreshLocalBackups(); renderReminder(); }
+        }).catch(function () {});
+      }, 1500);
+    }
   }
 
   window.YakitSettingsUI = {
     render: render, init: init, handle: handle,
     openIconPicker: openIconPicker,
     renderReminder: renderReminder, backupReminderDue: backupReminderDue,
-    quickBackup: quickBackup, closePicker: closePicker
+    quickBackup: quickBackup, closePicker: closePicker,
+    refreshLocalBackups: refreshLocalBackups
   };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
