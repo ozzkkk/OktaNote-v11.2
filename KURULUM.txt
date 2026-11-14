@@ -1,23 +1,22 @@
-YAKIT TAKİP v10.3 — BAKIM HATIRLATICILARI
-==========================================
+YAKIT TAKİP v10.4 — OCR DOĞRULUK İYİLEŞTİRMESİ
+==============================================
 
 BU ZIP NE İŞE YARAR?
-Yağ / servis, muayene, sigorta, lastik için tarih veya km hedefli hatırlatıcılar ekler.
-Ana ekranda yaklaşan/geciken bakım kartı çıkar. Menüde "Bakım" ekranı vardır.
-Gider kaydedince ilgili hatırlatıcıyı tamamlandı olarak işaretlemeyi önerir.
-İnternet/push yoktur; uygulama içi uyarır. Yedeklere dahildir.
+Fiş tarama doğruluğunu artırır: POS/kart slipinde tutar+tarih+saat okunur, litre
+uydurulmaz; karanlık/eğri fişlerde ek okuma yapılır; tarih/yıl/tutar hataları onarılır.
+Motor ve Türkçe model AYNI kalır; fotoğraflar cihazdan çıkmaz.
 
 GÜNCELLEME (mevcut siteniz varsa — önerilen)
 1. ZIP'i telefonda/bilgisayarda açın (klasör yok, dosyalar kökte).
 2. Tarayıcıdan github.com > ozzkkk/yakit deposunu açın (main dalı).
 3. Add file > Upload files'a dokunun.
 4. ZIP'ten çıkan şu dosyaları seçip yükleyin:
-   maintenance.js  (YENİ dosya)
-   index.html      (üzerine yazar)
+   ocr.js          (üzerine yazar)
    settings.js     (üzerine yazar)
    settings-ui.js  (üzerine yazar)
    sw.js           (üzerine yazar)
    README.md       (isteğe bağlı)
+   KURULUM.txt     (isteğe bağlı)
 5. Commit changes deyin.
 6. https://ozzkkk.github.io/yakit/ adresini bir kez yenileyin.
 
@@ -29,11 +28,11 @@ Hayır. Kayıtlarınız tarayıcının localStorage/IndexedDB alanında durur.
 Dosya değiştirmek verileri silmez. OCR motoru da yeniden inmez (5,6 MB korunur).
 
 KONTROL
-- Ayarlar > Hakkında: "Sürüm 10.3.0" ve v10.3 yazmalı.
-- Menüde "Bakım" satırı görünmeli.
-- Ayarlar > Veri: "Bakım hatırlatıcıları" satırı görünmeli.
-- Bakım ekranında "Yeni" ile hatırlatıcı ekleyin; km hedefi yakınsa ana ekranda kart çıkar.
+- Ayarlar > Hakkında: "Sürüm 10.4.0" ve v10.4 yazmalı.
+- Bir POS/kart slipi taratın: tutar, tarih, saat gelmeli; litre/fiyat boş kalmalı.
+- Bir yakıt fişi taratın: yakıt türü, litre, fiyat, toplam, tarih, saat gelmeli.
+- Sonuç ekranında değerleri kontrol edip "Dolum formuna aktar" deyin; Kaydet'e siz basarsınız.
 
 SORUN OLURSA
-- Bakım ekranı boşsa: araç seçili olduğundan emin olun, sayfayı yenileyin.
 - Eski sürüm görünüyorsa: bir kez daha yenileyin; service worker güncellemeyi alır.
+- Çok silik/kırışık fişte eksik alan olursa kutulardan elle düzeltin; bu beklenen durumdur.

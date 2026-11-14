@@ -1,4 +1,4 @@
-/* Yakıt Takip v10.3 — Ayarlar, birimler, dosya yedekleme + uygulama içi otomatik yedek
+/* Yakıt Takip v10.4 — Ayarlar, birimler, dosya yedekleme + uygulama içi otomatik yedek
  * Bağımsız modül: window.YakitSettings
  * Veri modeli: state.settings (localStorage içinde, ana state ile birlikte)
  */
@@ -283,7 +283,7 @@
       format: 'yakit-takip-backup',
       version: 7,
       createdAt: new Date().toISOString(),
-      appVersion: '10.3.0',
+      appVersion: '10.4.0',
       settings: get(),
       state: JSON.parse(JSON.stringify(st)),
       photos: {},

@@ -1,4 +1,4 @@
-/* Yakıt Takip v10.3 — Ayarlar ekranı (Fuelio tarzı gruplu liste)
+/* Yakıt Takip v10.4 — Ayarlar ekranı (Fuelio tarzı gruplu liste)
  * window.YakitSettingsUI
  */
 (function () {
@@ -118,7 +118,7 @@
     ].join(''));
 
     html += group('Hakkında', [
-      row({ icon: 'circle-info', iconBg: '#e0e7ff', iconFg: '#4f46e5', title: 'Yakıt Takip', desc: 'Sürüm 10.3.0', badge: 'v10.3' }),
+      row({ icon: 'circle-info', iconBg: '#e0e7ff', iconFg: '#4f46e5', title: 'Yakıt Takip', desc: 'Sürüm 10.4.0', badge: 'v10.4' }),
       row({ icon: 'shield-halved', iconBg: '#dcfce7', iconFg: '#059669', title: 'Gizlilik',
             desc: 'Veriler cihazınızda kalır. Sunucuya hiçbir şey gönderilmez.' }),
       row({ icon: 'file-lines', iconBg: '#f1f5f9', iconFg: '#64748b', title: 'Açık kaynak lisansları',

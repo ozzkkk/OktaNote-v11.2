@@ -1,4 +1,56 @@
-# Yakıt Takip v10.3 — Bakım Hatırlatıcıları
+# Yakıt Takip v10.4 — OCR Doğruluk İyileştirmesi
+
+Bu sürüm **fiş okuma (OCR) doğruluğuna** odaklanır. Motor ve Türkçe model aynı kalır
+(`OCR_VERSION 6.0.0`, önbellek korunur); değişen şey görüntü ön işleme, alan ayrıştırma
+ve çapraz doğrulama mantığıdır. **Fotoğraflar hiçbir sunucuya gönderilmez.**
+
+## v10.4'te yeni olanlar
+
+### Daha doğru alan çıkarımı (`ocr.js`)
+- **POS / kart slipi desteği:** `TUTAR` etiketi tek satır, tutar alt satırda olduğunda
+  (`1.830,59 TL`) artık okunur. Slipte yakıt/litre/fiyat yoksa **uydurulmaz**; yalnız
+  tutar + tarih + saat doldurulur. "Hizmeti aldım", "ParafPara" gibi satırlar litre/toplam sanılmaz.
+- **Tarih:** eksik/bozuk ayraçlar (`13'112024`, `13/11:2024`) ve OCR yıl hataları
+  (`08.12.2123` → 2023) onarılır. İkincil tarihler (hesap kesim/son ödeme) ana tarihin önüne geçmez.
+- **Yakıt kısaltmaları:** `K BNZ 95 OKT`, `KBENZIN`, `K 6NZ`, `OPTİMUM MOTORİN` tanınır.
+  Lisans/şirket satırları yakıt türü kaynağı olarak kullanılmaz.
+- **Toplam oylaması:** tutar fişte birkaç kez yazılır (ürün, TOPLAM, K.KARTI, TUTAR);
+  OCR birini bozsa bile (`1.000,04`) çoğunluk doğru değeri (`1.000,00`) seçer.
+- **Miktar×fiyat:** bozuk birimler (`1T`, `TAX`, `LI`) tolere edilir; saat artık tarih
+  içindeki noktalardan (`10.02`) yanlış üretilmez.
+- **Çapraz düzeltme:** yalnız gerçek hane hatalarında düzeltir, yuvarlama farkını bozmaz.
+
+### Zor görüntüler için ek okuma
+- **3. geçiş (yerel eşikleme):** karanlık, gölgeli, eğri fişlerde ilk iki geçiş zayıfsa
+  yerel ortalama eşiğiyle üçüncü okuma yapılır.
+- **Hedefli kırpma:** TOPLAM / litre×fiyat / tarih satırları TSV'den bulunup yalnız o
+  bölge rakam ağırlıklı yeniden okunur (tam fişi tekrar işlemekten hızlı ve isabetli).
+
+### Ölçüm (12 gerçek görüntü, 72 alan)
+Web'den toplanan gerçek fiş/slip fotoğrafları + sizin 3 yeni fiş + 3 eski regresyon fişi:
+
+| | v10.3 | v10.4 |
+|---|---|---|
+| Toplam doğru alan | 37/72 (%51) | **52/72 (%72)** |
+| POS/kart slipi (tutar+tarih+saat) | kaçırıyordu | **okunuyor** |
+| Eski regresyon fişleri FIS1–3 | 18/18 | **18/18** |
+
+Test paketi: **867/867** yeşil (22 paket; yeni OCR korpus + ayrıştırıcı testleri dahil).
+
+> Dürüst not: çok silik, ağır kırışık veya kadrajı bozuk fotoğraflarda hâlâ eksik alan
+> olabilir. Sonuçlar her zaman size gösterilir; **onaylamadan kayıt oluşmaz.**
+
+### v10.4 kurulumu (ZIP)
+- `yakit-takip-v10-4-guncelleme.zip` → değişen **4 dosya** (`ocr.js`, `settings.js`,
+  `settings-ui.js`, `sw.js`) + README + KURULUM.txt
+- `yakit-takip-v10-4-tam-paket.zip` → uygulamanın **32 dosyasının tamamı** (OCR motoru dahil)
+
+GitHub'da **Add file → Upload files** ile ZIP'ten çıkan dosyaları yükleyin; aynı adlı
+dosyalar üzerine yazılır. Kayıtlarınız tarayıcıda kaldığı için **veri kaybı olmaz**.
+OCR motor önbelleği korunur (`OCR_VERSION 6.0.0`), 5,6 MB yeniden inmez.
+
+---
+
 
 Bu sürümde **fiş tarama artık gerçek**: fotoğraf çekiyorsunuz, uygulama yazıyı telefonun
 kendi işlemcisinde okuyor ve **yakıt türü, litre, birim fiyat, toplam tutar, tarih, saat** alanlarını dolum
