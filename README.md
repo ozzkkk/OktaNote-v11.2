@@ -1,4 +1,4 @@
-# Yakıt Takip v6 — Gerçek Fiş Okuma (OCR)
+# Yakıt Takip v7 — Ayarlar, Araç Simgeleri ve Yedekleme
 
 Bu sürümde **fiş tarama artık gerçek**: fotoğraf çekiyorsunuz, uygulama yazıyı telefonun
 kendi işlemcisinde okuyor ve **litre, birim fiyat, toplam tutar, tarih** alanlarını dolum
@@ -7,13 +7,54 @@ formuna aktarıyor. Önceki sürümlerdeki demo/sahte okuma tamamen kaldırıld�
 **Fotoğraflar hiçbir sunucuya gönderilmez.** OCR motoru (Tesseract.js + Türkçe dil modeli)
 sitenizin kendi dosyaları arasındadır; ilk indirmeden sonra **internet olmadan** çalışır.
 
+## v7'de yeni olanlar
+
+### 1. Araç simgesi ve rengi
+Her araca kendi simgesini verebilirsiniz: **Taşıtlar** → aracın yanındaki **kalem** →
+yuvarlak simgeye dokunun. 16 simge (otomobil, sedan, pickup, kamyon, arazi, minibüs,
+otobüs, motosiklet, bisiklet, traktör, karavan, taksi, tekne, uçak, helikopter, tren)
+ve 8 renk. Seçim araç listesinde ve üst başlıkta görünür. Yeni araç eklerken de seçilebilir.
+
+### 2. Ayarlar menüsü
+Menü (☰) → **Ayarlar**. Fuelio'daki gibi gruplanmış:
+
+- **Ana tercihler** — Birimler, para birimi, tarih biçimi, varsayılan sayfa
+- **Yedekleme** — yedek al, paylaş, geri yükle, hatırlatma
+- **Fiş okuma (OCR)** — motor durumu, dosyaları indir
+- **Veri** — CSV, depolama, sıfırlama
+- **Hakkında** — sürüm, gizlilik, lisanslar
+
+**Birimler:** km ↔ mil, L ↔ galon (US/UK), tüketim L/100km ↔ km/L ↔ MPG-US ↔ MPG-UK.
+**Para birimi:** ₺ $ € £ ₽ ₼. **Tarih:** YYYY-MM-DD, DD.MM.YYYY, DD/MM/YYYY, MM/DD/YYYY, D MMM YYYY.
+
+> **Önemli:** Kayıtlarınız her zaman km, litre ve TL olarak saklanır; birim değişimi
+> yalnızca **gösterimi** etkiler. Birimi değiştirip geri almak verinizi bozmaz.
+> Para birimi değişimi de **kur çevirisi yapmaz** — sadece sembolü değiştirir.
+
+### 3. Yedekleme
+**Ayarlar → Yedekleme**:
+
+- **Yedek al (dosya indir)** — Tüm araçlar, dolumlar, giderler, yolculuklar, ayarlar ve
+  fotoğraflar tek `.json` dosyasında. Dosya adı `yakit-yedek-YYYYAAGG-SSDD.json`.
+- **Yedeği paylaş** — Android paylaş menüsü açılır: Google Drive, WhatsApp, e-posta,
+  Telegram. Desteklenmeyen tarayıcılarda indirmeye düşer.
+- **Yedekten geri yükle** — Dosyayı seçin; **önce özet gösterilir** (kaç araç, dolum,
+  fotoğraf). Onaylamadan hiçbir şey değişmez. "Vazgeç" güvenlidir.
+- **Otomatik hatırlatma** — 30 gün yedek alınmazsa ana ekranda uyarı çıkar.
+
+> Geri yükleme mevcut verinin **üzerine yazar**. Önce mevcut verinizin yedeğini alın.
+
+**Bulut eşitleme hakkında:** Bu uygulama sunucusuz çalıştığı için Google Drive'a
+doğrudan eşitleme yok. "Yedeği paylaş" ile Drive'a gönderip oradan geri alabilirsiniz —
+veri sizde kalır, hesap kurulumu gerekmez. Doğrudan Drive eşitlemesi sonraki turda eklenebilir.
+
 ---
 
 ## Android'de GitHub'a yükleme (klasör gerekmez)
 
 Bu paket **tek klasördür**, alt klasör yoktur. Android tarayıcısından doğrudan yükleyebilirsiniz.
 
-1. ZIP'i telefonda açın, içindeki **28 dosyanın tamamını** bir klasöre çıkarın.
+1. ZIP'i telefonda açın, içindeki **30 dosyanın tamamını** bir klasöre çıkarın.
 2. GitHub'ı **uygulamada değil, tarayıcıda** açın.
 3. **Add file → Upload files**'a dokunun.
 4. Dosya seçicide klasöre girip **tüm dosyaları seçin**.
@@ -116,11 +157,12 @@ yanlış okunur — kutulardan elle düzeltin.
 | Google Haritalar ile yol tarifi | ❌ internet gerekir |
 | Hava durumu (Open-Meteo) | ❌ internet gerekir |
 
-## Dosyalar (28 adet, hepsi kökte)
+## Dosyalar (30 adet, hepsi kökte)
 
 ```text
 index.html          manifest.webmanifest   sw.js
 pwa.js              pwa.css                ocr.js
+settings.js         settings-ui.js
 tailwind.css        fonts.css              icons.css
 leaflet.js          leaflet.css
 inter-latin.woff2   inter-latin-ext.woff2

@@ -1,14 +1,17 @@
-/* Yakıt Takip v5 — Service Worker
+/* Yakıt Takip v7 — Service Worker
  * App shell: sürümlü, kurulumda önceden önbelleğe alınır.
  * Gezinme: network-first, çevrimdışıyken önbellekteki index.html.
  * Aynı origin statik dosyalar: cache-first.
  * Üçüncü taraf API/harita/Google istekleri önbelleğe ALINMAZ (gizlilik + tazelik).
  * Kullanıcı verileri localStorage/IndexedDB'dedir; SW bunlara dokunmaz.
  */
-const CACHE_VERSION = '6.0.0';
+const CACHE_VERSION = '7.0.0';
 const SHELL_CACHE = `yakit-takip-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `yakit-takip-runtime-${CACHE_VERSION}`;
-const OCR_CACHE = `yakit-takip-ocr-${CACHE_VERSION}`;
+// OCR motor dosyaları v6'dan beri değişmedi. Önbellek adı sürümden BAĞIMSIZ;
+// böylece v6'dan güncelleyen kullanıcı 5,6 MB'ı yeniden indirmez.
+const OCR_VERSION = '6.0.0';
+const OCR_CACHE = `yakit-takip-ocr-${OCR_VERSION}`;
 const CACHE_PREFIX = 'yakit-takip-';
 
 const APP_SHELL = [
@@ -23,6 +26,8 @@ const APP_SHELL = [
   './leaflet.js',
   './pwa.js',
   './ocr.js',
+  './settings.js',
+  './settings-ui.js',
   './inter-latin.woff2',
   './inter-latin-ext.woff2',
   './fa-solid-subset.woff2',
@@ -70,7 +75,7 @@ self.addEventListener('activate', (event) => {
     const keys = await caches.keys();
     await Promise.all(
       keys
-        .filter((key) => key.startsWith(CACHE_PREFIX) && key !== SHELL_CACHE && key !== RUNTIME_CACHE && key !== OCR_CACHE)
+        .filter((key) => key.startsWith(CACHE_PREFIX) && key !== SHELL_CACHE && key !== RUNTIME_CACHE && !key.startsWith('yakit-takip-ocr-'))
         .map((key) => caches.delete(key))
     );
     await self.clients.claim();
@@ -168,7 +173,7 @@ self.addEventListener('message', (event) => {
       const cache = await caches.open(OCR_CACHE);
       let n = 0;
       for (const url of OCR_ASSETS) { if (await cache.match(url)) n++; }
-      if (port) port.postMessage({ ready: n === OCR_ASSETS.length, cached: n, total: OCR_ASSETS.length });
+      if (port) port.postMessage({ ready: n === OCR_ASSETS.length, cached: n, count: n, total: OCR_ASSETS.length });
     })());
   }
 });

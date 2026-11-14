@@ -19,6 +19,8 @@
     <link rel="stylesheet" href="./pwa.css">
     <script src="./pwa.js" defer></script>
     <script src="./ocr.js" defer></script>
+    <script src="./settings.js"></script>
+    <script src="./settings-ui.js" defer></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -114,6 +116,7 @@
 
         <!-- 1. ANA SAYFA GÖRÜNÜMÜ -->
         <section id="view-home" class="space-y-4 pt-1">
+            <div id="backup-reminder" class="hidden"></div>
             <!-- Yakıt Bölümü -->
             <div>
                 <div class="flex items-center justify-between mb-2 px-1">
@@ -194,16 +197,16 @@
             <h2 class="font-bold text-slate-800 text-base px-1">Yolculuk Maliyeti Hesapla</h2>
             <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
                 <div>
-                    <label class="block text-xs font-medium text-slate-500 mb-1">Mesafe (km)</label>
+                    <label id="label-calc-distance" class="block text-xs font-medium text-slate-500 mb-1">Mesafe (km)</label>
                     <input type="number" id="calc-distance" value="100" oninput="calculateTrip()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-base font-bold text-slate-800 focus:outline-none focus:border-slate-800">
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-xs font-medium text-slate-500 mb-1">Yakıt Fiyatı (₺/L)</label>
+                        <label id="label-calc-price" class="block text-xs font-medium text-slate-500 mb-1">Yakıt Fiyatı (₺/L)</label>
                         <input type="number" step="0.01" id="calc-price" value="81.60" oninput="calculateTrip()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-bold text-slate-800 focus:outline-none focus:border-slate-800">
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-slate-500 mb-1">Tüketim (L/100km)</label>
+                        <label id="label-calc-consumption" class="block text-xs font-medium text-slate-500 mb-1">Tüketim (L/100km)</label>
                         <input type="number" step="0.1" id="calc-consumption" value="6.5" oninput="calculateTrip()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-bold text-slate-800 focus:outline-none focus:border-slate-800">
                     </div>
                 </div>
@@ -257,7 +260,7 @@
                 </div>
 
                 <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
-                    <div class="text-xs font-bold text-slate-700">Yakıt Tüketim Analizi (L/100km)</div>
+                    <div id="label-consumption-analysis" class="text-xs font-bold text-slate-700">Yakıt Tüketim Analizi (L/100km)</div>
                     <div class="grid grid-cols-3 gap-2 text-center">
                         <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200/60">
                             <div class="text-[10px] font-medium text-slate-400">Ortalama</div>
@@ -464,7 +467,11 @@
             <div id="vehicles-list" class="space-y-2.5"></div>
             <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-2.5">
                 <div class="text-xs font-bold text-slate-700">Yeni Araç Ekle</div>
-                <input type="text" id="new-vehicle-name" placeholder="Araç Marka/Model (Örn: Renault Clio)" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs">
+                <div class="flex items-center gap-2.5">
+                    <button type="button" id="new-vehicle-icon-btn" onclick="pickNewVehicleIcon()" title="Simge seç" class="shrink-0 rounded-full ring-2 ring-transparent hover:ring-slate-200 transition"></button>
+                    <input type="text" id="new-vehicle-name" placeholder="Araç Marka/Model (Örn: Renault Clio)" class="flex-1 min-w-0 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs">
+                </div>
+                <button type="button" onclick="pickNewVehicleIcon()" class="text-[10px] font-semibold text-blue-600 hover:underline">Simge ve renk seç</button>
                 <div class="grid grid-cols-3 gap-2">
                     <input type="number" id="new-vehicle-odo" placeholder="Güncel Km" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs">
                     <input type="number" id="new-vehicle-tank" placeholder="Tank (L)" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs">
@@ -477,6 +484,16 @@
                 </div>
                 <button onclick="addVehicle()" class="w-full bg-slate-800 text-white py-2 rounded-xl text-xs font-semibold">Aracı Kaydet</button>
             </div>
+        </section>
+
+        <!-- 8. AYARLAR GÖRÜNÜMÜ (v7) -->
+        <section id="view-settings" class="hidden space-y-3 pt-1">
+            <div class="flex items-center gap-2 px-1">
+                <button type="button" onclick="switchView('home')" aria-label="Geri" class="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-600"><i class="fa-solid fa-arrow-left text-sm"></i></button>
+                <h2 class="font-bold text-slate-800 text-base">Ayarlar</h2>
+            </div>
+            <div id="settings-body" class="space-y-4"></div>
+            <input type="file" id="settings-restore-input" accept="application/json,.json" class="hidden">
         </section>
 
     </main>
@@ -559,6 +576,10 @@
                 <i class="fa-solid fa-car w-5 text-center text-slate-500"></i>
                 <span>Taşıtlar</span>
             </button>
+            <button onclick="switchView('settings'); toggleDrawer(false)" class="w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl hover:bg-slate-50 text-slate-700 font-medium">
+                <i class="fa-solid fa-gear w-5 text-center text-slate-500"></i>
+                <span>Ayarlar</span>
+            </button>
         </div>
         <div class="p-4 border-t border-slate-100">
             <button onclick="resetDemoData()" class="w-full text-xs text-slate-400 hover:text-rose-600 py-1.5 transition">Varsayılan Verilere Sıfırla</button>
@@ -624,14 +645,14 @@
         <div class="flex-1 overflow-y-auto no-scrollbar p-4 space-y-4">
             <input type="hidden" id="edit-refuel-id">
             <div class="bg-white rounded-2xl p-3.5 border border-slate-200/80">
-                <label class="block text-[11px] font-medium text-slate-500 mb-1">Mesafe sayacı (km)</label>
+                <label id="label-refuel-odo" class="block text-[11px] font-medium text-slate-500 mb-1">Mesafe sayacı (km)</label>
                 <input type="number" id="refuel-odo" class="w-full text-base font-bold text-slate-800 focus:outline-none" placeholder="Örn: 8150">
                 <div id="refuel-last-odo-hint" class="text-[11px] text-slate-400 mt-1">Son değer: 7778 km</div>
             </div>
 
             <div class="grid grid-cols-2 gap-3">
                 <div class="bg-white rounded-2xl p-3.5 border border-slate-200/80">
-                    <label class="block text-[11px] font-medium text-slate-500 mb-1">Yakıt (l)</label>
+                    <label id="label-refuel-liters" class="block text-[11px] font-medium text-slate-500 mb-1">Yakıt (L)</label>
                     <input type="number" step="0.01" id="refuel-liters" oninput="autoCalcRefuel('liters')" class="w-full text-base font-bold text-slate-800 focus:outline-none" placeholder="0,00">
                 </div>
                 <div class="bg-white rounded-2xl p-3.5 border border-slate-200/80">
@@ -647,11 +668,11 @@
 
             <div class="grid grid-cols-2 gap-3">
                 <div class="bg-white rounded-2xl p-3.5 border border-slate-200/80">
-                    <label class="block text-[11px] font-medium text-slate-500 mb-1">Fiyat/L (₺)</label>
+                    <label id="label-refuel-price" class="block text-[11px] font-medium text-slate-500 mb-1">Fiyat/L (₺)</label>
                     <input type="number" step="0.01" id="refuel-price" oninput="autoCalcRefuel('price')" class="w-full text-base font-bold text-slate-800 focus:outline-none" placeholder="81.60">
                 </div>
                 <div class="bg-white rounded-2xl p-3.5 border border-slate-200/80">
-                    <label class="block text-[11px] font-medium text-slate-500 mb-1">Toplam maliyet (₺)</label>
+                    <label id="label-refuel-total" class="block text-[11px] font-medium text-slate-500 mb-1">Toplam maliyet (₺)</label>
                     <input type="number" step="0.01" id="refuel-total" oninput="autoCalcRefuel('total')" class="w-full text-base font-bold text-slate-800 focus:outline-none" placeholder="0,00">
                 </div>
             </div>
@@ -870,7 +891,7 @@
                     </div>
                 </div>
                 <div>
-                    <label class="block text-[11px] font-medium text-slate-500 mb-1">Başlangıç sayacı (km)</label>
+                    <label id="label-trip-start-odo" class="block text-[11px] font-medium text-slate-500 mb-1">Başlangıç sayacı (km)</label>
                     <input type="number" id="trip-start-odo" oninput="updateTripDistancePreview()" placeholder="7778" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm font-bold text-slate-800 focus:outline-none">
                 </div>
             </div>
@@ -901,7 +922,7 @@
                     </div>
                 </div>
                 <div>
-                    <label class="block text-[11px] font-medium text-slate-500 mb-1">Bitiş sayacı (km)</label>
+                    <label id="label-trip-end-odo" class="block text-[11px] font-medium text-slate-500 mb-1">Bitiş sayacı (km)</label>
                     <input type="number" id="trip-end-odo" oninput="updateTripDistancePreview()" placeholder="Örn: 8250" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm font-bold text-slate-800 focus:outline-none">
                 </div>
                 <div class="flex items-center justify-between pt-1 text-xs">
@@ -1044,7 +1065,7 @@
                 </select>
             </div>
             <div>
-                <label class="block text-xs font-medium text-slate-500 mb-1">Tutar (₺)</label>
+                <label id="label-expense-amount" class="block text-xs font-medium text-slate-500 mb-1">Tutar (₺)</label>
                 <input type="number" step="0.01" id="expense-amount" placeholder="0,00" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-base font-bold">
             </div>
             <div>
@@ -1067,17 +1088,21 @@
         </div>
         <div class="p-4 space-y-3">
             <input type="hidden" id="edit-vehicle-id">
+            <div class="flex flex-col items-center gap-1.5 py-1">
+                <button type="button" id="edit-vehicle-icon-btn" onclick="pickEditVehicleIcon()" title="Simge seç" class="rounded-full ring-2 ring-transparent hover:ring-slate-200 transition"></button>
+                <button type="button" onclick="pickEditVehicleIcon()" class="text-[10px] font-semibold text-blue-600 hover:underline">Simge ve renk değiştir</button>
+            </div>
             <div>
                 <label class="block text-xs font-medium text-slate-500 mb-1">Araç Marka / Model</label>
                 <input type="text" id="edit-vehicle-name" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-semibold">
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-xs font-medium text-slate-500 mb-1">Güncel Kilometre</label>
+                    <label id="label-edit-vehicle-odo" class="block text-xs font-medium text-slate-500 mb-1">Güncel Kilometre</label>
                     <input type="number" id="edit-vehicle-odo" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-bold">
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-slate-500 mb-1">Tank Kapasitesi (L)</label>
+                    <label id="label-edit-vehicle-tank" class="block text-xs font-medium text-slate-500 mb-1">Tank Kapasitesi (L)</label>
                     <input type="number" id="edit-vehicle-tank" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-bold">
                 </div>
             </div>
@@ -1092,6 +1117,54 @@
             </div>
             <div class="pt-4">
                 <button id="delete-vehicle-btn" type="button" onclick="deleteVehicle()" class="w-full bg-rose-50 hover:bg-rose-100 text-rose-600 font-semibold py-2.5 rounded-xl text-xs transition">Aracı Sil</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- v7: AYAR SEÇİCİ ALT PANELİ -->
+    <div id="settings-picker" class="hidden absolute inset-0 bg-slate-900/40 z-[60] flex items-end">
+        <div class="w-full bg-white rounded-t-3xl max-h-[80%] flex flex-col shadow-2xl">
+            <div class="px-4 py-3 flex items-center justify-between border-b border-slate-100">
+                <span id="settings-picker-title" class="font-bold text-slate-800 text-sm">Seçin</span>
+                <button type="button" id="settings-picker-close" aria-label="Kapat" class="w-9 h-9 rounded-full hover:bg-slate-100 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="settings-picker-body" class="flex-1 overflow-y-auto divide-y divide-slate-100 pb-4"></div>
+        </div>
+    </div>
+
+    <!-- v7: YEDEK GERİ YÜKLEME ONAYI -->
+    <div id="settings-restore-modal" class="hidden absolute inset-0 bg-slate-900/50 z-[60] flex items-center justify-center p-5">
+        <div class="bg-white rounded-2xl w-full max-w-sm p-4 space-y-3 shadow-2xl">
+            <div class="flex items-center gap-2.5">
+                <span class="w-9 h-9 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center shrink-0"><i class="fa-solid fa-triangle-exclamation"></i></span>
+                <div class="font-bold text-slate-800 text-sm">Yedek geri yüklenecek</div>
+            </div>
+            <div id="settings-restore-summary"></div>
+            <p class="text-[11px] text-rose-600 leading-relaxed font-medium">Mevcut tüm kayıtlarınız bu yedekle değiştirilecek. Bu işlem geri alınamaz. Devam etmeden önce mevcut verinizin yedeğini almanız önerilir.</p>
+            <div class="flex gap-2 pt-1">
+                <button type="button" id="settings-restore-cancel" class="flex-1 bg-white border border-slate-200 text-slate-700 py-2.5 rounded-xl text-xs font-semibold">Vazgeç</button>
+                <button type="button" id="settings-restore-confirm" class="flex-1 bg-slate-800 text-white py-2.5 rounded-xl text-xs font-semibold">Geri yükle</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- v7: ARAÇ SİMGESİ SEÇİCİ -->
+    <div id="vehicle-icon-modal" class="hidden absolute inset-0 bg-white z-[60] flex flex-col">
+        <div class="px-4 py-3 flex items-center justify-between border-b border-slate-100">
+            <button type="button" id="vehicle-icon-close" aria-label="Kapat" class="w-9 h-9 rounded-full hover:bg-slate-100 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+            <span class="font-bold text-slate-800 text-sm">Araç Simgesi</span>
+            <button type="button" id="vehicle-icon-save" aria-label="Kaydet" class="w-9 h-9 rounded-full bg-slate-800 text-white flex items-center justify-center"><i class="fa-solid fa-check"></i></button>
+        </div>
+        <div class="flex-1 overflow-y-auto p-4 space-y-4">
+            <div class="flex justify-center py-2"><div id="vehicle-icon-preview"></div></div>
+            <div>
+                <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-2">Renk</div>
+                <div id="vehicle-color-row" class="flex flex-wrap gap-2.5"></div>
+            </div>
+            <div>
+                <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-2">Simge</div>
+                <div id="vehicle-icon-grid" class="grid grid-cols-4 gap-2"></div>
             </div>
         </div>
     </div>
@@ -1157,7 +1230,7 @@
                         trips: Array.isArray(parsed.trips) ? parsed.trips : []
                     };
                     merged.vehicles = merged.vehicles.filter(v => v && typeof v.id === 'string' && typeof v.name === 'string')
-                        .map(v => ({ ...v, odometer: Number(v.odometer) || 0, tankCapacity: Number(v.tankCapacity) || 50, fuelType: v.fuelType || 'Benzin' }));
+                        .map(v => ({ ...v, odometer: Number(v.odometer) || 0, tankCapacity: Number(v.tankCapacity) || 50, fuelType: v.fuelType || 'Benzin', icon: typeof v.icon === 'string' ? v.icon : 'car', color: typeof v.color === 'string' ? v.color : 'slate' }));
                     if (!merged.vehicles.length) merged.vehicles = JSON.parse(JSON.stringify(defaultState.vehicles));
                     merged.refuels = merged.refuels.filter(r => r && typeof r.id === 'string')
                         .map(r => ({ ...r, odometer: Number(r.odometer) || 0, liters: Number(r.liters) || 0, totalCost: Number(r.totalCost) || 0, pricePerLiter: Number(r.pricePerLiter) || 0 }));
@@ -1208,7 +1281,96 @@
     }
 
     function formatCurrency(val) {
+        if (window.YakitSettings) return window.YakitSettings.money(val);
         return '₺' + Number(val || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    // v7: birim/tarih yardımcıları
+    function fmtDistance(km, dec) { return window.YakitSettings ? window.YakitSettings.distance(km, dec) : Number(km||0).toLocaleString('tr-TR') + ' km'; }
+    function fmtVolume(l, dec) { return window.YakitSettings ? window.YakitSettings.volume(l, dec) : Number(l||0).toFixed(2) + ' L'; }
+    function fmtConsumption(l100, dec) { return window.YakitSettings ? window.YakitSettings.consumption(l100, dec) : Number(l100||0).toFixed(1) + ' L'; }
+    function fmtDate(iso) { return window.YakitSettings ? window.YakitSettings.formatDate(iso) : String(iso||''); }
+    function distLabel() { return window.YakitSettings ? window.YakitSettings.distanceLabel() : 'km'; }
+    function volLabel() { return window.YakitSettings ? window.YakitSettings.volumeLabel() : 'L'; }
+    function consLabel() { return window.YakitSettings ? window.YakitSettings.consumptionLabel() : 'L/100km'; }
+
+    // v7: giriş alanları seçilen birimde gösterilir, içeride hep km / L / TL saklanır.
+    function readDistInput(id) {
+        const el = document.getElementById(id);
+        const v = parseFloat(el && el.value);
+        if (!isFinite(v)) return NaN;
+        return window.YakitSettings ? window.YakitSettings.displayToKm(v) : v;
+    }
+    function writeDistInput(id, km, dec) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (km === '' || km === null || km === undefined || !isFinite(km)) { el.value = ''; return; }
+        const v = window.YakitSettings ? window.YakitSettings.kmToDisplay(km) : km;
+        el.value = +Number(v).toFixed(dec === undefined ? 1 : dec);
+    }
+    function readVolInput(id) {
+        const el = document.getElementById(id);
+        const v = parseFloat(el && el.value);
+        if (!isFinite(v)) return NaN;
+        return window.YakitSettings ? window.YakitSettings.displayToLiters(v) : v;
+    }
+    function writeVolInput(id, l, dec) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (l === '' || l === null || l === undefined || !isFinite(l)) { el.value = ''; return; }
+        const v = window.YakitSettings ? window.YakitSettings.litersToDisplay(l) : l;
+        el.value = +Number(v).toFixed(dec === undefined ? 2 : dec);
+    }
+    // Birim fiyat: ekranda seçilen hacim birimi başına, içeride L başına
+    function priceDisplayFromLiter(ppl) {
+        const S = window.YakitSettings;
+        if (!S) return Number(ppl || 0);
+        return S.litersToDisplay(1) * Number(ppl || 0);
+    }
+    function priceLiterFromDisplay(v) {
+        const S = window.YakitSettings;
+        if (!S) return Number(v || 0);
+        const per = S.litersToDisplay(1);
+        return per ? Number(v || 0) / per : Number(v || 0);
+    }
+    function readPriceInput(id) {
+        const el = document.getElementById(id);
+        const v = parseFloat(el && el.value);
+        return isFinite(v) ? priceLiterFromDisplay(v) : NaN;
+    }
+    function writePriceInput(id, ppl) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (ppl === '' || ppl === null || ppl === undefined || !isFinite(ppl)) { el.value = ''; return; }
+        el.value = +priceDisplayFromLiter(ppl).toFixed(2);
+    }
+    // Etiketleri güncelle
+    function updateUnitLabels() {
+        const S = window.YakitSettings;
+        if (!S) return;
+        const d = S.distanceLabel(), v = S.volumeLabel(), c = S.currencySymbol(), cons = S.consumptionLabel();
+        const map = {
+            'label-refuel-odo': `Mesafe sayacı (${d})`,
+            'label-refuel-liters': `Yakıt (${v})`,
+            'label-refuel-price': `Fiyat/${v} (${c})`,
+            'label-refuel-total': `Toplam maliyet (${c})`,
+            'label-calc-distance': `Mesafe (${d})`,
+            'label-calc-price': `Yakıt Fiyatı (${c}/${v})`,
+            'label-calc-consumption': `Tüketim (${cons})`,
+            'label-trip-start-odo': `Başlangıç sayacı (${d})`,
+            'label-trip-end-odo': `Bitiş sayacı (${d})`,
+            'label-expense-amount': `Tutar (${c})`,
+            'label-new-vehicle-odo': null, 'label-edit-vehicle-odo': `Güncel ${d === 'km' ? 'Kilometre' : 'Mil'}`,
+            'label-edit-vehicle-tank': `Tank Kapasitesi (${v})`,
+            'label-consumption-analysis': `Yakıt Tüketim Analizi (${cons})`
+        };
+        Object.keys(map).forEach(id => {
+            const el = document.getElementById(id);
+            if (el && map[id]) el.textContent = map[id];
+        });
+        const np = document.getElementById('new-vehicle-odo');
+        if (np) np.placeholder = d === 'km' ? 'Güncel Km' : 'Güncel Mil';
+        const nt = document.getElementById('new-vehicle-tank');
+        if (nt) nt.placeholder = `Tank (${v})`;
     }
 
     // --- Güvenlik: HTML kaçışı (XSS önleme) ---
@@ -1553,7 +1715,7 @@
 
     function switchView(viewName) {
         openTimelineMenuId = null;
-        const views = ['home', 'timeline', 'calculator', 'stats', 'trips', 'reports', 'vehicles'];
+        const views = ['home', 'timeline', 'calculator', 'stats', 'trips', 'reports', 'vehicles', 'settings'];
         views.forEach(v => {
             const el = document.getElementById('view-' + v);
             if (el) el.classList.toggle('hidden', v !== viewName);
@@ -1576,6 +1738,7 @@
 
         renderAll();
         if (viewName === 'reports') updateStorageInfo();
+        if (viewName === 'settings' && window.YakitSettingsUI) window.YakitSettingsUI.render();
     }
 
     function toggleDrawer(open) {
@@ -1647,7 +1810,7 @@
         document.getElementById('edit-refuel-id').value = record.id;
         document.getElementById('refuel-modal-title').textContent = 'Dolumu Düzenle';
         document.getElementById('refuel-odo').value = record.odometer;
-        document.getElementById('refuel-last-odo-hint').textContent = `Son değer: ${vehicle.odometer.toLocaleString('tr-TR')} km`;
+        document.getElementById('refuel-last-odo-hint').textContent = `Son değer: ${fmtDistance(vehicle.odometer, 0)}`;
         document.getElementById('refuel-liters').value = record.liters;
         document.getElementById('refuel-type').value = record.fuelType || 'Kurşunsuz 95';
         document.getElementById('refuel-price').value = record.pricePerLiter;
@@ -1657,7 +1820,7 @@
         document.getElementById('refuel-full').checked = record.fullTank !== false;
         
         const tankCapEl = document.getElementById('refuel-tank-capacity');
-        if (tankCapEl) tankCapEl.value = vehicle.tankCapacity || '';
+        if (tankCapEl) writeVolInput('refuel-tank-capacity', vehicle.tankCapacity || '');
 
         selectedStationName = (record.station && record.station !== 'Belirtilmedi') ? record.station : '';
         selectedStationMeta = (record.stationLat != null && record.stationLon != null && isFiniteCoord(Number(record.stationLat), Number(record.stationLon)))
@@ -1699,14 +1862,14 @@
 
         document.getElementById('edit-refuel-id').value = '';
         document.getElementById('refuel-modal-title').textContent = 'Dolum';
-        document.getElementById('refuel-odo').value = prefill.odometer || '';
-        document.getElementById('refuel-last-odo-hint').textContent = `Son değer: ${vehicle.odometer.toLocaleString('tr-TR')} km`;
-        document.getElementById('refuel-liters').value = prefill.liters || '';
-        document.getElementById('refuel-price').value = prefill.price || (lastRefuel ? lastRefuel.pricePerLiter.toFixed(2) : '81.60');
+        writeDistInput('refuel-odo', prefill.odometer || '');
+        document.getElementById('refuel-last-odo-hint').textContent = `Son değer: ${fmtDistance(vehicle.odometer, 0)}`;
+        writeVolInput('refuel-liters', prefill.liters || '');
+        writePriceInput('refuel-price', prefill.price || (lastRefuel ? lastRefuel.pricePerLiter : 81.60));
         document.getElementById('refuel-total').value = prefill.total || '';
         document.getElementById('refuel-full').checked = true;
         const tankCapEl = document.getElementById('refuel-tank-capacity');
-        if (tankCapEl) tankCapEl.value = vehicle.tankCapacity || '';
+        if (tankCapEl) writeVolInput('refuel-tank-capacity', vehicle.tankCapacity || '');
 
         const now = new Date();
         document.getElementById('refuel-date').value = todayKey();
@@ -1876,9 +2039,9 @@
     async function saveRefuel() {
         const vehicle = getActiveVehicle();
         const editId = document.getElementById('edit-refuel-id').value;
-        const odo = parseFloat(document.getElementById('refuel-odo').value) || vehicle.odometer;
-        const liters = parseFloat(document.getElementById('refuel-liters').value);
-        const price = parseFloat(document.getElementById('refuel-price').value);
+        const odo = readDistInput('refuel-odo') || vehicle.odometer;
+        const liters = readVolInput('refuel-liters');
+        const price = readPriceInput('refuel-price');
         const total = parseFloat(document.getElementById('refuel-total').value);
 
         if (isNaN(liters) || liters <= 0 || isNaN(total) || total <= 0) {
@@ -1985,15 +2148,17 @@
 
         if (!distEl || !priceEl || !consEl) return;
 
-        const distance = parseFloat(distEl.value) || 0;
-        const price = parseFloat(priceEl.value) || 0;
-        const consumption = parseFloat(consEl.value) || 0;
+        const S = window.YakitSettings;
+        const distance = S ? S.displayToKm(parseFloat(distEl.value) || 0) : (parseFloat(distEl.value) || 0);
+        const price = S ? priceLiterFromDisplay(parseFloat(priceEl.value) || 0) : (parseFloat(priceEl.value) || 0);
+        const consVal = parseFloat(consEl.value) || 0;
+        const consumption = S ? S.consumptionToL100(consVal) : consVal;
 
         const neededLiters = (distance * consumption) / 100;
         const totalCost = neededLiters * price;
 
         if (costEl) costEl.textContent = formatCurrency(totalCost);
-        if (litersEl) litersEl.textContent = neededLiters.toFixed(2).replace('.', ',') + ' L';
+        if (litersEl) litersEl.textContent = fmtVolume(neededLiters, 2);
     }
 
     // ============================================================
@@ -2545,14 +2710,14 @@
         const endOdo = parseFloat(document.getElementById('trip-end-odo')?.value) || 0;
         const dist = Math.max(0, endOdo - startOdo);
         const distEl = document.getElementById('trip-calculated-dist');
-        if (distEl) distEl.textContent = dist + ' km';
+        if (distEl) distEl.textContent = window.YakitSettings ? window.YakitSettings.num(dist, 0) + ' ' + distLabel() : dist + ' km';
     }
 
     function saveTrip() {
         const start = document.getElementById('trip-start')?.value || 'Başlangıç';
         const end = document.getElementById('trip-end')?.value || 'Bitiş';
-        const startOdo = parseFloat(document.getElementById('trip-start-odo')?.value) || 0;
-        const endOdo = parseFloat(document.getElementById('trip-end-odo')?.value) || 0;
+        const startOdo = readDistInput('trip-start-odo') || 0;
+        const endOdo = readDistInput('trip-end-odo') || 0;
         const dist = Math.max(0, endOdo - startOdo);
 
         const newTrip = {
@@ -2652,8 +2817,8 @@
 
     function addVehicle() {
         const name = document.getElementById('new-vehicle-name')?.value.trim();
-        const odo = parseFloat(document.getElementById('new-vehicle-odo')?.value) || 0;
-        const tank = parseFloat(document.getElementById('new-vehicle-tank')?.value) || 50;
+        const odo = readDistInput('new-vehicle-odo') || 0;
+        const tank = readVolInput('new-vehicle-tank') || 50;
         const fuel = document.getElementById('new-vehicle-fuel')?.value || 'Benzin';
 
         if (!name) {
@@ -2666,7 +2831,9 @@
             name: name,
             odometer: odo,
             fuelType: fuel,
-            tankCapacity: tank
+            tankCapacity: tank,
+            icon: newVehicleIcon,
+            color: newVehicleColor
         };
 
         state.vehicles.push(newV);
@@ -2675,9 +2842,66 @@
         document.getElementById('new-vehicle-name').value = '';
         document.getElementById('new-vehicle-odo').value = '';
         document.getElementById('new-vehicle-tank').value = '';
+        newVehicleIcon = 'car'; newVehicleColor = 'slate'; renderNewVehicleIconBtn();
         renderAll();
         showToast('Araç eklendi');
     }
+
+    // ===== v7: ARAÇ SİMGESİ =====
+    let newVehicleIcon = 'car', newVehicleColor = 'slate';
+    let editVehicleIcon = 'car', editVehicleColor = 'slate';
+
+    function renderNewVehicleIconBtn() {
+        const el = document.getElementById('new-vehicle-icon-btn');
+        if (el && window.YakitSettings) {
+            el.innerHTML = window.YakitSettings.vehicleAvatarHtml({ icon: newVehicleIcon, color: newVehicleColor }, 'w-10 h-10 text-base');
+        }
+    }
+    function renderEditVehicleIconBtn() {
+        const el = document.getElementById('edit-vehicle-icon-btn');
+        if (el && window.YakitSettings) {
+            el.innerHTML = window.YakitSettings.vehicleAvatarHtml({ icon: editVehicleIcon, color: editVehicleColor }, 'w-12 h-12 text-lg');
+        }
+    }
+    function pickNewVehicleIcon() {
+        if (!window.YakitSettingsUI) return;
+        window.YakitSettingsUI.openIconPicker(newVehicleIcon, newVehicleColor, (icon, color) => {
+            newVehicleIcon = icon; newVehicleColor = color; renderNewVehicleIconBtn();
+        });
+    }
+    function pickEditVehicleIcon() {
+        if (!window.YakitSettingsUI) return;
+        window.YakitSettingsUI.openIconPicker(editVehicleIcon, editVehicleColor, (icon, color) => {
+            editVehicleIcon = icon; editVehicleColor = color; renderEditVehicleIconBtn();
+        });
+    }
+
+    // ===== v7: AYARLAR / YEDEKLEME KÖPRÜSÜ =====
+    window.YakitApp = {
+        getState: () => state,
+        replaceState: (next) => {
+            // loadState'in şema doğrulamasından geçirmek için geçici olarak yazıp oku
+            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch (e) {}
+            state = loadState();
+            sessionAddedPhotoIds.clear();
+            photoUrlCache.forEach((url, id) => revokePhotoUrl(id));
+            saveState();
+            renderAll();
+        },
+        getAllPhotos: async () => {
+            const db = await openPhotoDb();
+            return new Promise((resolve, reject) => {
+                const req = db.transaction(PHOTO_STORE, 'readonly').objectStore(PHOTO_STORE).getAll();
+                req.onsuccess = () => resolve(req.result || []);
+                req.onerror = () => reject(req.error);
+            });
+        },
+        putPhoto: async (id, blob) => { await idbPutPhoto(id, blob); },
+        storageInfo: async () => {
+            const s = await idbPhotoStats();
+            return { text: `${s.count} fotoğraf · ${(s.bytes/1048576).toFixed(2)} MB` };
+        }
+    };
 
     function selectVehicle(id) {
         state.activeVehicleId = id;
@@ -2691,9 +2915,12 @@
         if (!v) return;
         document.getElementById('edit-vehicle-id').value = v.id;
         document.getElementById('edit-vehicle-name').value = v.name;
-        document.getElementById('edit-vehicle-odo').value = v.odometer;
-        document.getElementById('edit-vehicle-tank').value = v.tankCapacity || 50;
+        writeDistInput('edit-vehicle-odo', v.odometer);
+        writeVolInput('edit-vehicle-tank', v.tankCapacity || 50);
         document.getElementById('edit-vehicle-fuel').value = v.fuelType;
+        editVehicleIcon = v.icon || 'car';
+        editVehicleColor = v.color || 'slate';
+        renderEditVehicleIconBtn();
         const delBtn = document.getElementById('delete-vehicle-btn');
         if (delBtn) delBtn.style.display = state.vehicles.length > 1 ? 'block' : 'none';
         document.getElementById('edit-vehicle-modal').classList.remove('hidden');
@@ -2704,9 +2931,11 @@
         const v = state.vehicles.find(item => item.id === id);
         if (!v) return;
         v.name = document.getElementById('edit-vehicle-name').value.trim() || v.name;
-        v.odometer = parseFloat(document.getElementById('edit-vehicle-odo').value) || v.odometer;
-        v.tankCapacity = parseFloat(document.getElementById('edit-vehicle-tank').value) || v.tankCapacity;
+        v.odometer = readDistInput('edit-vehicle-odo') || v.odometer;
+        v.tankCapacity = readVolInput('edit-vehicle-tank') || v.tankCapacity;
         v.fuelType = document.getElementById('edit-vehicle-fuel').value;
+        v.icon = editVehicleIcon;
+        v.color = editVehicleColor;
         saveState();
         document.getElementById('edit-vehicle-modal').classList.add('hidden');
         renderAll();
@@ -2780,9 +3009,21 @@
         const avatarEl = document.getElementById('active-vehicle-avatar');
         const nameEl = document.getElementById('active-vehicle-name');
         const odoEl = document.getElementById('active-vehicle-odo');
-        if (avatarEl) avatarEl.textContent = vehicle.name.charAt(0).toUpperCase();
+        if (avatarEl) {
+            if (window.YakitSettings) {
+                const col = window.YakitSettings.vehicleColor(vehicle);
+                avatarEl.style.background = col.bg;
+                avatarEl.innerHTML = '<i class="fa-solid fa-' + window.YakitSettings.vehicleIcon(vehicle) + ' text-sm"></i>';
+            } else {
+                avatarEl.textContent = vehicle.name.charAt(0).toUpperCase();
+            }
+        }
         if (nameEl) nameEl.textContent = vehicle.name;
-        if (odoEl) odoEl.textContent = vehicle.odometer.toLocaleString('tr-TR') + ' km';
+        if (odoEl) odoEl.textContent = fmtDistance(vehicle.odometer, 0);
+        // v7: yedek hatırlatması + simge düğmeleri + birim etiketleri
+        if (window.YakitSettingsUI) window.YakitSettingsUI.renderReminder();
+        renderNewVehicleIconBtn();
+        updateUnitLabels();
 
         const vRefuels = state.refuels.filter(r => r.vehicleId === vehicle.id);
         const vExpenses = state.expenses.filter(e => e.vehicleId === vehicle.id);
@@ -2804,7 +3045,7 @@
                 const prev = sortedRefuels[idx + 1];
                 let kmDiffText = '';
                 if (prev && r.odometer > prev.odometer) {
-                    kmDiffText = ` (+${(r.odometer - prev.odometer).toLocaleString('tr-TR')} km)`;
+                    kmDiffText = ` (+${fmtDistance(r.odometer - prev.odometer, 0)})`;
                 }
                 return `
                     <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
@@ -2821,7 +3062,7 @@
                             </div>
                             <div class="text-right">
                                 <div class="text-xs font-bold text-slate-800">${formatCurrency(r.totalCost)}</div>
-                                <div class="text-[11px] text-slate-400 mt-0.5">${escapeHtml(r.date)} · ${r.odometer.toLocaleString('tr-TR')} km<span class="text-emerald-600 font-semibold">${kmDiffText}</span></div>
+                                <div class="text-[11px] text-slate-400 mt-0.5">${escapeHtml(fmtDate(r.date))} · ${fmtDistance(r.odometer, 0)}<span class="text-emerald-600 font-semibold">${kmDiffText}</span></div>
                             </div>
                         </div>
                         <div class="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
@@ -2876,7 +3117,7 @@
                 if (!isFull) {
                     consText = '<span class="text-[11px] font-semibold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-md shrink-0">Kısmi dolum</span>';
                 } else if (iv) {
-                    consText = `<span class="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md shrink-0">${iv.l100.toFixed(1).replace('.', ',')} l/100km</span>`;
+                    consText = `<span class="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md shrink-0">${fmtConsumption(iv.l100, 1)}</span>`;
                 } else if (r.id === consumptionAnalysis.firstFullId) {
                     consText = '<span class="text-[11px] font-medium text-slate-400">İlk tam dolum</span>';
                 } else {
@@ -2884,7 +3125,7 @@
                 }
                 let kmDiffText = '';
                 if (prev && r.odometer > prev.odometer) {
-                    kmDiffText = ` (+${(r.odometer - prev.odometer).toLocaleString('tr-TR')} km)`;
+                    kmDiffText = ` (+${fmtDistance(r.odometer - prev.odometer, 0)})`;
                 }
                 const isMenuOpen = openTimelineMenuId === r.id;
                 const safeId = escapeHtml(r.id); // data-* özniteliğinde kullanılır
@@ -2897,7 +3138,7 @@
                                 </div>
                                 <div class="min-w-0">
                                     <div class="font-bold text-slate-800 text-sm truncate">Dolum · ${r.liters.toFixed(2).replace('.', ',')} L</div>
-                                    <div class="text-[11px] text-slate-400 truncate">${escapeHtml(r.date)} ${escapeHtml(r.time || '')} · ${r.odometer.toLocaleString('tr-TR')} km<span class="text-emerald-600 font-semibold">${kmDiffText}</span></div>
+                                    <div class="text-[11px] text-slate-400 truncate">${escapeHtml(fmtDate(r.date))} ${escapeHtml(r.time || '')} · ${fmtDistance(r.odometer, 0)}<span class="text-emerald-600 font-semibold">${kmDiffText}</span></div>
                                 </div>
                             </div>
                             <div class="flex items-start gap-1.5 shrink-0">
@@ -2998,15 +3239,15 @@
             totalKmCovered = sorted[sorted.length - 1].odometer - sorted[0].odometer;
         }
         const overallCostPerKm = totalKmCovered > 0 ? totalSpent / totalKmCovered : 0;
-        if (statCostPerKm) statCostPerKm.textContent = '₺' + overallCostPerKm.toFixed(2).replace('.', ',');
+        if (statCostPerKm) statCostPerKm.textContent = formatCurrency(overallCostPerKm);
 
         // Km başına maliyet: tam depolar arası geçerli aralıklardan (kısmi dolumlar dahil edilerek)
         const costPerKmList = consumptionAnalysis.intervals.map(iv => iv.costPerKm);
         if (costPerKmList.length > 0) {
             const bestCPK = Math.min(...costPerKmList);
             const worstCPK = Math.max(...costPerKmList);
-            if (bestCostKmEl) bestCostKmEl.textContent = '₺' + bestCPK.toFixed(2).replace('.', ',') + ' /km';
-            if (worstCostKmEl) worstCostKmEl.textContent = '₺' + worstCPK.toFixed(2).replace('.', ',') + ' /km';
+            if (bestCostKmEl) bestCostKmEl.textContent = formatCurrency(bestCPK) + ' /' + distLabel();
+            if (worstCostKmEl) worstCostKmEl.textContent = formatCurrency(worstCPK) + ' /' + distLabel();
         } else {
             if (bestCostKmEl) bestCostKmEl.textContent = '₺0,00 /km';
             if (worstCostKmEl) worstCostKmEl.textContent = '₺0,00 /km';
@@ -3039,9 +3280,9 @@
         const statSpentEl = document.getElementById('stat-total-spent');
 
         if (statYearRefuels) statYearRefuels.textContent = `${thisYearRefuels.length} dolum`;
-        if (statYearLiters) statYearLiters.textContent = `${yearLiters.toFixed(1).replace('.', ',')} L`;
+        if (statYearLiters) statYearLiters.textContent = fmtVolume(yearLiters, 1);
         if (statMonthRefuels) statMonthRefuels.textContent = `${thisMonthRefuels.length} dolum`;
-        if (statMonthLiters) statMonthLiters.textContent = `${monthLiters.toFixed(1).replace('.', ',')} L`;
+        if (statMonthLiters) statMonthLiters.textContent = fmtVolume(monthLiters, 1);
         if (statSpentEl) statSpentEl.textContent = formatCurrency(totalSpent);
 
         const minRefuelEl = document.getElementById('stat-min-refuel');
@@ -3049,8 +3290,8 @@
         if (vRefuels.length > 0) {
             const minR = [...vRefuels].reduce((min, r) => r.liters < min.liters ? r : min, vRefuels[0]);
             const maxR = [...vRefuels].reduce((max, r) => r.liters > max.liters ? r : max, vRefuels[0]);
-            if (minRefuelEl) minRefuelEl.textContent = `${minR.liters.toFixed(1).replace('.', ',')} L / ${formatCurrency(minR.totalCost)}`;
-            if (maxRefuelEl) maxRefuelEl.textContent = `${maxR.liters.toFixed(1).replace('.', ',')} L / ${formatCurrency(maxR.totalCost)}`;
+            if (minRefuelEl) minRefuelEl.textContent = `${fmtVolume(minR.liters, 1)} / ${formatCurrency(minR.totalCost)}`;
+            if (maxRefuelEl) maxRefuelEl.textContent = `${fmtVolume(maxR.liters, 1)} / ${formatCurrency(maxR.totalCost)}`;
         } else {
             if (minRefuelEl) minRefuelEl.textContent = '0 L / ₺0';
             if (maxRefuelEl) maxRefuelEl.textContent = '0 L / ₺0';
@@ -3071,9 +3312,9 @@
             const bestC = Math.min(...consumptions);
             const worstC = Math.max(...consumptions);
 
-            if (avgConsEl) avgConsEl.textContent = avgC.toFixed(1).replace('.', ',') + ' L';
-            if (bestConsEl) bestConsEl.textContent = bestC.toFixed(1).replace('.', ',') + ' L';
-            if (worstConsEl) worstConsEl.textContent = worstC.toFixed(1).replace('.', ',') + ' L';
+            if (avgConsEl) avgConsEl.textContent = fmtConsumption(avgC, 1);
+            if (bestConsEl) bestConsEl.textContent = fmtConsumption(bestC, 1);
+            if (worstConsEl) worstConsEl.textContent = fmtConsumption(worstC, 1);
         } else {
             if (avgConsEl) avgConsEl.textContent = '0,0 L';
             if (bestConsEl) bestConsEl.textContent = '0,0 L';
@@ -3131,12 +3372,12 @@
         const statDistThisMonthEl = document.getElementById('stat-dist-this-month');
         const statDistLastMonthEl = document.getElementById('stat-dist-last-month');
 
-        if (statTotalDistEl) statTotalDistEl.textContent = `${calcTotalDist.toLocaleString('tr-TR')} km`;
-        if (statLastOdoEl) statLastOdoEl.textContent = `${vehicle.odometer.toLocaleString('tr-TR')} km`;
-        if (statDistThisYearEl) statDistThisYearEl.textContent = `${distThisYear.toLocaleString('tr-TR')} km`;
-        if (statDistLastYearEl) statDistLastYearEl.textContent = `${distLastYear.toLocaleString('tr-TR')} km`;
-        if (statDistThisMonthEl) statDistThisMonthEl.textContent = `${distThisMonth.toLocaleString('tr-TR')} km`;
-        if (statDistLastMonthEl) statDistLastMonthEl.textContent = `${distLastMonth.toLocaleString('tr-TR')} km`;
+        if (statTotalDistEl) statTotalDistEl.textContent = fmtDistance(calcTotalDist, 0);
+        if (statLastOdoEl) statLastOdoEl.textContent = fmtDistance(vehicle.odometer, 0);
+        if (statDistThisYearEl) statDistThisYearEl.textContent = fmtDistance(distThisYear, 0);
+        if (statDistLastYearEl) statDistLastYearEl.textContent = fmtDistance(distLastYear, 0);
+        if (statDistThisMonthEl) statDistThisMonthEl.textContent = fmtDistance(distThisMonth, 0);
+        if (statDistLastMonthEl) statDistLastMonthEl.textContent = fmtDistance(distLastMonth, 0);
 
         if (vRefuels.length >= 2) {
             const sorted = [...vRefuels].sort(compareRefuelsAsc);
@@ -3147,8 +3388,8 @@
             const dailyKm = totalKm / diffDays;
             const monthlyKm = dailyKm * 30;
 
-            if (avgDailyEl) avgDailyEl.textContent = `${Math.round(dailyKm)} km`;
-            if (avgMonthlyEl) avgMonthlyEl.textContent = `${Math.round(monthlyKm)} km`;
+            if (avgDailyEl) avgDailyEl.textContent = fmtDistance(dailyKm, 0);
+            if (avgMonthlyEl) avgMonthlyEl.textContent = fmtDistance(monthlyKm, 0);
         } else {
             if (avgDailyEl) avgDailyEl.textContent = '0 km';
             if (avgMonthlyEl) avgMonthlyEl.textContent = '0 km';
@@ -3167,11 +3408,11 @@
                                 </div>
                                 <div class="text-xs text-slate-600 mt-1">${escapeHtml(t.start)} → ${escapeHtml(t.end)}</div>
                             </div>
-                            <span class="font-bold text-sm text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-xl">${t.distance.toLocaleString('tr-TR')} km</span>
+                            <span class="font-bold text-sm text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-xl">${fmtDistance(t.distance, 0)}</span>
                         </div>
                         <div class="pt-1.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
                             <span>${escapeHtml(t.startDate || t.date || '')} ${escapeHtml(t.startTime || '')} → ${escapeHtml(t.endTime || '')}</span>
-                            ${t.startOdo !== undefined && t.endOdo !== undefined ? `<span>${t.startOdo.toLocaleString('tr-TR')} - ${t.endOdo.toLocaleString('tr-TR')} km</span>` : ''}
+                            ${t.startOdo !== undefined && t.endOdo !== undefined ? `<span>${fmtDistance(t.startOdo, 0)} - ${fmtDistance(t.endOdo, 0)}</span>` : ''}
                         </div>
                     </div>
                 `).join('')
@@ -3182,7 +3423,7 @@
         if (reportBox) {
             reportBox.innerHTML = `
                 <div class="flex justify-between"><span>Araç:</span><strong>${escapeHtml(vehicle.name)}</strong></div>
-                <div class="flex justify-between"><span>Güncel Kilometre:</span><strong>${vehicle.odometer.toLocaleString('tr-TR')} km</strong></div>
+                <div class="flex justify-between"><span>Güncel Kilometre:</span><strong>${fmtDistance(vehicle.odometer, 0)}</strong></div>
                 <div class="flex justify-between"><span>Toplam Dolum Sayısı:</span><strong>${vRefuels.length}</strong></div>
                 <div class="flex justify-between"><span>Toplam Yakıt:</span><strong>${totalLiters.toFixed(2)} L</strong></div>
                 <div class="flex justify-between"><span>Toplam Maliyet:</span><strong>${formatCurrency(totalSpent)}</strong></div>
@@ -3194,10 +3435,10 @@
             vehiclesListEl.innerHTML = state.vehicles.map(v => `
                 <div data-vid="${escapeHtml(v.id)}" onclick="selectVehicle(this.dataset.vid)" class="bg-white rounded-2xl p-3.5 shadow-sm border ${v.id === vehicle.id ? 'border-slate-800 ring-1 ring-slate-800' : 'border-slate-100'} flex items-center justify-between cursor-pointer">
                     <div class="flex items-center gap-3">
-                        <div class="w-9 h-9 rounded-full bg-slate-800 text-white font-bold flex items-center justify-center text-sm">${escapeHtml(v.name.charAt(0).toUpperCase())}</div>
+                        ${window.YakitSettings ? window.YakitSettings.vehicleAvatarHtml(v, 'w-9 h-9 text-sm') : `<div class="w-9 h-9 rounded-full bg-slate-800 text-white font-bold flex items-center justify-center text-sm">${escapeHtml(v.name.charAt(0).toUpperCase())}</div>`}
                         <div>
                             <div class="font-bold text-slate-800 text-sm">${escapeHtml(v.name)}</div>
-                            <div class="text-[11px] text-slate-500">${v.odometer.toLocaleString('tr-TR')} km · ${escapeHtml(v.fuelType)}${v.tankCapacity ? ` · ${v.tankCapacity} L depo` : ''}</div>
+                            <div class="text-[11px] text-slate-500">${fmtDistance(v.odometer, 0)} · ${escapeHtml(v.fuelType)}${v.tankCapacity ? ` · ${fmtVolume(v.tankCapacity, 0)} depo` : ''}</div>
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
@@ -3223,6 +3464,11 @@
     window.addEventListener('DOMContentLoaded', () => {
         renderAll();
         initPhotonBaseSetting();
+        // v7: varsayılan sayfa
+        try {
+            const dv = window.YakitSettings && window.YakitSettings.get().defaultView;
+            if (dv && dv !== 'home' && document.getElementById('view-' + dv)) switchView(dv);
+        } catch (e) {}
         window.addEventListener('resize', () => {
             const pane = document.getElementById('station-map-pane');
             if (stationMap && pane && !pane.classList.contains('hidden')) stationMap.invalidateSize();

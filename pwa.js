@@ -207,9 +207,9 @@
   async function refreshOcrStatus() {
     const el = $('ocr-cache-status');
     const btn = $('ocr-precache-btn');
-    if (!el) return;
     try {
       const st = await swMessage({ type: 'OCR_STATUS' });
+      if (!el) return st;
       if (st.ready) {
         el.textContent = 'Hazır — çevrimdışı çalışır';
         el.className = 'text-[10px] font-semibold text-emerald-700';
@@ -219,10 +219,14 @@
         el.className = 'text-[10px] font-semibold text-amber-600';
         if (btn) btn.classList.remove('hidden');
       }
+      return st;
     } catch (e) {
-      el.textContent = 'Henüz indirilmedi';
-      el.className = 'text-[10px] font-semibold text-slate-400';
+      if (el) {
+        el.textContent = 'Henüz indirilmedi';
+        el.className = 'text-[10px] font-semibold text-slate-400';
+      }
       if (btn) btn.classList.remove('hidden');
+      return { ready: false, count: 0, cached: 0, total: 5, error: String(e && e.message || e) };
     }
   }
 

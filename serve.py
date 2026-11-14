@@ -24,8 +24,12 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self.send_header('X-Content-Type-Options', 'nosniff')
         super().end_headers()
 
-with socketserver.TCPServer(('0.0.0.0', PORT), Handler) as httpd:
-    print(f'Yakıt Takip v5 PWA → http://localhost:{PORT}')
+class Server(socketserver.ThreadingTCPServer):
+    allow_reuse_address = True
+    daemon_threads = True
+
+with Server(('0.0.0.0', PORT), Handler) as httpd:
+    print(f'Yakıt Takip v7 → http://localhost:{PORT}')
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
