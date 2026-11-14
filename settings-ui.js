@@ -1,4 +1,4 @@
-/* Yakıt Takip v7 — Ayarlar ekranı (Fuelio tarzı gruplu liste)
+/* Yakıt Takip v9 — Ayarlar ekranı (Fuelio tarzı gruplu liste)
  * window.YakitSettingsUI
  */
 (function () {
@@ -60,8 +60,14 @@
     var html = '';
 
     html += group('Ana tercihler', [
-      row({ icon: 'ruler-combined', iconBg: '#dbeafe', iconFg: '#2563eb', title: 'Birimler',
-            desc: 'Mesafe, hacim ve tüketim birimleri', badge: S.distanceLabel() + ' · ' + S.volumeLabel(), action: 'units', arrow: false }),
+      row({ icon: 'ruler-combined', iconBg: '#dbeafe', iconFg: '#2563eb', title: 'Mesafe birimi',
+            desc: 'Kilometre veya mil', badge: S.distanceLabel(), action: 'units', arrow: true }),
+      row({ icon: 'fill-drip', iconBg: '#e0f2fe', iconFg: '#0284c7', title: 'Hacim birimi',
+            desc: 'Litre, ABD galonu veya İngiliz galonu', badge: S.volumeLabel(), action: 'volume', arrow: true }),
+      row({ icon: 'gauge-high', iconBg: '#ede9fe', iconFg: '#7c3aed', title: 'Tüketim birimi',
+            desc: 'L/100km, km/L veya MPG', badge: S.consumptionLabel(), action: 'consumption', arrow: true }),
+      row({ icon: 'calendar-days', iconBg: '#fce7f3', iconFg: '#db2777', title: 'Haftanın ilk günü',
+            desc: 'Raporlardaki haftalık özet bu güne göre hesaplanır', badge: S.weekStartLabel(), action: 'weekstart', arrow: true }),
       row({ icon: 'coins', iconBg: '#dcfce7', iconFg: '#059669', title: 'Para birimi',
             desc: cur.name, badge: cur.symbol, action: 'currency' }),
       row({ icon: 'calendar-days', iconBg: '#e0e7ff', iconFg: '#4f46e5', title: 'Tarih biçimi',
@@ -98,7 +104,7 @@
     ].join(''));
 
     html += group('Hakkında', [
-      row({ icon: 'circle-info', iconBg: '#e0e7ff', iconFg: '#4f46e5', title: 'Yakıt Takip', desc: 'Sürüm 7.0.0', badge: 'v7' }),
+      row({ icon: 'circle-info', iconBg: '#e0e7ff', iconFg: '#4f46e5', title: 'Yakıt Takip', desc: 'Sürüm 9.0.0', badge: 'v9' }),
       row({ icon: 'shield-halved', iconBg: '#dcfce7', iconFg: '#059669', title: 'Gizlilik',
             desc: 'Veriler cihazınızda kalır. Sunucuya hiçbir şey gönderilmez.' }),
       row({ icon: 'file-lines', iconBg: '#f1f5f9', iconFg: '#64748b', title: 'Açık kaynak lisansları',
@@ -130,7 +136,7 @@
     if (!el || !window.YakitPWA || !window.YakitPWA.refreshOcrStatus) return;
     try {
       var st = await window.YakitPWA.refreshOcrStatus();
-      el.textContent = st && st.ready ? 'Hazır' : (st && st.count ? st.count + '/5' : 'İndirilmedi');
+      el.textContent = st && st.ready ? 'Hazır' : (st && st.count ? st.count + '/' + (st.total || 4) : 'İndirilmedi');
     } catch (e) { el.textContent = 'Bilinmiyor'; }
   }
 
@@ -167,12 +173,44 @@
       case 'units':
         openPicker('Mesafe birimi', [
           { value: 'km', label: 'Kilometre (km)', desc: 'Tüketim: L/100km veya km/L' },
-          { value: 'mi', label: 'Mil (mi)', desc: 'Tüketim: MPG' }
+          { value: 'mi', label: 'Mil (mi)', desc: 'Tüketim: MPG-US veya MPG-UK' }
         ], s.distanceUnit, function (v) {
           S.set('distanceUnit', v);
-          if (v === 'mi' && s.consumptionUnit === 'L/100km') S.set('consumptionUnit', 'MPG-US');
-          if (v === 'km' && s.consumptionUnit.indexOf('MPG') === 0) S.set('consumptionUnit', 'L/100km');
-          applyUnits();
+          var c = S.get().consumptionUnit;
+          if (v === 'mi' && c.indexOf('MPG') !== 0) S.set('consumptionUnit', S.get().volumeUnit === 'galUK' ? 'MPG-UK' : 'MPG-US');
+          if (v === 'km' && c.indexOf('MPG') === 0) S.set('consumptionUnit', 'L/100km');
+          applyUnits(); toast('Mesafe birimi güncellendi');
+        });
+        break;
+      case 'volume':
+        openPicker('Hacim birimi', [
+          { value: 'L', label: 'Litre (L)', desc: 'Metrik hacim birimi' },
+          { value: 'galUS', label: 'ABD galonu (gal US)', desc: '1 gal US = 3,78541 L' },
+          { value: 'galUK', label: 'İngiliz galonu (gal UK)', desc: '1 gal UK = 4,54609 L' }
+        ], s.volumeUnit, function (v) {
+          S.set('volumeUnit', v); applyUnits(); toast('Hacim birimi güncellendi');
+        });
+        break;
+      case 'consumption':
+        var opts = s.distanceUnit === 'mi'
+          ? [
+              { value: 'MPG-US', label: 'MPG-US', desc: 'Mil / ABD galonu' },
+              { value: 'MPG-UK', label: 'MPG-UK', desc: 'Mil / İngiliz galonu' }
+            ]
+          : [
+              { value: 'L/100km', label: 'L/100km', desc: '100 km başına litre' },
+              { value: 'km/L', label: 'km/L', desc: 'Litre başına kilometre' }
+            ];
+        openPicker('Tüketim birimi', opts, s.consumptionUnit, function (v) {
+          S.set('consumptionUnit', v); applyUnits(); toast('Tüketim birimi güncellendi');
+        });
+        break;
+      case 'weekstart':
+        openPicker('Haftanın ilk günü', [
+          { value: '1', label: 'Pazartesi', desc: 'Hafta pazartesi başlar' },
+          { value: '0', label: 'Pazar', desc: 'Hafta pazar başlar' }
+        ], String(s.weekStart), function (v) {
+          S.set('weekStart', Number(v)); applyUnits(); toast('Haftanın ilk günü: ' + S.weekStartLabel());
         });
         break;
       case 'currency':
