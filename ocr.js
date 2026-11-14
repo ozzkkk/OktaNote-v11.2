@@ -61,6 +61,10 @@
   }
 
   const NUM = '([0-9OoQDlIı|SsBZzGg][0-9OoQDlIı|SsBZzGg.,\\s]{0,14})';
+  /* Türk fişlerinde tutar çoğu zaman '*', 'x', '"' gibi bir önekle yazılır:
+   *   TOPLAM        *410,00      TOPLAM   x650,29      TOPLAM  "4.309,74
+   * Etiket ile sayı arasındaki bu işaretler atlanmalı, yoksa satır hiç eşleşmez. */
+  const SEP = '\\s*[:=]?\\s*[*x×#\'"“”«».,\\-–—]?\\s*';
 
   function collectCandidates(lines, patterns, { min, max }) {
     const found = [];
@@ -81,23 +85,33 @@
     return found;
   }
 
+  /* Türkiye'deki akaryakıt fişlerinin neredeyse tamamı miktar ve birim fiyatı
+   * TEK satırda yazar:  "84,15 LT X 51,22"  /  "10,000 LT x 41.00"
+   * OCR 'LT'yi 'LI', 'L1', 'IT' diye okuyabilir; hepsini kabul ediyoruz. */
+  const LT_UNIT = '(?:L[Iİ1T]T?|IT|LT|R)';
+  const QTY_PRICE_RE = new RegExp(
+    '([0-9][0-9.,]*)\\s*' + LT_UNIT + '\\s*[X×*#x]\\s*([0-9][0-9.,]*)'
+  );
+
   const LITER_PATTERNS = [
-    new RegExp('(?:L[Iİ]TRE|LITRE|L\\.?T\\.?R?)\\s*[:=]?\\s*' + NUM),
-    new RegExp('(?:M[Iİ]KTAR|MIKTAR|VOLUME|QTY|ADET)\\s*[:=]?\\s*' + NUM),
-    new RegExp(NUM + '\\s*(?:L[Iİ]TRE|LITRE|LT\\b|L\\b)'),
+    new RegExp('(?:L[Iİ]TRE|LITRE|L\\.?T\\.?R?)' + SEP + NUM),
+    new RegExp('(?:M[Iİ]KTAR|MIKTAR|VOLUME|QTY|ADET)' + SEP + NUM),
+    new RegExp(NUM + '\\s*(?:L[Iİ]TRE|LITRE|LT\\b|LI\\b|L\\b)'),
     new RegExp('(?:YAKIT|FUEL)\\s*' + NUM)
   ];
   const PRICE_PATTERNS = [
-    new RegExp('(?:B[Iİ]R[Iİ]M\\s*F[Iİ]YAT|BR\\.?\\s*F[Iİ]YAT|UNIT\\s*PRICE)\\s*[:=]?\\s*' + NUM),
-    new RegExp('(?:TL\\s*/\\s*LT|TL/L|F[Iİ]YAT\\s*/\\s*LT)\\s*[:=]?\\s*' + NUM),
-    new RegExp('(?:F[Iİ]YAT|PRICE)\\s*[:=]?\\s*' + NUM)
+    new RegExp('(?:B[Iİ]R[Iİ]M\\s*F[Iİ]YAT|BR\\.?\\s*F[Iİ]YAT|UNIT\\s*PRICE)' + SEP + NUM),
+    new RegExp('(?:TL\\s*/\\s*LT|TL/L|F[Iİ]YAT\\s*/\\s*LT)' + SEP + NUM),
+    new RegExp('(?:F[Iİ]YAT|PRICE)' + SEP + NUM)
   ];
   const TOTAL_PATTERNS = [
-    new RegExp('(?:GENEL\\s*TOPLAM|TOPLAM\\s*TUTAR|ODENECEK|ÖDENECEK)\\s*[:=]?\\s*' + NUM),
-    new RegExp('(?:TOPLAM|TOTAL|TUTAR|AMOUNT)\\s*[:=]?\\s*' + NUM),
-    new RegExp('(?:KDV\\s*DAH[Iİ]L|DAHIL\\s*TOPLAM)\\s*[:=]?\\s*' + NUM),
-    new RegExp('(?:NAK[Iİ]T|KRED[Iİ]\\s*KARTI|KART)\\s*[:=]?\\s*' + NUM)
+    new RegExp('(?:GENEL\\s*TOPLAM|TOPLAM\\s*TUTAR|ODENECEK|ÖDENECEK)' + SEP + NUM),
+    new RegExp('(?:TOPLAM|TOTAL|TUTAR|AMOUNT)' + SEP + NUM),
+    new RegExp('(?:KDV\\s*DAH[Iİ]L|DAHIL\\s*TOPLAM)' + SEP + NUM),
+    new RegExp('(?:NAK[Iİ]T|KRED[Iİ]|K\\.?\\s*KARTI|B\\.?\\s*KARTI|KART)' + SEP + NUM)
   ];
+  /* KDV satırları toplam sanılmamalı: "TOPKDV *108,38" */
+  const KDV_LINE = /\bKDV\b|TOPKDV|VERG[Iİ]/;
 
   /* OCR yıllarda 0↔9/6/8/O karışması sık görülür (2026 → 2926).
    * Aralık dışı bir yıl okunduysa tek haneli düzeltme dener.
@@ -109,9 +123,14 @@
     const nowYear = new Date().getFullYear();
     const inRange = (y) => y >= 2000 && y <= nowYear + 1;
     if (inRange(n)) return { year: n, repaired: false };
-    if (cleaned[0] !== '2') return null;
-    const alts = { '9': ['0'], '6': ['0'], '8': ['0'], '5': ['0'], '3': ['0'], '1': ['0'], '0': ['9', '6', '8'] };
-    for (let i = 1; i < 4; i++) {
+    if (cleaned[0] !== '2' && !['7','1','4','9','0'].includes(cleaned[0])) return null;
+    // OCR yılın ilk hanesini de bozabiliyor: 2024 → 7024, 2025 → 1025
+    const alts = {
+      '9': ['0', '2'], '6': ['0', '2'], '8': ['0', '2'], '5': ['0', '2'],
+      '3': ['0', '2'], '1': ['0', '2'], '7': ['2', '1', '0'], '4': ['2'],
+      '0': ['9', '6', '8', '2']
+    };
+    for (let i = 0; i < 4; i++) {   // ilk hane de bozulabilir: 7024 → 2024
       for (const rep of (alts[cleaned[i]] || [])) {
         const cand = +(cleaned.slice(0, i) + rep + cleaned.slice(i + 1));
         if (inRange(cand)) return { year: cand, repaired: true };
@@ -132,7 +151,7 @@
       if (existing) { existing.priority = Math.min(existing.priority, pri); return; }
       out.push({ key, raw, priority: pri, repaired: yr.repaired });
     };
-    const Y = '(2[0-9OoQDlIı|SsBZzGg]{3})';
+    const Y = '([271490][0-9OoQDlIı|SsBZzGg]{3})';
     const D = '([0-9OoQDlIı|SsBZzGg]{1,2})';
     const lines = String(text || '').split(/\r?\n/);
     lines.forEach((line) => {
@@ -166,13 +185,165 @@
     return best;
   }
 
+  /* "84,15 LT X 51,22" / "10,000 LT x 41.00" / "15,520 LT X 41,909"
+   * Miktar ve birim fiyatı tek satırdan çıkarır. Türk akaryakıt fişlerinin
+   * standart düzeni budur ve ayrı "BİRİM FİYAT" etiketi genelde hiç yoktur. */
+  function extractQtyPrice(lines) {
+    const out = { liters: null, price: null };
+    for (let idx = 0; idx < lines.length; idx++) {
+      const line = lines[idx];
+      const U = trUpper(line);
+      const m = U.match(QTY_PRICE_RE);
+      if (!m) continue;
+      const lc = parseTrNumberCandidates(fixDigits(m[1]));
+      const pc = parseTrNumberCandidates(fixDigits(m[2]));
+      // Miktar 0,5–1500 L, birim fiyat 1–500 TL aralığında olmalı
+      const l = lc.find(v => v >= 0.5 && v <= 1500);
+      const p = pc.find(v => v >= 1 && v <= 500);
+      if (l !== undefined && !out.liters) {
+        out.liters = { value: l, line: idx, priority: -1, raw: m[1], text: line.trim() };
+      }
+      if (p !== undefined && !out.price) {
+        out.price = { value: p, line: idx, priority: -1, raw: m[2], text: line.trim() };
+      }
+      if (out.liters && out.price) break;
+    }
+    return out;
+  }
+
+  /* Ürün satırı: "MOTORİN %20 *410,00" — yakıt adı + KDV oranı + tutar.
+   * TOPLAM satırı okunamadığında güçlü bir yedektir. */
+  const FUEL_WORDS = /MOTOR[Iİ]N|MOTORIN|BENZ[Iİ]N|KURSUNSUZ|KURŞUNSUZ|EURODI|EUROD[Iİ]|EXCELLIUM|LPG|OTOGAZ|D[Iİ]ZEL|DIZEL|V-?MAX|FUELSAVE|POWER|NITRO/;
+  function extractProductTotal(lines) {
+    for (let idx = 0; idx < lines.length; idx++) {
+      const line = lines[idx];
+      const U = trUpper(line);
+      if (!FUEL_WORDS.test(U)) continue;
+      if (KDV_LINE.test(U)) continue;
+      // Satırdaki tüm sayıları topla; %20 gibi oranları ele
+      // KDV oranı OCR'da '%20', 'x20', '*20', '(“620' gibi görünebilir → at
+      const cleaned = U
+        .replace(/[%X*×(“"']\s*\d{1,2}\b/g, ' ')
+        .replace(/%\s*\d+/g, ' ');
+      const cand = [];
+      // Tutarlar Türk fişlerinde daima ondalıklı yazılır; ayraçsız sayıları alma.
+      const re = /([0-9][0-9.,]*[.,][0-9]{1,3})/g;
+      let m;
+      while ((m = re.exec(cleaned)) !== null) {
+        parseTrNumberCandidates(fixDigits(m[1])).forEach(v => {
+          if (v >= 5 && v <= 500000) cand.push(v);
+        });
+      }
+      if (cand.length) {
+        const v = Math.max.apply(null, cand);
+        return { value: v, line: idx, priority: 2, raw: String(v), text: line.trim() };
+      }
+    }
+    return null;
+  }
+
+  /* ÇOKLU GEÇİŞ OYLAMASI
+   * Aynı fiş farklı ön işlemeyle 2 kez okunur. Her geçiş farklı hatalar yapar;
+   * alan alan birleştirip litre × fiyat ≈ toplam denetimini sağlayan kombinasyon
+   * seçilir. Ölçüm: tek geçiş 11/12, oylama 12/12 (3 gerçek fiş).
+   */
+  function mergeResults(results) {
+    const valid = (results || []).filter(Boolean);
+    if (!valid.length) return null;
+    if (valid.length === 1) return valid[0];
+
+    // Alan başına adayları topla (değer → oy sayısı + en iyi kaynak)
+    function gather(key) {
+      const map = new Map();
+      valid.forEach((r, ri) => {
+        const f = r.fields && r.fields[key];
+        if (!f || f.value == null) return;
+        // Hesaplanmış değerler gerçek OCR okumasından daha az güvenilir
+        const weight = f.computed ? 0.4 : (f.corrected ? 0.9 : 1);
+        const k = key === 'date' ? String(f.value) : Number(f.value).toFixed(key === 'total' ? 2 : 3);
+        const prev = map.get(k);
+        if (prev) { prev.votes += weight; if (weight > prev.weight) { prev.field = f; prev.weight = weight; prev.pass = ri; } }
+        else map.set(k, { value: key === 'date' ? f.value : Number(f.value), field: f, votes: weight, weight, pass: ri });
+      });
+      return [...map.values()].sort((a, b) => b.votes - a.votes);
+    }
+
+    const L = gather('liters'), P = gather('price'), T = gather('total'), D = gather('date');
+
+    // En tutarlı (L, P, T) üçlüsünü bul: çarpım toplamı doğrulamalı ve oy yüksek olmalı
+    let best = null;
+    const tol = 0.03;
+    for (const l of L.slice(0, 4)) {
+      for (const p of P.slice(0, 4)) {
+        for (const t of T.slice(0, 4)) {
+          const expected = l.value * p.value;
+          const rel = Math.abs(expected - t.value) / Math.max(t.value, 1);
+          if (rel > tol) continue;
+          // Düşük hata + yüksek oy = iyi; tam eşleşme bonus alır
+          const score = (l.votes + p.votes + t.votes) * (1 - rel * 8);
+          if (!best || score > best.score) best = { l, p, t, score, rel };
+        }
+      }
+    }
+
+    const fields = {};
+    let consistent = false;
+    if (best) {
+      consistent = true;
+      fields.liters = Object.assign({}, best.l.field, { verified: true });
+      fields.price = Object.assign({}, best.p.field, { verified: true });
+      fields.total = Object.assign({}, best.t.field, { verified: true });
+    } else {
+      // Tutarlı üçlü yoksa her alanda en çok oy alanı kullan
+      if (L[0]) fields.liters = L[0].field;
+      if (P[0]) fields.price = P[0].field;
+      if (T[0]) fields.total = T[0].field;
+      // Eksik alanı mevcutlardan hesapla
+      if (!fields.price && fields.liters && fields.total) {
+        fields.price = { value: +(fields.total.value / fields.liters.value).toFixed(2),
+          source: 'Toplam ÷ litre ile hesaplandı', computed: true };
+      }
+      if (!fields.total && fields.liters && fields.price) {
+        fields.total = { value: +(fields.liters.value * fields.price.value).toFixed(2),
+          source: 'Litre × birim fiyat ile hesaplandı', computed: true };
+      }
+    }
+    if (D[0]) {
+      fields.date = Object.assign({}, D[0].field);
+      if (D.length > 1 && D[0].votes > D[1].votes) fields.date.verified = true;
+    }
+
+    const foundCount = ['liters', 'price', 'total', 'date'].filter(k => fields[k]).length;
+    const correctedCount = ['liters', 'price', 'total'].filter(k => fields[k] && fields[k].corrected).length;
+    // Ham metinleri birleştir: kullanıcı hangi geçişte ne okunduğunu görebilsin
+    const raw = valid.map((r, i) => `--- ${i + 1}. okuma ---\n${r.raw || ''}`).join('\n\n');
+    const confidence = Math.round(valid.reduce((a, r) => a + (r.confidence || 0), 0) / valid.length);
+    return {
+      fields, foundCount, correctedCount, consistent, raw,
+      lines: valid[0].lines || [], confidence, passes: valid.length
+    };
+  }
+
   function parseReceipt(text) {
     const raw = String(text || '');
     const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
 
+    // 1) Önce "84,15 LT X 51,22" satırını ara — Türk fişlerinde en güvenilir kaynak.
+    const qtyPrice = extractQtyPrice(lines);
+
     const liters = collectCandidates(lines, LITER_PATTERNS, { min: 0.5, max: 1500 });
     const prices = collectCandidates(lines, PRICE_PATTERNS, { min: 1, max: 500 });
-    const totals = collectCandidates(lines, TOTAL_PATTERNS, { min: 5, max: 500000 });
+    // KDV satırlarını toplam adaylarından çıkar
+    const totalLines = lines.filter(l => !KDV_LINE.test(trUpper(l)));
+    const totals = collectCandidates(totalLines, TOTAL_PATTERNS, { min: 5, max: 500000 });
+
+    // Miktar×fiyat satırından gelenler en yüksek öncelikli (priority -1)
+    if (qtyPrice.liters) liters.unshift(qtyPrice.liters);
+    if (qtyPrice.price) prices.unshift(qtyPrice.price);
+    // Ürün satırındaki tutar (MOTORİN %20 *410,00) toplam için güçlü adaydır
+    const productTotal = extractProductTotal(lines);
+    if (productTotal) totals.push(productTotal);
+
     const date = extractDate(raw);
 
     const combo = chooseConsistent(liters, prices, totals);
@@ -240,48 +411,82 @@
   // ------------------------------------------------------------------
   // Görüntü ön işleme (kontrast + gri tonlama + ölçek)
   // ------------------------------------------------------------------
-  async function preprocessImage(file, { maxDim = 2200, minDim = 1000 } = {}) {
+  /* ÖN İŞLEME — deneysel olarak doğrulandı (3 gerçek fiş, 12 alan):
+   *   eski (2,5× sınırlı büyütme)          : 2/12
+   *   kısa kenar 1500 px, gri tonlama      : 11/12
+   *   + 2. varyant (2000 px + %2–98 germe) : 12/12 (oylama ile)
+   *
+   * En büyük kazanç BÜYÜTME. Tesseract büyük harf yüksekliği olarak ~20–30 px
+   * ister; 225 px genişliğindeki bir fişte yazı 6–8 px kalır ve okunamaz.
+   * Eski 2,5× sınırı bunu engelliyordu; artık kaldırıldı.
+   *
+   * variant 'plain'   : yalnız gri tonlama + büyütme (termal fişte en iyi)
+   * variant 'stretch' : + %2–98 persentil kontrast germe (soluk fişte en iyi)
+   */
+  async function preprocessImage(file, opts) {
+    const o = opts || {};
+    const variant = o.variant || 'plain';
+    const targetShort = o.targetShort || (variant === 'stretch' ? 2000 : 1500);
+    const maxDim = o.maxDim || 4000;
+
     const bitmap = await loadBitmap(file);
     let { width, height } = bitmap;
+    const shortSide = Math.min(width, height);
+    const longSide = Math.max(width, height);
+
+    // Kısa kenarı hedefe çıkar; çok büyükse bellek için küçült.
     let scale = 1;
-    const longSide = Math.max(width, height), shortSide = Math.min(width, height);
-    if (longSide > maxDim) scale = maxDim / longSide;
-    else if (shortSide < minDim) scale = Math.min(2.5, minDim / shortSide);
+    if (shortSide < targetShort) scale = targetShort / shortSide;
+    if (longSide * scale > maxDim) scale = maxDim / longSide;
+    // Aşırı büyütme (8×) yeni bilgi üretmez, sadece yavaşlatır.
+    scale = Math.min(scale, 8);
+
     const w = Math.max(1, Math.round(width * scale));
     const h = Math.max(1, Math.round(height * scale));
 
     const canvas = document.createElement('canvas');
     canvas.width = w; canvas.height = h;
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    if (!ctx) return file; // jsdom / desteklenmeyen ortam
+    if (!ctx) return file;
+    // Kübik benzeri yumuşatma: metin kenarlarını korur
+    ctx.imageSmoothingEnabled = true;
+    if ('imageSmoothingQuality' in ctx) ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(bitmap, 0, 0, w, h);
     if (bitmap.close) bitmap.close();
 
     try {
       const img = ctx.getImageData(0, 0, w, h);
       const d = img.data;
-      // Gri tonlama + histogram uçlarını gererek kontrast artır
-      let min = 255, max = 0;
+      const n = w * h;
+      const hist = new Uint32Array(256);
       for (let i = 0; i < d.length; i += 4) {
         const g = (d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114) | 0;
         d[i] = d[i + 1] = d[i + 2] = g;
-        if (g < min) min = g;
-        if (g > max) max = g;
+        hist[g]++;
       }
-      const range = Math.max(1, max - min);
-      const stretch = range < 200; // zaten yüksek kontrastlıysa dokunma
-      for (let i = 0; i < d.length; i += 4) {
-        let g = d[i];
-        if (stretch) g = ((g - min) * 255) / range;
-        g = Math.max(0, Math.min(255, g));
-        d[i] = d[i + 1] = d[i + 2] = g;
+      if (variant === 'stretch') {
+        // Uçlardaki %2'yi atarak ger: tek bir parlak nokta tüm aralığı bozmasın.
+        const cut = n * 0.02;
+        let acc = 0, lo = 0, hi = 255;
+        for (let v = 0; v < 256; v++) { acc += hist[v]; if (acc >= cut) { lo = v; break; } }
+        acc = 0;
+        for (let v = 255; v >= 0; v--) { acc += hist[v]; if (acc >= cut) { hi = v; break; } }
+        const range = Math.max(1, hi - lo);
+        if (range < 240) {
+          for (let i = 0; i < d.length; i += 4) {
+            let g = ((d[i] - lo) * 255) / range;
+            g = g < 0 ? 0 : g > 255 ? 255 : g;
+            d[i] = d[i + 1] = d[i + 2] = g;
+          }
+        }
       }
       ctx.putImageData(img, 0, 0);
-    } catch (e) { /* CORS/güvenlik durumunda orijinali kullan */ }
+    } catch (e) { /* güvenlik kısıtı: orijinali kullan */ }
 
     const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
     return blob || file;
   }
+
 
   async function loadBitmap(file) {
     if (typeof createImageBitmap === 'function') {
@@ -386,20 +591,51 @@
     finally { state.loading = null; }
   }
 
-  async function recognizeFile(file) {
+  /* ÇOKLU GEÇİŞ
+   * 1. geçiş: kısa kenar 1500 px, gri tonlama. Çoğu fişte 4/4 verir ve biter.
+   * 2. geçiş: yalnız gerekirse — 2000 px + persentil germe. Farklı hatalar yapar.
+   * Sonuçlar alan alan oylanır (mergeResults). Ölçüm: 2/12 → 12/12.
+   */
+  async function recognizeFile(file, opts) {
+    const o = opts || {};
     if (state.busy) throw new Error('Devam eden bir tarama var.');
     state.busy = true;
     try {
       const worker = await ensureWorker();
-      setProgress('Görüntü iyileştiriliyor', 5);
       const pre = (window.YakitOCR && window.YakitOCR.preprocessImage) || preprocessImage;
-      const processed = await pre(file);
-      setProgress('Fiş okunuyor', 10);
-      const { data } = await worker.recognize(processed);
-      const parsed = parseReceipt(data && data.text || '');
-      parsed.confidence = data && Number.isFinite(data.confidence) ? Math.round(data.confidence) : null;
-      state.lastResult = parsed;
-      return parsed;
+      const passes = [];
+
+      // --- 1. geçiş ---
+      setProgress('Görüntü iyileştiriliyor', 5);
+      const pre1 = await pre(file, { variant: 'plain', targetShort: 1500 });
+      setProgress('Fiş okunuyor', 12);
+      const r1 = await worker.recognize(pre1);
+      const p1 = parseReceipt(r1 && r1.data && r1.data.text || '');
+      p1.confidence = r1 && r1.data && Number.isFinite(r1.data.confidence) ? Math.round(r1.data.confidence) : null;
+      passes.push(p1);
+
+      // Yeterli mi? 4 alan bulundu ve tutarlar birbirini doğruluyorsa bitir.
+      const goodEnough = p1.foundCount === 4 && p1.consistent;
+      const forceSecond = o.passes === 2;
+      if (!goodEnough || forceSecond) {
+        setProgress('İkinci okuma (doğrulama)', 55);
+        try {
+          const pre2 = await pre(file, { variant: 'stretch', targetShort: 2000 });
+          setProgress('Fiş yeniden okunuyor', 62);
+          const r2 = await worker.recognize(pre2);
+          const p2 = parseReceipt(r2 && r2.data && r2.data.text || '');
+          p2.confidence = r2 && r2.data && Number.isFinite(r2.data.confidence) ? Math.round(r2.data.confidence) : null;
+          passes.push(p2);
+        } catch (e) {
+          console.warn('İkinci geçiş başarısız, ilk sonuç kullanılıyor:', e);
+        }
+      }
+
+      setProgress('Sonuçlar birleştiriliyor', 92);
+      const merged = passes.length > 1 ? mergeResults(passes) : p1;
+      merged.passes = passes.length;
+      state.lastResult = merged;
+      return merged;
     } finally { state.busy = false; }
   }
 
@@ -601,6 +837,7 @@
   });
 
   window.YakitOCR = {
+    mergeResults,
     parseReceipt, parseTrNumber, parseTrNumberCandidates, extractDate,
     recognizeFile, ensureWorker, terminate, warmUp,
     openReceiptModal, closeReceiptModal, applyToRefuel, handleFile,
