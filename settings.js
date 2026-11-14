@@ -1,4 +1,4 @@
-/* Yakıt Takip v7 — Ayarlar, birimler ve dosya yedekleme
+/* Yakıt Takip v9 — Ayarlar, birimler ve dosya yedekleme
  * Bağımsız modül: window.YakitSettings
  * Veri modeli: state.settings (localStorage içinde, ana state ile birlikte)
  */
@@ -85,7 +85,7 @@
     if (['L/100km', 'km/L', 'MPG-US', 'MPG-UK'].indexOf(settings.consumptionUnit) < 0) settings.consumptionUnit = 'L/100km';
     if (!CURRENCIES[settings.currency]) settings.currency = 'TRY';
     if (DATE_FORMATS.indexOf(settings.dateFormat) < 0) settings.dateFormat = 'YYYY-MM-DD';
-    settings.weekStart = settings.weekStart === 0 ? 0 : 1;
+    settings.weekStart = Number(settings.weekStart) === 0 ? 0 : 1;
     return settings;
   }
 
@@ -129,7 +129,7 @@
   }
   function distanceLabel() { return settings.distanceUnit === 'mi' ? 'mil' : 'km'; }
   function volumeLabel() {
-    return settings.volumeUnit === 'galUS' ? 'gal' : settings.volumeUnit === 'galUK' ? 'gal (UK)' : 'L';
+    return settings.volumeUnit === 'galUS' ? 'gal (US)' : settings.volumeUnit === 'galUK' ? 'gal (UK)' : 'L';
   }
 
   // Tüketim: içeride her zaman L/100km saklanır
@@ -155,6 +155,31 @@
   }
   function consumptionLabel() {
     return settings.consumptionUnit === 'L/100km' ? 'L/100km' : settings.consumptionUnit;
+  }
+
+
+  // ---------- hafta yardımcıları ----------
+  function weekStartLabel(v) {
+    var w = v === undefined ? settings.weekStart : Number(v);
+    return w === 0 ? 'Pazar' : 'Pazartesi';
+  }
+  function dateKeyLocal(d) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  // Seçilen haftanın ilk gününe göre [başlangıç, bitiş] (yerel tarih, DST güvenli)
+  function weekRange(date, firstDay) {
+    var d = date ? new Date(date) : new Date();
+    if (isNaN(d.getTime())) d = new Date();
+    d = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12, 0, 0, 0);
+    var fd = Number(firstDay === undefined ? settings.weekStart : firstDay) === 0 ? 0 : 1;
+    var diff = (d.getDay() - fd + 7) % 7;
+    var start = new Date(d); start.setDate(d.getDate() - diff);
+    var end = new Date(start); end.setDate(start.getDate() + 6);
+    return { start: start, end: end, startKey: dateKeyLocal(start), endKey: dateKeyLocal(end), firstDay: fd };
+  }
+  function inWeekRange(dateStr, range) {
+    var k = String(dateStr || '').slice(0, 10);
+    return !!k && k >= range.startKey && k <= range.endKey;
   }
 
   // ---------- biçimlendirme ----------
@@ -251,7 +276,7 @@
       format: 'yakit-takip-backup',
       version: 7,
       createdAt: new Date().toISOString(),
-      appVersion: '7.0.0',
+      appVersion: '9.0.0',
       settings: get(),
       state: JSON.parse(JSON.stringify(st)),
       photos: {},
@@ -390,6 +415,7 @@
     distanceLabel: distanceLabel, volumeLabel: volumeLabel,
     consumptionFromL100: consumptionFromL100, consumptionToL100: consumptionToL100,
     consumptionLabel: consumptionLabel,
+    weekStartLabel: weekStartLabel, weekRange: weekRange, inWeekRange: inWeekRange,
     num: num, money: money, currencySymbol: currencySymbol,
     distance: distance, volume: volume, consumption: consumption,
     pricePerVolume: pricePerVolume, formatDate: formatDate,
