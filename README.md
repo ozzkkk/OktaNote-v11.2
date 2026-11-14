@@ -1,3 +1,62 @@
+# Yakıt Takip v10.6 — OCR Doğruluk İyileştirmesi (2. tur)
+
+Bu sürüm, v10.5'in **iki dil (Türkçe/English)** desteğini aynen korur ve **fiş okuma
+doğruluğunu** bir adım daha artırır. Motor ve Türkçe model aynı kalır
+(`OCR_VERSION 6.0.0`, önbellek korunur); değişen şey alan ayrıştırma, çapraz düzeltme
+ve zor görüntüler için ek okuma mantığıdır. **Fotoğraflar hiçbir sunucuya gönderilmez.**
+
+## v10.6'de yeni olanlar (`ocr.js`)
+
+### Akıllı çapraz düzeltme (hane-maliyeti)
+- Litre × fiyat ≈ toplam tutmuyorsa artık **hangi alanın bozuk olduğuna** bakılır:
+  OCR'dan en az rakam değiştirerek tutarlılığa ulaşan düzeltme seçilir.
+- Böylece temiz okunmuş birim fiyat (örn. `41,80`) bozulmaz; hatalı litre
+  (`23,97 → 23,92`) düzeltilir. Yuvarlama farkları (FIS2 gibi) yine düzeltme tetiklemez.
+
+### Eksik litre hesaplama
+- Litre okunamaz ama birim fiyat + toplam okunursa **litre = toplam ÷ birim fiyat**
+  hesaplanır ve "hesaplandı" olarak işaretlenir (kullanıcı onayına sunulur).
+
+### Zor görüntü için 4. geçiş: fiş bölgesi kırpma
+- İlk üç geçişte litre/fiyat hâlâ eksikse, karanlık arka plandaki **parlak fiş bölgesi
+  otomatik kırpılır** ve yerel eşiklemeyle yeniden okunur. Soluk ürün satırları
+  (`2,890 LT X 34,600`) bu sayede okunabilir. İyi görüntülerde bu geçiş çalışmaz.
+
+### Sayı / tarih onarımları
+- OCR binlik ayracı olarak `:` okuyabilir: `1:989.12 → 1989.12` (POS slipi). Saat (`10:44`) bozulmaz.
+- Tarih gün/ay ilk hanesi onarımı (`66 → 06`) ve `V → 2` ikamesi (`V025 → 2025`).
+- MERSİS / LİSANS / TİC / SİC / ADA NO satırları **tarih sanılmaz**; temiz (az harf
+  ikameli) tarihler, gürültülü tarihlere yeğlenir.
+- Toplam kırpma okuması KODU/üye no gibi **kimlik bağlamını reddeder**; oy eşitliğinde
+  etiketli TOPLAM/TUTAR değeri kırpma değerinden üstün tutulur.
+
+### Ölçüm (12 gerçek görüntü, 72 alan)
+| | v10.3 | v10.4 | v10.6 |
+|---|---|---|---|
+| Toplam doğru alan | 37/72 (%51) | 52/72 (%72) | **57/72 (%79)** |
+| U3-AKAR (soluk ürün satırı) | 0/6 | 4/6 | **6/6** |
+| W2-LPG (tarih) | 5/6 | 5/6 | **6/6** |
+| W3-POS (binlik tutar) | 4/6 | 4/6 | **5/6** |
+| U1-PO (birim fiyat) | 3/6 | 3/6 | **4/6** |
+| Eski regresyon fişleri FIS1–3 | 18/18 | 18/18 | **18/18** |
+
+Test paketi: **973/973** yeşil (25 paket; yeni v10.6 ayrıştırıcı testleri dahil).
+İki dil desteği korunur: EN modunda yeni OCR durum metinleri de çevrilir.
+
+> Dürüst not: çok silik / ağır kırışık / eğri fotoğraflarda (örn. W1, W5) hâlâ eksik
+> alan olabilir. Sonuçlar her zaman size gösterilir; **onaylamadan kayıt oluşmaz.**
+
+### v10.6 kurulumu (ZIP)
+- `yakit-takip-v10-6-guncelleme.zip` → değişen **5 dosya** (`ocr.js`, `i18n.js`,
+  `settings.js`, `settings-ui.js`, `sw.js`) + README + KURULUM.txt
+- `yakit-takip-v10-6-tam-paket.zip` → uygulamanın **33 dosyasının tamamı** (OCR motoru dahil)
+
+GitHub'da **Add file → Upload files** ile ZIP'ten çıkan dosyaları yükleyin; aynı adlı
+dosyalar üzerine yazılır. Kayıtlarınız tarayıcıda kaldığı için **veri kaybı olmaz**.
+OCR motor önbelleği korunur (`OCR_VERSION 6.0.0`), 5,6 MB yeniden inmez.
+
+---
+
 # Yakıt Takip v10.5 — İki Dil Desteği (Türkçe / English)
 
 Bu sürüm uygulamayı **iki dilli** yapar: **Türkçe ve English**. Ayarlar'dan dil seçilir,

@@ -1,4 +1,4 @@
-/* Yakıt Takip v10.4 — Gerçek OCR (Tesseract.js, tamamen yerel/çevrimdışı)
+/* Yakıt Takip v10.6 — Gerçek OCR (Tesseract.js, tamamen yerel/çevrimdışı)
  * - Motor ve Türkçe model aynı klasörden yüklenir, CDN yoktur.
  * - Görüntü cihazdan çıkmaz; işleme WebWorker içinde yapılır.
  * - Çıkarılan alanlar: yakıt türü, litre, birim fiyat, toplam tutar, tarih, saat.
@@ -22,7 +22,8 @@
       .replace(/[Ss]/g, '5')
       .replace(/[B]/g, '8')
       .replace(/[Zz]/g, '2')
-      .replace(/[Gg]/g, '6');
+      .replace(/[Gg]/g, '6')
+      .replace(/[Vv]/g, '2');
   }
 
   /* Türkçe sayı biçimlerini çözer:
@@ -32,6 +33,8 @@
   function parseTrNumberCandidates(raw) {
     if (raw == null) return [];
     let s = String(raw).trim().replace(/\s/g, '').replace(/[₺]|TL|TRY/gi, '');
+    // OCR binlik ayracı olarak ':' okuyabilir: 1:989.12 -> 1989.12 (saat 10:44 bozulmaz)
+    s = s.replace(/(\d):(\d{3})(?=[.,\d]|$)/g, '$1$2');
     if (!s) return [];
     const hasDot = s.includes('.'), hasComma = s.includes(',');
     const out = [];
@@ -60,7 +63,7 @@
     return c.length ? c[0] : null;
   }
 
-  const NUM = '([0-9OoQDlIı|SsBZzGg][0-9OoQDlIı|SsBZzGg.,\\s]{0,14})';
+  const NUM = '([0-9OoQDlIı|SsBZzGg][0-9OoQDlIı|SsBZzGg.,:\\s]{0,14})';
   /* Türk fişlerinde tutar çoğu zaman '*', 'x', '"' gibi bir önekle yazılır:
    *   TOPLAM        *410,00      TOPLAM   x650,29      TOPLAM  "4.309,74
    * Etiket ile sayı arasındaki bu işaretler atlanmalı, yoksa satır hiç eşleşmez. */
@@ -148,19 +151,34 @@
     const push = (yTok, m, d, raw, pri) => {
       const yr = repairYear(yTok);
       if (!yr) return;
+      const dirty = (String(yTok) + String(m) + String(d)).replace(/[0-9]/g, '').length;
       m = +fixDigits(m); d = +fixDigits(d);
+      // OCR gün/ay ilk hanesini bozabilir: 66 -> 06, 0V -> 02. Tek hane onarımı dene.
+      const repairDay = (v) => {
+        if (v >= 1 && v <= 31) return v;
+        const t = String(v).padStart(2, '0');
+        const alts = { '6': ['0','1','2'], '8': ['0','1','2'], '9': ['0','1','2'], '5': ['0','1','2'], '3': ['0','1','2'], '7': ['0','1'], '4': ['0','1'] };
+        for (let i = 0; i < t.length; i++) for (const r of (alts[t[i]] || [])) {
+          const c = +(t.slice(0, i) + r + t.slice(i + 1));
+          if (c >= 1 && c <= 31) return c;
+        }
+        return v;
+      };
+      d = repairDay(d);
+      if (m < 1 || m > 12) { const mr = repairDay(m); if (mr >= 1 && mr <= 12) m = mr; }
       if (m < 1 || m > 12 || d < 1 || d > 31) return;
       const key = `${yr.year}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
       const existing = out.find(o => o.key === key);
-      if (existing) { existing.priority = Math.min(existing.priority, pri); return; }
-      out.push({ key, raw, priority: pri, repaired: yr.repaired });
+      if (existing) { existing.priority = Math.min(existing.priority, pri); existing.dirty = Math.min(existing.dirty, dirty); return; }
+      out.push({ key, raw, priority: pri, repaired: yr.repaired, dirty });
     };
-    const Y = '([0-9OoQDlIı|SsBZzGg]{4})';
-    const D = '([0-9OoQDlIı|SsBZzGg]{1,2})';
-    const SP = '[./\\-\u2019\u2018\u0027:|\\s]';
+    const Y = '([0-9OoQDlIı|SsBZzGgVv]{4})';
+    const D = '([0-9OoQDlIı|SsBZzGgVv]{1,2})';
+    const SP = '[./\\-\u2019\u2018\u0027:|\\s]+';
     const lines = String(text || '').split(/\r?\n/);
     lines.forEach((line) => {
       const U = trUpper(line);
+      if (META_LINE.test(U)) return; // MERSİS/LİSANS/TİC/SİC/ADA NO satırları tarih değildir
       const labeled = /TAR[Iİ]H|DATE/.test(U);
       // İkincil tarihler (hesap kesim / son ödeme) ana tarihin önüne geçmesin
       const secondary = /KES[Iİ]M|HESAP|VADE|SON\s*[ÖO]DEME/.test(U);
@@ -179,7 +197,7 @@
       }
     });
     // etiketli > etiketsiz, onarılmamış > onarılmış
-    out.sort((a, b) => a.priority - b.priority || (a.repaired ? 1 : 0) - (b.repaired ? 1 : 0));
+    out.sort((a, b) => a.priority - b.priority || (a.repaired ? 1 : 0) - (b.repaired ? 1 : 0) || (a.dirty || 0) - (b.dirty || 0));
     return out[0] || null;
   }
 
@@ -353,24 +371,41 @@
   }
   // Birleştirme sonrası çapraz tutarlılık: litre×fiyat≈toplam değilse ve
   // fark yuvarlamadan büyükse, 3 ondalıklı (OCR artefaktı) alanı düzelt.
-  function reconcileNumeric(fields) {
-    const L = fields.liters && fields.liters.value, P = fields.price && fields.price.value, T = fields.total && fields.total.value;
-    if (!(L > 0 && P > 0 && T > 0) || (fields.total && fields.total.computed)) return;
+  // İki sayı arasındaki OCR hane hatası maliyeti (kaç rakam farklı)
+  function digitCost(a, b) {
+    const sa = Number(a).toFixed(2).replace('.', ''), sb = Number(b).toFixed(2).replace('.', '');
+    if (sa.length !== sb.length) return Math.abs(sa.length - sb.length) + 2;
+    let d = 0; for (let i = 0; i < sa.length; i++) if (sa[i] !== sb[i]) d++;
+    return d;
+  }
+  /* litre × fiyat ≈ toplam tutmuyorsa hangi alanı düzelteceğimize karar verir.
+   * OCR'dan en az rakam değiştirerek tutarlılığa ulaşan düzeltmeyi seçer;
+   * böylece temiz okunmuş birim fiyat (41,80) bozulmaz, hatalı litre (23,97→23,92) düzelir. */
+  function pickReconcile(L, P, T) {
     const err = Math.abs(L * P - T);
-    if (err / Math.max(T, 1) <= 0.001) return;
-    const srcL = String((fields.liters && fields.liters.source) || '');
-    const srcP = String((fields.price && fields.price.source) || '');
-    const l3 = /\d[.,]\d{3}\b/.test(srcL), p3 = /\d[.,]\d{3}\b/.test(srcP);
+    if (!(L > 0 && P > 0 && T > 0) || err / Math.max(T, 1) <= 0.001) return null;
     const dL = +(T / P).toFixed(2), dP = +(T / L).toFixed(2);
     const eL = Math.abs(dL * P - T), eP = Math.abs(L * dP - T);
-    const okL = eL + 0.005 < err && Math.abs(dL - L) / L < 0.02;
-    const okP = eP + 0.005 < err && Math.abs(dP - P) / P < 0.02;
-    const setL = () => { fields.liters = { value: dL, source: `Toplam ÷ birim fiyat ile düzeltildi (${String(L).replace('.', ',')} → ${String(dL).replace('.', ',')})`, verified: true, corrected: true, ocrValue: L }; };
-    const setP = () => { fields.price = { value: dP, source: `Toplam ÷ litre ile düzeltildi (${String(P).replace('.', ',')} → ${String(dP).replace('.', ',')})`, verified: true, corrected: true, ocrValue: P }; };
-    if (okP && eP < 0.01) setP();
-    else if (okL && eL < 0.01) setL();
-    else if (l3 && !p3 && okL) setL();
-    else if (p3 && okP) setP();
+    const okL = dL > 0 && eL + 0.005 < err && Math.abs(dL - L) / L < 0.02;
+    const okP = dP > 0 && eP + 0.005 < err && Math.abs(dP - P) / P < 0.02;
+    if (!okL && !okP) return null;
+    if (okL && !okP) return { field: 'L', value: dL };
+    if (okP && !okL) return { field: 'P', value: dP };
+    const cL = digitCost(L, dL), cP = digitCost(P, dP);
+    if (cL !== cP) return cL < cP ? { field: 'L', value: dL } : { field: 'P', value: dP };
+    return eL <= eP ? { field: 'L', value: dL } : { field: 'P', value: dP };
+  }
+
+  function reconcileNumeric(fields) {
+    const L = fields.liters && fields.liters.value, P = fields.price && fields.price.value, T = fields.total && fields.total.value;
+    if (fields.total && fields.total.computed) return;
+    const pick = pickReconcile(L, P, T);
+    if (!pick) return;
+    if (pick.field === 'L') {
+      fields.liters = { value: pick.value, source: `Toplam ÷ birim fiyat ile düzeltildi (${String(L).replace('.', ',')} → ${String(pick.value).replace('.', ',')})`, verified: true, corrected: true, ocrValue: L };
+    } else {
+      fields.price = { value: pick.value, source: `Toplam ÷ litre ile düzeltildi (${String(P).replace('.', ',')} → ${String(pick.value).replace('.', ',')})`, verified: true, corrected: true, ocrValue: P };
+    }
   }
 
   function recount(parsed) {
@@ -386,29 +421,31 @@
       const NUMWL = '0123456789.,';
 
       // --- TOPLAM / TUTAR ---
-      const totalLine = lines.find(g => /\b(TOPLAM|TUTAR|GENEL\s*TOPLAM|TOTAL|AMOUNT)\b/i.test(trUpper(g.text)));
+      const CROP_SKIP = /KODU|MERS[Iİ]S|L[Iİ]SANS|T[Iİ]C|S[Iİ]C|ADA\s*NO|[ÜU]YE|POS\s*NO|[İI][SŞ]LEM|SATI[SŞ]|F[Iİ][SŞ]\s*NO|POMPA|TERM[Iİ]NAL/;
+      const totalLine = lines.find(g => /\b(TOPLAM|TUTAR|GENEL\s*TOPLAM|TOTAL|AMOUNT)\b/i.test(trUpper(g.text)) && !CROP_SKIP.test(trUpper(g.text)));
       if (totalLine) {
         const lr = { x: totalLine.left, y: totalLine.top, w: totalLine.width, h: totalLine.height };
         let rect = { x: lr.x + lr.w * 0.40, y: lr.y - 8, w: lr.w * 0.60 + 10, h: lr.h + 16 };
         let rr = await cropRecognize(worker, imageBlob, rect, NUMWL + '*xX');
-        let val = rr && parseTrNumberCandidates(fixDigits(rr.text.replace(/[^0-9.,]/g, ''))).find(v => v >= 5 && v <= 500000);
+        const idContext = (t) => CROP_SKIP.test(trUpper(t || '')) || /[0-9]{6,}/.test(String(t || ''));
+        let val = (rr && !idContext(rr.text) && !(parsed.fields.liters && parsed.fields.price)) ? parseTrNumberCandidates(fixDigits(rr.text.replace(/[^0-9.,]/g, ''))).find(v => v >= 5 && v <= 500000) : null;
         if (val == null) {
           const next = lines.filter(g => g.top > lr.y + lr.h * 0.5 && g.top < lr.y + lr.h * 3.5)
             .sort((a, b) => a.top - b.top)[0];
           if (next) {
             rr = await cropRecognize(worker, imageBlob, { x: next.left - 6, y: next.top - 8, w: next.width + 12, h: next.height + 16 }, NUMWL);
-            val = rr && parseTrNumberCandidates(fixDigits(rr.text.replace(/[^0-9.,]/g, ''))).find(v => v >= 5 && v <= 500000);
+            val = (rr && !idContext(rr.text) && !idContext(next.text) && !(parsed.fields.liters && parsed.fields.price)) ? parseTrNumberCandidates(fixDigits(rr.text.replace(/[^0-9.,]/g, ''))).find(v => v >= 5 && v <= 500000) : null;
           }
         }
         const old = parsed.fields.total;
         if (val != null && !old) {
-          parsed.fields.total = { value: +val.toFixed(2), source: `Tutar bölgesi yeniden okundu: ${String(val).replace('.', ',')}`, verified: rr.conf >= 80, confidence: Math.round(rr.conf) };
+          parsed.fields.total = { value: +val.toFixed(2), source: `Tutar bölgesi yeniden okundu: ${String(val).replace('.', ',')}`, verified: rr.conf >= 80, confidence: Math.round(rr.conf), crop: true };
           recount(parsed);
         }
       }
 
       // --- litre × fiyat satırı ---
-      const qtyLine = lines.find(g => /[0-9][.,][0-9]{1,3}\s*[A-Z]{0,3}\s*[X×*]/i.test(g.text) || (/\bLT\b|\bLI\b|\bLİTRE\b/i.test(g.text) && /[X×*]/.test(g.text)));
+      const qtyLine = lines.find(g => /[0-9][.,][0-9]{1,3}\s*[A-Z]{0,3}\s*[X×*]/i.test(g.text) || (/[X×*]/.test(g.text) && /\bLT|\bLI\b|L[Iİ]TRE|LTX|[0-9][.,][0-9]{2,3}/i.test(g.text)));
       if (qtyLine) {
         const rr = await cropRecognize(worker, imageBlob, { x: qtyLine.left - 6, y: qtyLine.top - 8, w: qtyLine.width + 12, h: qtyLine.height + 16 }, NUMWL + 'Xx*LlIi');
         if (rr) {
@@ -561,7 +598,12 @@
       return [...map.values()].sort((a, b) => b.votes - a.votes);
     }
 
-    const L = gather('liters'), P = gather('price'), T = gather('total'), D = gather('date');
+    const L = gather('liters'), P = gather('price');
+    let T = gather('total');
+    // Oy eşitliğinde etiketli (TOPLAM/TUTAR) toplamı, kırpma ile okunmuş toplamdan yeğle
+    T = T.slice().sort((a, b) => b.votes - a.votes || ((a.field.crop ? 1 : 0) - (b.field.crop ? 1 : 0)));
+    let D = gather('date');
+    D = D.slice().sort((a, b) => b.votes - a.votes || ((a.field.repaired ? 1 : 0) - (b.field.repaired ? 1 : 0)) || ((a.field.dirty || 0) - (b.field.dirty || 0)) || ((a.field.datePriority || 1) - (b.field.datePriority || 1)));
     const F = gather('fuelType'), TT = gather('time');
 
     // En tutarlı (L, P, T) üçlüsünü bul: çarpım toplamı doğrulamalı ve oy yüksek olmalı
@@ -600,6 +642,10 @@
       if (!fields.total && fields.liters && fields.price) {
         fields.total = { value: +(fields.liters.value * fields.price.value).toFixed(2),
           source: 'Litre × birim fiyat ile hesaplandı', computed: true };
+      }
+      if (!fields.liters && fields.price && fields.total && !fields.total.computed) {
+        fields.liters = { value: +(fields.total.value / fields.price.value).toFixed(2),
+          source: 'Toplam ÷ birim fiyat ile hesaplandı', computed: true };
       }
     }
     if (D[0]) {
@@ -676,7 +722,7 @@
       liters: L ? { value: +L.value.toFixed(2), source: L.text, verified: !!combo } : null,
       price: P ? { value: +P.value.toFixed(2), source: P.text, verified: !!combo } : null,
       total: T ? { value: +T.value.toFixed(2), source: T.text, verified: !!combo } : null,
-      date: date ? { value: date.key, source: date.repaired ? `OCR "${date.raw}" okudu; yıl onarıldı` : date.raw, verified: date.priority === 0 && !date.repaired, repaired: !!date.repaired } : null,
+      date: date ? { value: date.key, source: date.repaired ? `OCR "${date.raw}" okudu; yıl onarıldı` : date.raw, verified: date.priority === 0 && !date.repaired, repaired: !!date.repaired, dirty: date.dirty || 0, datePriority: date.priority } : null,
       fuelType: fuelType ? { value: fuelType.value, source: fuelType.source, verified: fuelType.verified } : null,
       time: time ? { value: time.value, source: time.source, verified: time.verified, raw: time.raw } : null
     };
@@ -697,31 +743,25 @@
         verified: false, computed: true
       };
     }
+    // Litre okunamadıysa toplam ÷ birim fiyat ile hesapla
+    if (!fields.liters && fields.price && fields.total && !fields.total.computed) {
+      fields.liters = {
+        value: +(fields.total.value / fields.price.value).toFixed(2),
+        source: 'Toplam ÷ birim fiyat ile hesaplandı',
+        verified: false, computed: true
+      };
+    }
 
     // İnce ayar: OCR tek haneyi yanlış okuduysa (81,60 → 81,69) çapraz hesapla düzelt.
     // Toplam ve litre genellikle daha uzun/doğrulanabilir alanlardır.
     if (fields.liters && fields.price && fields.total && !fields.total.computed) {
       const L = fields.liters.value, P = fields.price.value, T = fields.total.value;
-      const errP = Math.abs(L * P - T);
-      // Yuvarlama farkını (23,92×41,80≈999,86 vs 1.000,00) "düzeltme" diye bozma.
-      // Yalnız gerçek hane hatasında düzelt: fiyat 3 ondalıklı okunduysa veya hata >%1.
-      const priceThreeDec = !!(P && /\d[.,]\d{3}\b/.test(String(P.raw || '')));
-      const litersThreeDec = !!(L && /\d[.,]\d{3}\b/.test(String(L.raw || '')));
-      const bigErr = errP / Math.max(T, 1) > 0.001;
-      const derivedP = +(T / L).toFixed(2);
-      const errDerivedP = Math.abs(L * derivedP - T);
-      const derivedL = +(T / P).toFixed(2);
-      const errDerivedL = Math.abs(derivedL * P - T);
-      const fixP = () => { fields.price = { value: derivedP, source: `OCR "${String(P).replace('.', ',')}" okudu; toplam ÷ litre ile düzeltildi`, verified: true, corrected: true, ocrValue: P }; };
-      const fixL = () => { fields.liters = { value: derivedL, source: `OCR "${String(L).replace('.', ',')}" okudu; toplam ÷ birim fiyat ile düzeltildi`, verified: true, corrected: true, ocrValue: L }; };
-      const okP = (priceThreeDec || bigErr) && derivedP > 0 && errDerivedP + 0.005 < errP && Math.abs(derivedP - P) / P < 0.02;
-      const okL = bigErr && derivedL > 0 && errDerivedL + 0.005 < errP && Math.abs(derivedL - L) / L < 0.02;
-      // Neredeyse tam eşleşen düzeltme (hata < 1 kuruş) kesin OCR hane hatasıdır.
-      if (okP && errDerivedP < 0.01) fixP();
-      else if (okL && errDerivedL < 0.01) fixL();
-      else if (litersThreeDec && okL) fixL();
-      else if (okP) fixP();
-      else if (okL) fixL();
+      const pick = pickReconcile(L, P, T);
+      if (pick && pick.field === 'L') {
+        fields.liters = { value: pick.value, source: `OCR "${String(L).replace('.', ',')}" okudu; toplam ÷ birim fiyat ile düzeltildi`, verified: true, corrected: true, ocrValue: L };
+      } else if (pick && pick.field === 'P') {
+        fields.price = { value: pick.value, source: `OCR "${String(P).replace('.', ',')}" okudu; toplam ÷ litre ile düzeltildi`, verified: true, corrected: true, ocrValue: P };
+      }
     }
 
     const foundCount = ['liters', 'price', 'total', 'date', 'fuelType', 'time'].filter(k => fields[k]).length;
@@ -795,8 +835,34 @@
 
     const bitmap = await loadBitmap(file);
     let { width, height } = bitmap;
-    const shortSide = Math.min(width, height);
-    const longSide = Math.max(width, height);
+    let sx = 0, sy = 0, sw = width, sh = height;
+    // 'receipt' / crop: karanlık arka plandaki parlak fiş bölgesini kırp (metni büyütür)
+    if (o.crop || variant === 'receipt') {
+      try {
+        const dw = Math.min(360, width), dh = Math.round(height * (dw / width));
+        const tc = document.createElement('canvas'); tc.width = dw; tc.height = dh;
+        const tx = tc.getContext('2d', { willReadFrequently: true });
+        tx.drawImage(bitmap, 0, 0, dw, dh);
+        const px = tx.getImageData(0, 0, dw, dh).data;
+        let sum = 0; const gn = dw * dh;
+        for (let i = 0; i < px.length; i += 4) sum += px[i] * 0.299 + px[i + 1] * 0.587 + px[i + 2] * 0.114;
+        const mean = sum / gn, th = Math.max(90, mean * 1.15);
+        let minx = dw, miny = dh, maxx = 0, maxy = 0, cnt = 0;
+        for (let y = 0; y < dh; y++) for (let x = 0; x < dw; x++) {
+          const i = (y * dw + x) * 4, g = px[i] * 0.299 + px[i + 1] * 0.587 + px[i + 2] * 0.114;
+          if (g > th) { cnt++; if (x < minx) minx = x; if (x > maxx) maxx = x; if (y < miny) miny = y; if (y > maxy) maxy = y; }
+        }
+        if (cnt > gn * 0.03 && maxx - minx > dw * 0.2 && maxy - miny > dh * 0.2) {
+          const kx = width / dw, ky = height / dh;
+          const mx = (maxx - minx) * 0.04, my = (maxy - miny) * 0.04;
+          sx = Math.max(0, Math.round((minx - mx) * kx)); sy = Math.max(0, Math.round((miny - my) * ky));
+          sw = Math.min(width - sx, Math.round((maxx - minx + 2 * mx) * kx));
+          sh = Math.min(height - sy, Math.round((maxy - miny + 2 * my) * ky));
+        }
+      } catch (e) { /* kırpma başarısız: tam kare */ }
+    }
+    const shortSide = Math.min(sw, sh);
+    const longSide = Math.max(sw, sh);
 
     // Kısa kenarı hedefe çıkar; çok büyükse bellek için küçült.
     let scale = 1;
@@ -805,8 +871,8 @@
     // Aşırı büyütme (8×) yeni bilgi üretmez, sadece yavaşlatır.
     scale = Math.min(scale, 8);
 
-    const w = Math.max(1, Math.round(width * scale));
-    const h = Math.max(1, Math.round(height * scale));
+    const w = Math.max(1, Math.round(sw * scale));
+    const h = Math.max(1, Math.round(sh * scale));
 
     const canvas = document.createElement('canvas');
     canvas.width = w; canvas.height = h;
@@ -815,7 +881,7 @@
     // Kübik benzeri yumuşatma: metin kenarlarını korur
     ctx.imageSmoothingEnabled = true;
     if ('imageSmoothingQuality' in ctx) ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(bitmap, 0, 0, w, h);
+    ctx.drawImage(bitmap, sx, sy, sw, sh, 0, 0, w, h);
     if (bitmap.close) bitmap.close();
 
     try {
@@ -850,8 +916,8 @@
 
       if (variant === 'stretch') {
         percentileStretch(0.02);
-      } else if (variant === 'otsu' || variant === 'adaptive' || variant === 'sharpen') {
-        percentileStretch(0.01);
+      } else if (variant === 'otsu' || variant === 'adaptive' || variant === 'sharpen' || variant === 'receipt') {
+        if (variant !== 'receipt') percentileStretch(0.01);
         if (variant === 'sharpen') {
           // Unsharp mask: kenarları belirginleştir (bulanık telefon fotoğrafı)
           const blur = boxBlur(gray, w, h, Math.max(1, Math.round(Math.min(w, h) / 300)));
@@ -863,11 +929,11 @@
         if (variant === 'otsu') {
           const t = otsuThreshold(gray);
           for (let j = 0; j < n; j++) gray[j] = gray[j] > t ? 255 : 0;
-        } else if (variant === 'adaptive') {
+        } else if (variant === 'adaptive' || variant === 'receipt') {
           // Yerel ortalama eşiği: uneven lighting / gölge / karanlık fişte en iyisi
           const r = Math.max(8, Math.round(Math.min(w, h) / 40));
           const mean = boxBlur(gray, w, h, r);
-          const C = 12;
+          const C = Number.isFinite(o.C) ? o.C : 12;
           for (let j = 0; j < n; j++) gray[j] = gray[j] < mean[j] - C ? 0 : 255;
         }
       }
@@ -1051,6 +1117,23 @@
           await verifyNumericCrops(worker, pre3, p3);
           passes.push(p3);
         } catch (e) { console.warn('Üçüncü geçiş başarısız:', e); }
+      }
+
+      // --- 4. geçiş: hâlâ litre/fiyat eksikse parlak fiş bölgesini kırpıp oku ---
+      let m2 = passes.length > 1 ? mergeResults(passes) : p1;
+      const stillWeak = !m2.fields.liters || !m2.fields.price || !m2.consistent;
+      if ((stillWeak || o.passes === 4) && passes.length < 4) {
+        setProgress('Fiş bölgesi kırpılarak okunuyor', 86);
+        try {
+          const pre4 = await pre(file, { variant: 'receipt', targetShort: 3000, C: 8, crop: true });
+          const r4 = await worker.recognize(pre4, {}, { text: true, tsv: true });
+          const p4 = parseReceipt(r4 && r4.data && r4.data.text || '');
+          p4.confidence = r4 && r4.data && Number.isFinite(r4.data.confidence) ? Math.round(r4.data.confidence) : null;
+          p4._tsvRows = parseTsvRows(r4 && r4.data && r4.data.tsv);
+          await verifyTimeWithCrop(worker, pre4, p4);
+          await verifyNumericCrops(worker, pre4, p4);
+          passes.push(p4);
+        } catch (e) { console.warn('Dördüncü geçiş başarısız:', e); }
       }
 
       setProgress('Sonuçlar birleştiriliyor', 92);
