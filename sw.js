@@ -1,11 +1,11 @@
-/* Yakıt Takip v10.1 — Service Worker
+/* Yakıt Takip v10.2 — Service Worker
  * App shell: sürümlü, kurulumda önceden önbelleğe alınır.
  * Gezinme: network-first, çevrimdışıyken önbellekteki index.html.
  * Aynı origin statik dosyalar: cache-first.
  * Üçüncü taraf API/harita/Google istekleri önbelleğe ALINMAZ (gizlilik + tazelik).
  * Kullanıcı verileri localStorage/IndexedDB'dedir; SW bunlara dokunmaz.
  */
-const CACHE_VERSION = '10.1.0';
+const CACHE_VERSION = '10.2.0';
 const SHELL_CACHE = `yakit-takip-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `yakit-takip-runtime-${CACHE_VERSION}`;
 // OCR motor dosyaları v6'dan beri değişmedi. Önbellek adı sürümden BAĞIMSIZ;
@@ -26,6 +26,7 @@ const APP_SHELL = [
   './leaflet.js',
   './pwa.js',
   './ocr.js',
+  './guards.js',
   './settings.js',
   './settings-ui.js',
   './inter-latin.woff2',

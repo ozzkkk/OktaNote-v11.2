@@ -19,6 +19,7 @@
     <link rel="stylesheet" href="./pwa.css">
     <script src="./pwa.js" defer></script>
     <script src="./ocr.js" defer></script>
+    <script src="./guards.js"></script>
     <script src="./settings.js"></script>
     <script src="./settings-ui.js" defer></script>
     <style>
@@ -1135,6 +1136,27 @@
     </div>
 
     <!-- v7: YEDEK GERİ YÜKLEME ONAYI -->
+    <!-- v10.2: VERİ GİRİŞ UYARISI (kayıt engellenmez) -->
+    <div id="guard-modal" style="z-index:70" class="hidden absolute inset-0 bg-slate-900/50 z-[70] flex items-center justify-center p-5">
+        <div class="bg-white rounded-2xl w-full max-w-sm shadow-2xl flex flex-col max-h-full">
+            <div class="flex items-center gap-2.5 p-4 pb-3 shrink-0">
+                <span class="w-9 h-9 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center shrink-0"><i class="fa-solid fa-triangle-exclamation"></i></span>
+                <div class="min-w-0">
+                    <div class="font-bold text-slate-800 text-sm">Kaydetmeden önce kontrol edin</div>
+                    <div id="guard-count" class="text-[10px] text-slate-400"></div>
+                </div>
+            </div>
+            <div id="guard-list" class="px-4 space-y-2 overflow-y-auto no-scrollbar"></div>
+            <div class="p-4 pt-3 space-y-2 shrink-0">
+                <p class="text-[10px] text-slate-400 leading-relaxed">Bu uyarılar kaydı engellemez. Değerler doğruysa “Yine de kaydet” ile devam edebilirsiniz.</p>
+                <div class="flex gap-2">
+                    <button type="button" id="guard-cancel" class="flex-1 bg-white border border-slate-200 text-slate-700 py-2.5 rounded-xl text-xs font-semibold">Düzelt</button>
+                    <button type="button" id="guard-save" class="flex-1 bg-slate-800 text-white py-2.5 rounded-xl text-xs font-semibold">Yine de kaydet</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="settings-restore-modal" class="hidden absolute inset-0 bg-slate-900/50 z-[60] flex items-center justify-center p-5">
         <div class="bg-white rounded-2xl w-full max-w-sm p-4 space-y-3 shadow-2xl">
             <div class="flex items-center gap-2.5">
@@ -1885,6 +1907,8 @@
         const vRefuels = state.refuels.filter(r => r.vehicleId === vehicle.id);
         const lastRefuel = [...vRefuels].sort(compareRefuelsDesc)[0];
 
+        guardBypass = false;
+        closeGuardModal();
         document.getElementById('edit-refuel-id').value = '';
         document.getElementById('refuel-modal-title').textContent = 'Dolum';
         writeDistInput('refuel-odo', prefill.odometer || '');
@@ -1920,6 +1944,8 @@
     }
 
     function closeRefuelModal() {
+        guardBypass = false;
+        closeGuardModal();
         discardSessionPhotos(); // kaydedilmemiş yeni fotoğrafları çöpe at
         currentRefuelPhotos = [];
         document.getElementById('edit-refuel-id').value = '';
@@ -2062,6 +2088,99 @@
         );
     }
 
+    // ============================================================
+    // v10.2 — VERİ GİRİŞ UYARILARI (arayüz)
+    // Kurallar guards.js içinde; burada yalnızca gösterim ve onay var.
+    // ============================================================
+    let guardBypass = false;
+
+    function guardsEnabled() {
+        try {
+            return !window.YakitSettings || window.YakitSettings.get().dataGuards !== false;
+        } catch (e) { return true; }
+    }
+
+    function guardFieldLabel(field) {
+        if (field === 'odometer') return window.YakitSettings ? window.YakitSettings.distanceLabel() : 'km';
+        if (field === 'liters') return window.YakitSettings ? window.YakitSettings.volumeLabel() : 'L';
+        return '';
+    }
+
+    function guardFixLabel(fix) {
+        if (!fix) return '';
+        if (fix.field === 'odometer') return 'Sayaçı ' + fmtDistance(fix.value, 0) + ' yap';
+        if (fix.field === 'liters') return 'Litreyi ' + fmtVolume(fix.value, 2) + ' yap';
+        return fix.label || 'Düzelt';
+    }
+
+    function openGuardModal(warnings) {
+        const box = document.getElementById('guard-list');
+        const modal = document.getElementById('guard-modal');
+        if (!box || !modal) { guardBypass = true; saveRefuel(); return; }
+        const blocking = warnings.some(w => w.severity !== 'info');
+        const cnt = document.getElementById('guard-count');
+        if (cnt) cnt.textContent = blocking ? warnings.length + ' nokta bulundu' : 'Bilgilendirme — kaydı engellemez';
+        const saveBtn = document.getElementById('guard-save');
+        if (saveBtn) saveBtn.textContent = blocking ? 'Yine de kaydet' : 'Kaydet';
+        const cancelBtn = document.getElementById('guard-cancel');
+        if (cancelBtn) cancelBtn.textContent = blocking ? 'Düzelt' : 'Geri dön';
+        box.innerHTML = warnings.map((w, i) => {
+            const warn = w.severity !== 'info';
+            const iconBg = warn ? 'bg-amber-50 text-amber-700' : 'bg-blue-50 text-blue-700';
+            const border = warn ? 'border-amber-200' : 'border-blue-200';
+            const fixBtn = w.fix
+                ? '<button type="button" data-guard-fix="' + i + '" class="mt-2 bg-white border border-slate-300 text-slate-700 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold">' + escapeHtml(guardFixLabel(w.fix)) + '</button>'
+                : '';
+            const goBtn = w.field
+                ? '<button type="button" data-guard-goto="' + escapeHtml(w.field) + '" class="mt-2 ml-1.5 text-[11px] font-semibold text-slate-500 underline">Alanı düzenle</button>'
+                : '';
+            return '<div class="border ' + border + ' rounded-xl p-2.5 ' + (warn ? 'bg-amber-50/50' : 'bg-blue-50/40') + '">' +
+                '<div class="flex items-start gap-2">' +
+                '<span class="w-6 h-6 rounded-full ' + iconBg + ' flex items-center justify-center shrink-0 text-[11px]"><i class="fa-solid fa-' + (warn ? 'triangle-exclamation' : 'circle-info') + '"></i></span>' +
+                '<div class="min-w-0"><div class="text-[12px] font-bold text-slate-800">' + escapeHtml(w.title) + '</div>' +
+                '<div class="text-[11px] text-slate-600 leading-snug mt-0.5">' + escapeHtml(w.detail) + '</div>' +
+                fixBtn + goBtn + '</div></div></div>';
+        }).join('');
+        box.querySelectorAll('[data-guard-fix]').forEach(btn => {
+            btn.onclick = () => {
+                const w = warnings[+btn.dataset.guardFix];
+                if (!w || !w.fix) return;
+                applyGuardFix(w.fix);
+                closeGuardModal();
+                showToast('Değer düzeltildi, kontrol edip kaydedin');
+            };
+        });
+        box.querySelectorAll('[data-guard-goto]').forEach(btn => {
+            btn.onclick = () => {
+                const field = btn.dataset.guardGoto;
+                closeGuardModal();
+                const el = document.getElementById(field === 'odometer' ? 'refuel-odo' : 'refuel-liters');
+                if (el) { el.focus(); el.select(); }
+            };
+        });
+        modal.classList.remove('hidden');
+    }
+
+    function applyGuardFix(fix) {
+        if (!fix) return;
+        if (fix.field === 'odometer') writeDistInput('refuel-odo', fix.value, 0);
+        else if (fix.field === 'liters') {
+            writeVolInput('refuel-liters', fix.value, 2);
+            if (typeof autoCalcRefuel === 'function') autoCalcRefuel('liters');
+        }
+    }
+
+    function closeGuardModal() {
+        const modal = document.getElementById('guard-modal');
+        if (modal) modal.classList.add('hidden');
+    }
+
+    function guardSaveAnyway() {
+        closeGuardModal();
+        guardBypass = true;
+        saveRefuel();
+    }
+
     async function saveRefuel() {
         const vehicle = getActiveVehicle();
         const editId = document.getElementById('edit-refuel-id').value;
@@ -2099,6 +2218,15 @@
             photos: [...currentRefuelPhotos],
             note: document.getElementById('refuel-note').value.trim()
         };
+
+        // v10.2: veri giriş korumaları — uyarmak için, engellemek için değil
+        if (!guardBypass && window.YakitGuards && guardsEnabled()) {
+            const warnings = window.YakitGuards.check(recordData, {
+                refuels: state.refuels, editId: editId, vehicle: vehicle
+            });
+            if (warnings.length) { openGuardModal(warnings); return; }
+        }
+        guardBypass = false;
 
         // Depolama hatasında geri alma için anlık görüntü
         const refuelsBackup = JSON.parse(JSON.stringify(state.refuels));
@@ -3509,6 +3637,11 @@
     window.addEventListener('DOMContentLoaded', () => {
         renderAll();
         initPhotonBaseSetting();
+        // v10.2: veri giriş uyarısı düğmeleri
+        const gCancel = document.getElementById('guard-cancel');
+        const gSave = document.getElementById('guard-save');
+        if (gCancel) gCancel.onclick = closeGuardModal;
+        if (gSave) gSave.onclick = guardSaveAnyway;
         // v7: varsayılan sayfa
         try {
             const dv = window.YakitSettings && window.YakitSettings.get().defaultView;

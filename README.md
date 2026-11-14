@@ -1,11 +1,129 @@
-# Yakıt Takip v7 — Ayarlar, Araç Simgeleri ve Yedekleme
+# Yakıt Takip v10.2 — Veri Giriş Korumaları
 
 Bu sürümde **fiş tarama artık gerçek**: fotoğraf çekiyorsunuz, uygulama yazıyı telefonun
-kendi işlemcisinde okuyor ve **litre, birim fiyat, toplam tutar, tarih** alanlarını dolum
-formuna aktarıyor. Önceki sürümlerdeki demo/sahte okuma tamamen kaldırıldı.
+kendi işlemcisinde okuyor ve **yakıt türü, litre, birim fiyat, toplam tutar, tarih, saat** alanlarını dolum
+formuna aktarıyor. v9 ayrıca **yakıt türü** ve **saat** okur. Önceki sürümlerdeki demo/sahte okuma tamamen kaldırıldı.
 
 **Fotoğraflar hiçbir sunucuya gönderilmez.** OCR motoru (Tesseract.js + Türkçe dil modeli)
 sitenizin kendi dosyaları arasındadır; ilk indirmeden sonra **internet olmadan** çalışır.
+
+## v10.2'de yeni olanlar
+
+### Veri giriş korumaları (`guards.js`)
+Kayıt **engellenmez**; uygulama yalnızca uyarır, kararı siz verirsiniz.
+
+| Kontrol | Ne zaman uyarır | Seviye |
+|---|---|---|
+| **Mükerrer dolum** | Aynı araç + aynı tarih + yakın litre/tutar (veya aynı sayaç + litre) | Uyarı |
+| **Sayaç gerilemesi** | Yeni km, aracın en yüksek sayacından düşük | Uyarı |
+| **Basamak hatası** | 7778 yerine 77780 gibi 10× / ÷10 giriş; tek dokunuşla düzeltme önerisi | Uyarı |
+| **Büyük sıçrama** | Tek dolumda 2000 km üzeri artış | Bilgi |
+| **Tüketim sapması** | Tam depolar arası tüketim, geçmiş medyanın 0,5×–1,8× dışında (en az 3 geçmiş aralık, ≥50 km) | Uyarı |
+| **Depo aşımı** | Litre, depo kapasitesinin 1,5 katından fazla | Bilgi |
+
+- Uyarı ekranında **“Düzelt”** (forma döner) ve **“Yine de kaydet”** vardır.
+- Yalnızca bilgi seviyesinde nokta varsa düğme **“Kaydet”** olur; tek dokunuşla devam edilir.
+- Basamak hatasında **“Sayaçı … yap”** düğmesi değeri otomatik düzeltir.
+- Düzenlemede kaydın kendisi karşılaştırmaya katılmaz.
+- **Ayarlar → Ana tercihler → Veri giriş uyarıları** ile kapatılabilir (varsayılan açık).
+- Eşikler `guards.js` içinde `LIMITS` nesnesindedir.
+
+Test paketi: **751/751** yeşil; üç gerçek fişte OCR hâlâ **18/18** alan.
+
+### v10.2 kurulumu (ZIP)
+Bu sürüm **ZIP** ile dağıtılır:
+- `yakit-takip-v10-2-guncelleme.zip` → yalnızca değişen **6 dosya** + `guards.js` (yeni) + bu README + KURULUM.txt
+- `yakit-takip-v10-2-tam-paket.zip` → uygulamanın **31 dosyasının tamamı** (OCR motoru dahil)
+
+GitHub'da **Add file → Upload files** ile ZIP'ten çıkan dosyaları yükleyin; aynı adlı dosyalar
+üzerine yazılır, `guards.js` yeni eklenir. Kayıtlarınız tarayıcıda kaldığı için **veri kaybı olmaz**.
+OCR motor önbelleği korunur (`OCR_VERSION 6.0.0`), 5,6 MB yeniden inmez.
+
+---
+
+## v10.1'de yeni olanlar
+
+- **Geri yükleme güvenlik yedeği:** Bir yedeği geri yüklemeden önce uygulama, mevcut
+  durumun otomatik olarak bir **güvenlik** yedeğini alır. Geri yükleme yanlışsa listedeki
+  “güvenlik” yedeğinden önceki duruma dönebilirsiniz. Güvenlik yedeği alınamazsa geri
+  yükleme hiç başlamaz. En yeni güvenlik yedeği normal budamadan korunur.
+- **Yedek hata uyarısı:** Otomatik yedek başarısız olursa ana ekranda ve Ayarlar →
+  Uygulama içi yedekler altında görünür uyarı çıkar; **Tekrar dene** düğmesi vardır.
+- **Saat düzeltmesi:** Saat girişlerinde `step=60` ile Android seçicinin saniye
+  göstermesi engellenir; değer HH:MM kalır.
+
+Test paketi: **658/658** yeşil; üç gerçek fişte OCR hâlâ **18/18** alan.
+
+### v10.1 kurulumu
+Değişen dosyalar: `settings.js`, `settings-ui.js`, `index.html`, `sw.js`.
+OCR motor önbelleği korunur (`OCR_VERSION 6.0.0`). `v10-1-kopyala-yapistir.html`
+sayfasından kopyala/yapıştır ile kurulur.
+
+---
+
+## v10'da yeni olanlar
+
+### Uygulama içi otomatik yedekleme (Drive yok, internet yok)
+Google Drive eşitlemesinden vazgeçildi; onun yerine uygulama **kendi içinde** yedekler:
+
+- **Otomatik:** Uygulama açılışında, son yedeğin üzerinden 24 saat geçtiyse sessizce
+  bir yedek alır. Tüm kayıtlar + fotoğraflar + ayarlar dahil.
+- **Saklama:** Son **7 / 14 / 30** yedek tutulur (Ayarlar'dan seçilir), eskiler silinir.
+- **Elle:** Ayarlar → Uygulama içi yedekler → **Şimdi yedek al**.
+- **Geri yükleme:** Listedeki yedeğin yanındaki **Geri yükle** → önce özet gösterilir,
+  onaylamadan hiçbir şey değişmez. Dosya yedekleriyle aynı onay akışı.
+- **Ayrı veritabanı:** Yedekler ana veriden ayrı bir IndexedDB'de tutulur;
+  "Tüm verileri sıfırla" yedekleri SİLMEZ. Sıfırlasanız bile yedekten dönebilirsiniz.
+- Dosya yedekleme (indir/paylaş/geri yükle) aynen duruyor.
+
+> Not: Uygulama içi yedekler cihazda kalır. Cihaz kaybolursa/silinerse yedekler de
+> gider; ara sıra "Yedeği paylaş" ile cihaz dışına kopya almak yine önerilir.
+
+### v10 kurulumu
+Yalnızca **3 dosya** değişti: `settings.js`, `settings-ui.js`, `sw.js`.
+OCR motor önbelleği korunur (`OCR_VERSION 6.0.0`). `v10-kopyala-yapistir.html`
+sayfasından kopyala/yapıştır ile kurulur.
+
+---
+
+## v9'da yeni olanlar
+
+### A) Ayarlar tamamlandı
+- **Hacim birimi** artık seçilebilir: L / gal (US) / gal (UK).
+- **Tüketim birimi** ayrı seçilebilir: L/100km, km/L, MPG-US, MPG-UK.
+- **Haftanın ilk günü**: Pazartesi / Pazar. Raporlar ekranındaki "Bu hafta" özeti bu güne göre hesaplanır.
+- Galon seçilince dolum formu, fiyat etiketi, tank kapasitesi, hesaplayıcı ve CSV doğru birime çevrilir.
+- Düzenleme ekranı birim tur atmasını doğru yapar; kayıtlar içeride hep km/L/TL saklanır.
+
+### B) OCR kapsamı genişletildi
+Yeni okunan alanlar: **yakıt türü** ve **saat**. Tarih zaten okunuyordu, korundu.
+İstasyon adı, plaka, fiş numarası **bilerek eklenmedi**.
+
+- Yakıt türü fişteki ürün adından çıkarılır: MOTORİN / DİZEL / EURODI / EXCELLIUM → Motorin (Dizel);
+  BENZİN / KURŞUNSUZ 95 → Kurşunsuz 95; 97/98 → Kurşunsuz 97/98; LPG / OTOGAZ → LPG.
+- Saat için küçük bir **kırpma doğrulaması** yapılır: OCR `01:09` yerine `0:09` okursa,
+  tarih/saat bölgesi kırpılıp rakam whitelist'i ile yeniden okunur.
+
+### v9 doğruluk ölçümü (3 gerçek fiş, 6 alan)
+
+| Fiş | Yakıt türü | Litre | Fiyat | Toplam | Tarih | Saat | Süre |
+|---|---|---|---|---|---|---|---|
+| Net küçük (225×505) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | 2,5 s |
+| Total (1200×1600) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | 1,4 s |
+| Merzifon (389×788) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | 4,7 s |
+| **TOPLAM** | | | | | | | **18/18 alan** |
+
+Test paketi: **552/552** yeşil (ayarlar, birimler, yedek, PWA, harita, OCR, gerçek tarayıcı).
+
+### v9 kurulumu (indirme gerektirmez)
+Yalnızca **5 dosya** değişti: `index.html`, `settings.js`, `settings-ui.js`, `ocr.js`, `sw.js`.
+OCR motor önbelleği (`OCR_VERSION 6.0.0`) korunur; 5,6 MB yeniden inmez.
+
+`v9-kopyala-yapistir.html` sayfasını açın, her dosyanın metnini kopyalayıp GitHub web
+editöründe ilgili dosyanın üzerine yapıştırın ve **Commit changes** deyin. Sonra siteyi
+bir kez yenileyin. Ayrıntılı adımlar o sayfadadır.
+
+---
 
 ## v7'de yeni olanlar
 
@@ -113,32 +231,56 @@ sürer ve internet gerektirir. Düğmeye basmak, sonraki tüm taramaları **anı
 Alt kısımdaki **"Okunan ham metni göster/gizle"** ile motorun gördüğü tüm yazıyı
 görebilirsiniz; bir alan neden bulunamadı, oradan anlarsınız.
 
-## Doğruluk: dürüst beklenti
+## Doğruluk: gerçek fişlerle ölçüldü
 
-Bu bir **yardımcı**dır, otomatik muhasebe değil. Sonuçları her zaman kontrol edin.
+v8, üç gerçek Türk akaryakıt fişi üzerinde test edildi (OPET/Total/Merzifon düzenleri,
+225×505 ile 1200×1600 arası çözünürlük, termal ve normal baskı):
 
-İyi sonuç veren koşullar:
-- Fiş **düz** ve kadraja tam giriyor, köşelerden kesilmemiş
-- **İyi ışık**, gölge yok, flaş parlaması yok
-- Yazılar net; buruşuk/ısıl yazısı solmuş fişlerde hata artar
-- Fiş kadrajı dik; hafif eğrilik tolere edilir, 15°+ eğrilik hatayı artırır
+| Fiş | v7 (önce) | v8 (şimdi) | Süre |
+|---|---|---|---|
+| Net, küçük (225×505) | 1/4 alan | **4/4** | 4,5 s |
+| Total (1200×1600) | 1/4 alan | **4/4** | 2,0 s |
+| Merzifon (389×788) | 2/4 alan | **4/4** | 5,2 s |
+| **TOPLAM** | **2/12** | **12/12** | |
 
-Zorlanan durumlar: silik termal fişler, çok küçük punto, el yazısı, kırışık yüzey,
-alacakaranlık, fişin bir kısmının görünmesi. Böyle durumlarda alanlar boş gelir veya
-yanlış okunur — kutulardan elle düzeltin.
+### Neyi düzelttik
 
-**Kapsam bu turda 4 alanla sınırlı:** litre, birim fiyat, toplam tutar, tarih.
-İstasyon adı, yakıt türü, kilometre ve fiş numarası okunmuyor (bilinçli tercih).
+1. **Büyütme sınırı kaldırıldı.** Tesseract büyük harf için ~20–30 piksel ister.
+   225 px genişliğindeki fişte yazı 6–8 px kalıyordu. Eski kod en fazla 2,5× büyütüyordu;
+   artık kısa kenar 1500 piksele çıkarılıyor. **En büyük kazanç bu oldu.**
+2. **"84,15 LT X 51,22" satırı okunuyor.** Türk fişleri miktar ve birim fiyatı tek satırda
+   yazar; ayrı "BİRİM FİYAT" etiketi yoktur. Eski ayrıştırıcı bu deseni hiç tanımıyordu.
+3. **`TOPLAM *410,00` içindeki yıldız tolere ediliyor.** Fişlerde tutar `*`, `x`, `"` gibi
+   bir önekle yazılır; bu işaret satırın hiç eşleşmemesine yol açıyordu.
+4. **KDV satırları dışlanıyor.** `TOPKDV *108,38` artık toplam sanılmıyor.
+5. **Yıl onarımı genişletildi.** `11-02-7024` → 2024 (ilk hane de bozulabiliyor).
+6. **İki geçişli oylama.** İlk okuma 4 alanı da bulur ve tutarlar uyumluysa biter.
+   Aksi hâlde farklı ön işlemeyle ikinci okuma yapılır, alan alan birleştirilir.
+
+### Yine de kontrol edin
+
+Bu bir yardımcıdır. Sonuçlar her zaman size gösterilir, onaylamadan kayıt oluşmaz.
+Zorlanan durumlar: çok silik termal fiş, el yazısı, kırışık yüzey, 15°+ eğrilik,
+fişin bir kısmının kadraj dışında kalması. Böyle durumlarda kutulardan elle düzeltin.
+
+**İpucu:** Fişi düz, kadraja tam ve iyi ışıkta çekin. Mümkünse fişi telefona
+yakın tutun — küçük görüntüler artık büyütülüyor ama olmayan detay üretilemiyor.
+
+**Kapsam:** litre, birim fiyat, toplam tutar, tarih. İstasyon adı, yakıt türü,
+kilometre ve fiş numarası okunmuyor.
 
 ## Teknik notlar
 
 - **Motor:** Tesseract.js 7.0.0, OEM 1 (LSTM), PSM 6, Türkçe `tessdata_fast` modeli.
-- **Görüntü ön işleme:** gri tonlama + koşullu kontrast germe, 1000–2200 px yeniden
-  boyutlama, PNG'ye çevirme. Başarısız olursa orijinal dosyayla devam eder.
+- **Görüntü ön işleme:** gri tonlama + kısa kenarı 1500 px'e büyütme (en fazla 8×,
+  uzun kenar 4000 px sınırı). İkinci geçiş: 2000 px + %2–98 persentil kontrast germe.
+  Kübik benzeri yumuşatma (`imageSmoothingQuality: high`). PNG'ye çevrilir.
 - **Sayı ayrıştırma:** Türkçe biçim (`3.468,00`, `42,50`), binlik ayraçları, rakam
   karışıklıkları (O→0, l→1, S→5 vb.), KDV satırlarının dışlanması.
 - **Çapraz doğrulama:** litre × birim fiyat ≈ toplam (±%3). Tutarsızlıkta tek alanlı
   düzeltme denenir; olmazsa toplam ÷ litre ile birim fiyat hesaplanır.
+- **Çoklu geçiş oylaması:** en tutarlı (litre, fiyat, toplam) üçlüsü seçilir; tarih
+  çoğunluk oyuyla belirlenir. İlk geçiş yeterliyse ikincisi hiç çalışmaz.
 - **Sadece SIMD çekirdeği** paketlenmiştir (~4 MB tasarruf). SIMD desteklemeyen çok eski
   tarayıcılarda anlaşılır bir Türkçe hata çıkar. Böyle bir cihazla karşılaşırsanız
   `tesseract-core-lstm.wasm.js` dosyasını da ekleyip `ocr.js` içindeki `corePath`'i

@@ -1,4 +1,4 @@
-/* Yakıt Takip v10.1 — Ayarlar, birimler, dosya yedekleme + uygulama içi otomatik yedek
+/* Yakıt Takip v10.2 — Ayarlar, birimler, dosya yedekleme + uygulama içi otomatik yedek
  * Bağımsız modül: window.YakitSettings
  * Veri modeli: state.settings (localStorage içinde, ana state ile birlikte)
  */
@@ -18,7 +18,8 @@
     autoBackupReminder: true,
     lastBackupAt: null,
     autoLocalBackup: true,     // uygulama açılışında günde 1 otomatik yedek
-    localBackupKeep: 7         // saklanacak yedek sayısı: 7 | 14 | 30
+    localBackupKeep: 7,        // saklanacak yedek sayısı: 7 | 14 | 30
+    dataGuards: true           // v10.2: veri giriş uyarıları (mükerrer/sayaç/tüketim)
   };
 
   var CURRENCIES = {
@@ -91,6 +92,7 @@
     settings.autoLocalBackup = settings.autoLocalBackup !== false;
     if ([7, 14, 30].indexOf(Number(settings.localBackupKeep)) < 0) settings.localBackupKeep = 7;
     settings.localBackupKeep = Number(settings.localBackupKeep);
+    settings.dataGuards = settings.dataGuards !== false;
     return settings;
   }
 
@@ -281,7 +283,7 @@
       format: 'yakit-takip-backup',
       version: 7,
       createdAt: new Date().toISOString(),
-      appVersion: '10.1.0',
+      appVersion: '10.2.0',
       settings: get(),
       state: JSON.parse(JSON.stringify(st)),
       photos: {},

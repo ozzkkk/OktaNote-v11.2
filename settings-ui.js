@@ -1,4 +1,4 @@
-/* Yakıt Takip v10.1 — Ayarlar ekranı (Fuelio tarzı gruplu liste)
+/* Yakıt Takip v10.2 — Ayarlar ekranı (Fuelio tarzı gruplu liste)
  * window.YakitSettingsUI
  */
 (function () {
@@ -73,7 +73,9 @@
       row({ icon: 'calendar-days', iconBg: '#e0e7ff', iconFg: '#4f46e5', title: 'Tarih biçimi',
             desc: S.formatDate('2026-04-18'), badge: s.dateFormat, action: 'dateformat' }),
       row({ icon: 'house', iconBg: '#fef3c7', iconFg: '#d97706', title: 'Varsayılan sayfa',
-            desc: 'Uygulama açılınca gösterilecek ekran', badge: viewLabel(s.defaultView), action: 'defaultview' })
+            desc: 'Uygulama açılınca gösterilecek ekran', badge: viewLabel(s.defaultView), action: 'defaultview' }),
+      row({ icon: 'shield-halved', iconBg: '#fef3c7', iconFg: '#d97706', title: 'Veri giriş uyarıları',
+            desc: 'Mükerrer dolum, sayaç gerilemesi ve tüketim sapması uyarısı', toggle: true, value: s.dataGuards, action: 'toggle-guards' })
     ].join(''));
 
     html += group('Yedekleme', [
@@ -114,7 +116,7 @@
     ].join(''));
 
     html += group('Hakkında', [
-      row({ icon: 'circle-info', iconBg: '#e0e7ff', iconFg: '#4f46e5', title: 'Yakıt Takip', desc: 'Sürüm 10.1.0', badge: 'v10.1' }),
+      row({ icon: 'circle-info', iconBg: '#e0e7ff', iconFg: '#4f46e5', title: 'Yakıt Takip', desc: 'Sürüm 10.2.0', badge: 'v10.2' }),
       row({ icon: 'shield-halved', iconBg: '#dcfce7', iconFg: '#059669', title: 'Gizlilik',
             desc: 'Veriler cihazınızda kalır. Sunucuya hiçbir şey gönderilmez.' }),
       row({ icon: 'file-lines', iconBg: '#f1f5f9', iconFg: '#64748b', title: 'Açık kaynak lisansları',
@@ -298,6 +300,9 @@
         break;
       case 'toggle-reminder':
         S.set('autoBackupReminder', !s.autoBackupReminder); render(); break;
+      case 'toggle-guards':
+        S.set('dataGuards', !s.dataGuards); render();
+        toast(S.get().dataGuards ? 'Veri giriş uyarıları açık' : 'Veri giriş uyarıları kapalı'); break;
       case 'toggle-local-backup':
         S.set('autoLocalBackup', !s.autoLocalBackup); render();
         toast(S.get().autoLocalBackup ? 'Otomatik yedek açık' : 'Otomatik yedek kapalı'); break;
