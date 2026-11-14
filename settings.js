@@ -1,4 +1,4 @@
-/* Yakıt Takip v9 — Ayarlar, birimler ve dosya yedekleme
+/* Yakıt Takip v10 — Ayarlar, birimler, dosya yedekleme + uygulama içi otomatik yedek
  * Bağımsız modül: window.YakitSettings
  * Veri modeli: state.settings (localStorage içinde, ana state ile birlikte)
  */
@@ -16,7 +16,9 @@
     defaultView: 'home',
     weekStart: 1,              // 1=Pazartesi, 0=Pazar
     autoBackupReminder: true,
-    lastBackupAt: null
+    lastBackupAt: null,
+    autoLocalBackup: true,     // uygulama açılışında günde 1 otomatik yedek
+    localBackupKeep: 7         // saklanacak yedek sayısı: 7 | 14 | 30
   };
 
   var CURRENCIES = {
@@ -86,6 +88,9 @@
     if (!CURRENCIES[settings.currency]) settings.currency = 'TRY';
     if (DATE_FORMATS.indexOf(settings.dateFormat) < 0) settings.dateFormat = 'YYYY-MM-DD';
     settings.weekStart = Number(settings.weekStart) === 0 ? 0 : 1;
+    settings.autoLocalBackup = settings.autoLocalBackup !== false;
+    if ([7, 14, 30].indexOf(Number(settings.localBackupKeep)) < 0) settings.localBackupKeep = 7;
+    settings.localBackupKeep = Number(settings.localBackupKeep);
     return settings;
   }
 
@@ -276,7 +281,7 @@
       format: 'yakit-takip-backup',
       version: 7,
       createdAt: new Date().toISOString(),
-      appVersion: '9.0.0',
+      appVersion: '10.0.0',
       settings: get(),
       state: JSON.parse(JSON.stringify(st)),
       photos: {},
@@ -402,6 +407,125 @@
     return obj;
   }
 
+
+  // ---------- UYGULAMA İÇİ YEDEK (v10) ----------
+  // Ayrı bir IndexedDB veritabanı: ana veri sıfırlansa bile yedekler kalır.
+  // İnternet/Drive yoktur; her şey cihazda saklanır.
+  var LOCAL_BACKUP_DB = 'yakitTakipBackups';
+  var LOCAL_BACKUP_VERSION = 1;
+  var localDbPromise = null;
+
+  function openLocalBackupDb() {
+    if (localDbPromise) return localDbPromise;
+    localDbPromise = new Promise(function (resolve, reject) {
+      if (typeof indexedDB === 'undefined') { reject(new Error('Bu tarayıcıda IndexedDB yok')); return; }
+      var req = indexedDB.open(LOCAL_BACKUP_DB, LOCAL_BACKUP_VERSION);
+      req.onupgradeneeded = function () {
+        var db = req.result;
+        if (!db.objectStoreNames.contains('snapshots')) db.createObjectStore('snapshots', { keyPath: 'id' });
+      };
+      req.onsuccess = function () { resolve(req.result); };
+      req.onerror = function () { reject(req.error || new Error('Yedek veritabanı açılamadı')); };
+    });
+    return localDbPromise;
+  }
+
+  function localReq(req) {
+    return new Promise(function (resolve, reject) {
+      req.onsuccess = function () { resolve(req.result); };
+      req.onerror = function () { reject(req.error || new Error('Yedek işlemi başarısız')); };
+    });
+  }
+
+  function localTxDone(tx) {
+    return new Promise(function (resolve, reject) {
+      tx.oncomplete = function () { resolve(); };
+      tx.onerror = function () { reject(tx.error || new Error('Yedek yazılamadı')); };
+      tx.onabort = function () { reject(tx.error || new Error('Yedek işlemi yarıda kesildi')); };
+    });
+  }
+
+  async function pruneLocalBackups(keep) {
+    var n = Number(keep);
+    if ([7, 14, 30].indexOf(n) < 0) n = settings.localBackupKeep || 7;
+    var all = await listLocalBackups();
+    var old = all.slice(n);
+    if (!old.length) return 0;
+    var db = await openLocalBackupDb();
+    var tx = db.transaction('snapshots', 'readwrite');
+    var st = tx.objectStore('snapshots');
+    old.forEach(function (m) { st.delete(m.id); });
+    await localTxDone(tx);
+    return old.length;
+  }
+
+  // kind: 'auto' | 'manual'. payload = buildBackup çıktısı (fotoğraflar dahil).
+  async function createLocalBackup(kind) {
+    var payload = await buildBackup({ photos: true });
+    var json = JSON.stringify(payload);
+    var rec = {
+      id: 'lb' + Date.now() + '-' + Math.random().toString(36).slice(2, 8),
+      createdAt: payload.createdAt,
+      kind: kind === 'manual' ? 'manual' : 'auto',
+      bytes: json.length,
+      appVersion: payload.appVersion,
+      summary: summarizeBackup(payload),
+      payload: payload
+    };
+    var db = await openLocalBackupDb();
+    var tx = db.transaction('snapshots', 'readwrite');
+    tx.objectStore('snapshots').put(rec);
+    await localTxDone(tx);
+    set('lastBackupAt', payload.createdAt);
+    await pruneLocalBackups(settings.localBackupKeep);
+    return { id: rec.id, createdAt: rec.createdAt, kind: rec.kind, bytes: rec.bytes, summary: rec.summary, photoCount: payload.photoCount, warning: payload.photoWarning };
+  }
+
+  async function listLocalBackups() {
+    var db = await openLocalBackupDb();
+    var tx = db.transaction('snapshots', 'readonly');
+    var all = await localReq(tx.objectStore('snapshots').getAll());
+    return (all || []).map(function (r) {
+      return { id: r.id, createdAt: r.createdAt, kind: r.kind, bytes: r.bytes, appVersion: r.appVersion, summary: r.summary };
+    }).sort(function (a, b) { return String(b.createdAt).localeCompare(String(a.createdAt)); });
+  }
+
+  async function getLocalBackup(id) {
+    var db = await openLocalBackupDb();
+    var tx = db.transaction('snapshots', 'readonly');
+    var rec = await localReq(tx.objectStore('snapshots').get(id));
+    return rec ? rec.payload : null;
+  }
+
+  async function deleteLocalBackup(id) {
+    var db = await openLocalBackupDb();
+    var tx = db.transaction('snapshots', 'readwrite');
+    tx.objectStore('snapshots').delete(id);
+    await localTxDone(tx);
+  }
+
+  async function restoreLocalBackup(id) {
+    var payload = await getLocalBackup(id);
+    if (!payload) throw new Error('Yedek bulunamadı');
+    return restoreBackup(payload, { photos: true });
+  }
+
+  // Açılışta çağrılır: açıksa ve son yedeğin üzerinden 24 saat geçtiyse alır.
+  async function maybeAutoBackup() {
+    if (!settings.autoLocalBackup) return null;
+    try {
+      var all = await listLocalBackups();
+      if (all.length) {
+        var age = Date.now() - new Date(all[0].createdAt).getTime();
+        if (isFinite(age) && age < 24 * 3600 * 1000) return null;
+      }
+      return await createLocalBackup('auto');
+    } catch (e) {
+      console.warn('Otomatik yedek alınamadı:', e);
+      return null;
+    }
+  }
+
   // ---------- dışa aktarım ----------
   window.YakitSettings = {
     DEFAULTS: DEFAULTS,
@@ -424,7 +548,11 @@
     restoreBackup: restoreBackup, readBackupFile: readBackupFile,
     validateBackup: validateBackup, summarizeBackup: summarizeBackup,
     backupFileName: backupFileName,
-    dataUrlToBlob: dataUrlToBlob, blobToDataUrl: blobToDataUrl
+    dataUrlToBlob: dataUrlToBlob, blobToDataUrl: blobToDataUrl,
+    createLocalBackup: createLocalBackup, listLocalBackups: listLocalBackups,
+    getLocalBackup: getLocalBackup, deleteLocalBackup: deleteLocalBackup,
+    restoreLocalBackup: restoreLocalBackup, maybeAutoBackup: maybeAutoBackup,
+    pruneLocalBackups: pruneLocalBackups
   };
 
   load();
