@@ -1,4 +1,4 @@
-/* Yakıt Takip v10 — Ayarlar, birimler, dosya yedekleme + uygulama içi otomatik yedek
+/* Yakıt Takip v10.1 — Ayarlar, birimler, dosya yedekleme + uygulama içi otomatik yedek
  * Bağımsız modül: window.YakitSettings
  * Veri modeli: state.settings (localStorage içinde, ana state ile birlikte)
  */
@@ -281,7 +281,7 @@
       format: 'yakit-takip-backup',
       version: 7,
       createdAt: new Date().toISOString(),
-      appVersion: '10.0.0',
+      appVersion: '10.1.0',
       settings: get(),
       state: JSON.parse(JSON.stringify(st)),
       photos: {},
@@ -370,6 +370,16 @@
     var err = validateBackup(obj);
     if (err) throw new Error(err);
 
+    // v10.1: geri yüklemeden önce mevcut durumun güvenlik yedeğini al.
+    // Alınamazsa geri yükleme hiç başlamaz.
+    var safety = null;
+    if (o.safety !== false) {
+      try { safety = await createLocalBackup('safety'); }
+      catch (e) {
+        throw new Error('Geri yükleme öncesi güvenlik yedeği alınamadı: ' + (e && e.message ? e.message : e));
+      }
+    }
+
     // Fotoğrafları IndexedDB'ye yaz
     var restored = 0;
     if (o.photos !== false && obj.photos && window.YakitApp && window.YakitApp.putPhoto) {
@@ -394,7 +404,7 @@
     } else {
       throw new Error('Uygulama geri yükleme arayüzü bulunamadı');
     }
-    return { photoCount: restored, summary: summarizeBackup(obj) };
+    return { photoCount: restored, summary: summarizeBackup(obj), safetyBackupId: safety ? safety.id : null };
   }
 
   async function readBackupFile(file) {
@@ -449,7 +459,11 @@
     var n = Number(keep);
     if ([7, 14, 30].indexOf(n) < 0) n = settings.localBackupKeep || 7;
     var all = await listLocalBackups();
-    var old = all.slice(n);
+    // v10.1: en yeni güvenlik yedeği normal budamadan korunur
+    var safety = null;
+    for (var i = 0; i < all.length; i++) { if (all[i].kind === 'safety') { safety = all[i]; break; } }
+    var pool = safety ? all.filter(function (m) { return m.id !== safety.id; }) : all;
+    var old = pool.slice(n);
     if (!old.length) return 0;
     var db = await openLocalBackupDb();
     var tx = db.transaction('snapshots', 'readwrite');
@@ -459,14 +473,15 @@
     return old.length;
   }
 
-  // kind: 'auto' | 'manual'. payload = buildBackup çıktısı (fotoğraflar dahil).
+  // kind: 'auto' | 'manual' | 'safety'. payload = buildBackup çıktısı (fotoğraflar dahil).
   async function createLocalBackup(kind) {
     var payload = await buildBackup({ photos: true });
     var json = JSON.stringify(payload);
+    var k = (kind === 'manual' || kind === 'safety') ? kind : 'auto';
     var rec = {
       id: 'lb' + Date.now() + '-' + Math.random().toString(36).slice(2, 8),
       createdAt: payload.createdAt,
-      kind: kind === 'manual' ? 'manual' : 'auto',
+      kind: k,
       bytes: json.length,
       appVersion: payload.appVersion,
       summary: summarizeBackup(payload),
@@ -477,7 +492,8 @@
     tx.objectStore('snapshots').put(rec);
     await localTxDone(tx);
     set('lastBackupAt', payload.createdAt);
-    await pruneLocalBackups(settings.localBackupKeep);
+    try { await pruneLocalBackups(settings.localBackupKeep); }
+    catch (e) { console.warn('Eski yedekler budanamadı:', e); }
     return { id: rec.id, createdAt: rec.createdAt, kind: rec.kind, bytes: rec.bytes, summary: rec.summary, photoCount: payload.photoCount, warning: payload.photoWarning };
   }
 
@@ -510,21 +526,46 @@
     return restoreBackup(payload, { photos: true });
   }
 
-  // Açılışta çağrılır: açıksa ve son yedeğin üzerinden 24 saat geçtiyse alır.
-  async function maybeAutoBackup() {
-    if (!settings.autoLocalBackup) return null;
+  // v10.1: otomatik yedek durumu (hata görünür uyarı için) — ayarlardan ayrı tutulur
+  var AUTO_STATUS_KEY = 'yakitTakipAutoBackupStatus';
+  function getAutoBackupStatus() {
     try {
-      var all = await listLocalBackups();
-      if (all.length) {
-        var age = Date.now() - new Date(all[0].createdAt).getTime();
-        if (isFinite(age) && age < 24 * 3600 * 1000) return null;
+      var raw = localStorage.getItem(AUTO_STATUS_KEY);
+      if (!raw) return null;
+      var p = JSON.parse(raw);
+      return p && typeof p === 'object' ? p : null;
+    } catch (e) { return null; }
+  }
+  function setAutoBackupStatus(st) {
+    try { localStorage.setItem(AUTO_STATUS_KEY, JSON.stringify(st)); } catch (e) {}
+  }
+
+  // Açılışta çağrılır: açıksa ve son yedeğin üzerinden 24 saat geçtiyse alır.
+  // force=true (tekrar dene) 24 saat kuralını atlar.
+  async function maybeAutoBackup(force) {
+    if (!settings.autoLocalBackup && !force) return null;
+    try {
+      if (!force) {
+        var all = await listLocalBackups();
+        if (all.length) {
+          var age = Date.now() - new Date(all[0].createdAt).getTime();
+          if (isFinite(age) && age < 24 * 3600 * 1000) {
+            setAutoBackupStatus({ ok: true, at: all[0].createdAt, skipped: true });
+            return null;
+          }
+        }
       }
-      return await createLocalBackup('auto');
+      var r = await createLocalBackup('auto');
+      setAutoBackupStatus({ ok: true, at: r.createdAt, error: null });
+      return r;
     } catch (e) {
       console.warn('Otomatik yedek alınamadı:', e);
+      setAutoBackupStatus({ ok: false, at: new Date().toISOString(), error: String(e && e.message ? e.message : e) });
       return null;
     }
   }
+
+  async function retryAutoBackup() { return maybeAutoBackup(true); }
 
   // ---------- dışa aktarım ----------
   window.YakitSettings = {
@@ -552,7 +593,8 @@
     createLocalBackup: createLocalBackup, listLocalBackups: listLocalBackups,
     getLocalBackup: getLocalBackup, deleteLocalBackup: deleteLocalBackup,
     restoreLocalBackup: restoreLocalBackup, maybeAutoBackup: maybeAutoBackup,
-    pruneLocalBackups: pruneLocalBackups
+    pruneLocalBackups: pruneLocalBackups,
+    getAutoBackupStatus: getAutoBackupStatus, retryAutoBackup: retryAutoBackup
   };
 
   load();
