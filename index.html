@@ -24,6 +24,8 @@
     <script src="./i18n.js"></script>
     <script src="./settings-ui.js" defer></script>
     <script src="./maintenance.js" defer></script>
+    <script src="./weather.js" defer></script>
+    <script src="./contact.js" defer></script>
     <style>
         /* v10.8: Yakınlaştırma kilidi kaldırıldı (WCAG 1.4.4). iOS Safari, yazı
            boyutu 16px'ten küçük bir alana odaklanınca sayfayı kendi kendine
@@ -610,9 +612,19 @@
                 <i class="fa-solid fa-gear w-5 text-center text-slate-500"></i>
                 <span>Ayarlar</span>
             </button>
+            <!-- v10.9: İletişim -->
+            <button onclick="openContactModal(); toggleDrawer(false)" class="w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl hover:bg-slate-50 text-slate-700 font-medium">
+                <i class="fa-solid fa-envelope w-5 text-center text-slate-500"></i>
+                <span>İletişim</span>
+            </button>
         </div>
-        <div class="p-4 border-t border-slate-100">
+        <div class="p-4 border-t border-slate-100 space-y-1">
             <button onclick="resetDemoData()" class="w-full text-xs text-slate-400 hover:text-rose-600 py-1.5 transition">Varsayılan Verilere Sıfırla</button>
+            <!-- v10.9: Uygulamadan çıkış (en altta) -->
+            <button onclick="exitApp()" class="w-full flex items-center justify-center gap-2 text-xs font-semibold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-xl py-2.5 transition">
+                <i class="fa-solid fa-power-off"></i>
+                <span>Uygulamadan çıkış</span>
+            </button>
         </div>
     </aside>
 
@@ -759,12 +771,12 @@
                         <i id="weather-icon" class="fa-solid fa-cloud-sun text-amber-500"></i>
                         <span class="text-sm font-semibold text-slate-800">Hava Durumu</span>
                     </div>
-                    <button type="button" onclick="detectWeatherByLocation()" class="text-[11px] text-blue-600 font-semibold flex items-center gap-1 hover:underline">
-                        <i class="fa-solid fa-location-crosshairs"></i>
-                        <span>Konumdan Güncelle</span>
+                    <button type="button" onclick="openWeatherCityPicker()" class="text-[11px] text-blue-600 font-semibold flex items-center gap-1 hover:underline">
+                        <i class="fa-solid fa-city"></i>
+                        <span>Şehir seç</span>
                     </button>
                 </div>
-                <div id="weather-status-text" class="text-[11px] text-slate-500">Konum otomatik alınmaz; isterseniz “Konumdan Güncelle”yi kullanın.</div>
+                <div id="weather-status-text" class="text-[11px] text-slate-500">Şehir seçilmedi. Ayarlar’dan şehir seçin veya “Konumdan Güncelle”yi kullanın.</div>
                 <div class="grid grid-cols-2 gap-2">
                     <select id="refuel-weather-cond" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700">
                         <option value="Güneşli">☀️ Güneşli</option>
@@ -777,6 +789,13 @@
                         <input type="number" id="refuel-weather-temp" value="18" class="w-full bg-transparent text-xs font-bold text-slate-800 focus:outline-none">
                         <span class="text-xs font-semibold text-slate-500">°C</span>
                     </div>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span id="weather-city-badge" class="text-[10px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full hidden"></span>
+                    <button type="button" onclick="detectWeatherByLocation()" class="text-[10px] text-slate-500 font-semibold flex items-center gap-1 hover:underline ml-auto">
+                        <i class="fa-solid fa-location-crosshairs"></i>
+                        <span>Konumdan Güncelle</span>
+                    </button>
                 </div>
             </div>
 
@@ -1273,8 +1292,91 @@
         </div>
     </div>
 
+    <!-- v10.9: İLETİŞİM FORMU -->
+    <div id="contact-modal" style="z-index:80" class="hidden absolute inset-0 bg-slate-900/50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-sm shadow-2xl flex flex-col max-h-full">
+            <div class="flex items-center gap-2.5 p-4 pb-3 shrink-0 border-b border-slate-100">
+                <span class="w-9 h-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0"><i class="fa-solid fa-envelope"></i></span>
+                <div class="min-w-0 flex-1">
+                    <div class="font-bold text-slate-800 text-sm">İletişim</div>
+                    <div class="text-[10px] text-slate-400">o.elver@gmail.com</div>
+                </div>
+                <button type="button" onclick="YakitContact.close()" aria-label="Kapat" class="w-8 h-8 rounded-lg hover:bg-slate-100 text-slate-400 flex items-center justify-center shrink-0"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="px-4 py-3 space-y-2.5 overflow-y-auto no-scrollbar">
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label for="contact-first" class="block text-[11px] font-medium text-slate-500 mb-1">Ad</label>
+                        <input type="text" id="contact-first" autocomplete="given-name" maxlength="60" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-slate-800">
+                    </div>
+                    <div>
+                        <label for="contact-last" class="block text-[11px] font-medium text-slate-500 mb-1">Soyad</label>
+                        <input type="text" id="contact-last" autocomplete="family-name" maxlength="60" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-slate-800">
+                    </div>
+                </div>
+                <div>
+                    <label for="contact-phone" class="block text-[11px] font-medium text-slate-500 mb-1">Telefon (isteğe bağlı)</label>
+                    <input type="tel" id="contact-phone" autocomplete="tel" maxlength="20" placeholder="05xx xxx xx xx" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-slate-800">
+                </div>
+                <div>
+                    <label for="contact-email" class="block text-[11px] font-medium text-slate-500 mb-1">E-posta</label>
+                    <input type="email" id="contact-email" autocomplete="email" maxlength="120" placeholder="ornek@eposta.com" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-slate-800">
+                </div>
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label for="contact-message" class="block text-[11px] font-medium text-slate-500">Mesaj</label>
+                        <span id="contact-count" class="text-[10px] text-slate-400">0/4000</span>
+                    </div>
+                    <textarea id="contact-message" rows="5" maxlength="4000" placeholder="Öneri, hata bildirimi veya sorununuzu yazın..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-slate-800 resize-none"></textarea>
+                </div>
+                <label class="flex items-start gap-2.5 bg-slate-50 border border-slate-200 rounded-xl p-3 cursor-pointer">
+                    <input type="checkbox" id="contact-accept" class="mt-0.5 w-4 h-4 shrink-0 accent-slate-800">
+                    <span class="text-[11px] text-slate-600 leading-relaxed">
+                        Kuralları ve şartları okudum, kabul ediyorum.
+                        <button type="button" onclick="event.preventDefault(); YakitContact.openTerms()" class="text-blue-600 font-semibold underline">Metni oku</button>
+                    </span>
+                </label>
+                <div id="contact-status" class="text-[11px] leading-relaxed text-slate-500"></div>
+            </div>
+            <div class="p-4 pt-2 space-y-2 shrink-0 border-t border-slate-100">
+                <button type="button" id="contact-send" onclick="YakitContact.submit()" class="w-full bg-slate-800 text-white py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 opacity-40 cursor-not-allowed" disabled>
+                    <i class="fa-solid fa-paper-plane"></i><span>Gönder</span>
+                </button>
+                <div class="flex gap-2">
+                    <button type="button" id="contact-copy" onclick="YakitContact.copy()" class="flex-1 bg-white border border-slate-200 text-slate-700 py-2 rounded-xl text-[11px] font-semibold opacity-40" disabled>Metni kopyala</button>
+                    <button type="button" onclick="YakitContact.close()" class="flex-1 bg-white border border-slate-200 text-slate-700 py-2 rounded-xl text-[11px] font-semibold">Vazgeç</button>
+                </div>
+                <p class="text-[10px] text-slate-400 leading-relaxed">Bu form sunucuya veri göndermez. “Gönder” düğmesi, yazdıklarınızı içeren hazır bir e-posta penceresi açar; mesajı kendi e-posta uygulamanız gönderir.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- v10.9: KURALLAR VE ŞARTLAR -->
+    <div id="contact-terms-modal" style="z-index:85" class="hidden absolute inset-0 bg-slate-900/60 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-sm shadow-2xl flex flex-col max-h-full">
+            <div class="flex items-center gap-2.5 p-4 pb-3 shrink-0 border-b border-slate-100">
+                <span class="w-9 h-9 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center shrink-0"><i class="fa-solid fa-file-contract"></i></span>
+                <div class="min-w-0 flex-1 font-bold text-slate-800 text-sm">Kurallar ve Şartlar</div>
+                <button type="button" onclick="YakitContact.closeTerms()" aria-label="Kapat" class="w-8 h-8 rounded-lg hover:bg-slate-100 text-slate-400 flex items-center justify-center shrink-0"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="contact-terms-body" class="px-4 py-3 overflow-y-auto no-scrollbar"></div>
+            <div class="p-4 pt-2 flex gap-2 shrink-0 border-t border-slate-100">
+                <button type="button" onclick="YakitContact.closeTerms()" class="flex-1 bg-white border border-slate-200 text-slate-700 py-2.5 rounded-xl text-xs font-semibold">Kapat</button>
+                <button type="button" onclick="YakitContact.acceptFromTerms()" class="flex-1 bg-slate-800 text-white py-2.5 rounded-xl text-xs font-semibold">Okudum, kabul ediyorum</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- v10.9: ÇIKIŞ EKRANI (tarayıcı sekmeyi kapatmaya izin vermezse) -->
+    <div id="exit-screen" style="z-index:95;position:fixed" class="hidden absolute inset-0 bg-slate-900 flex flex-col items-center justify-center text-center p-8 gap-4">
+        <div class="w-16 h-16 rounded-2xl bg-white/10 text-white flex items-center justify-center"><i class="fa-solid fa-power-off text-2xl"></i></div>
+        <div class="text-white font-bold text-lg">Çıkış yapıldı</div>
+        <div id="exit-screen-note" class="text-slate-300 text-xs leading-relaxed max-w-xs">Verileriniz cihazınıza kaydedildi. Bu sekmeyi kapatabilirsiniz.</div>
+        <button type="button" onclick="cancelExit()" class="mt-2 bg-white text-slate-900 px-5 py-2.5 rounded-xl text-xs font-bold">Uygulamaya geri dön</button>
+    </div>
+
     <!-- BİLDİRİM TOAST -->
-    <div id="toast-box" class="hidden absolute top-16 left-1/2 -translate-x-1/2 bg-slate-900/90 text-white text-xs font-medium px-4 py-2 rounded-full shadow-lg z-50 whitespace-nowrap">
+    <div id="toast-box" style="z-index:100;max-width:90%" class="hidden absolute top-16 left-1/2 -translate-x-1/2 bg-slate-900/90 text-white text-xs font-medium px-4 py-2 rounded-full shadow-lg z-50 whitespace-nowrap truncate">
         İşlem başarılı!
     </div>
 </div>
@@ -1982,7 +2084,7 @@
             if (condReset) condReset.value = 'Güneşli';
             if (tempReset) tempReset.value = 18;
             const weatherStatus = document.getElementById('weather-status-text');
-            if (weatherStatus) weatherStatus.textContent = 'Konum otomatik alınmaz; isterseniz “Konumdan Güncelle”yi kullanın.';
+            if (weatherStatus) weatherStatus.textContent = weatherText('Bu kayıtta hava durumu yok. İsterseniz elle seçin.', 'This record has no weather. Pick manually if you like.');
         }
 
         discardSessionPhotos(); // önceki oturumdan kalan kaydedilmemiş fotoğrafları temizle
@@ -2026,11 +2128,13 @@
 
         // v4 gizlilik: konum yalnızca kullanıcı isterse alınır (harita/konum düğmeleri).
         const weatherStatus = document.getElementById('weather-status-text');
-        if (weatherStatus) weatherStatus.textContent = 'Konum otomatik alınmaz; isterseniz “Konumdan Güncelle”yi kullanın.';
+        if (weatherStatus) weatherStatus.textContent = weatherText('Şehir seçilmedi. “Şehir seç” ile bir şehir seçin.', 'No city selected. Use “Choose city” to pick one.');
         const condEl = document.getElementById('refuel-weather-cond');
         const tempEl = document.getElementById('refuel-weather-temp');
         if (condEl) condEl.value = 'Güneşli';
         if (tempEl) tempEl.value = 18;
+        // v10.9: seçili şehir varsa hava durumunu otomatik getir (formu kilitlemez)
+        try { updateWeatherCityBadge(); refreshWeatherForCity({ silent: false }); } catch (e) {}
         document.getElementById('refuel-modal').classList.remove('hidden');
     }
 
@@ -2131,49 +2235,152 @@
         renderRefuelPhotos();
     }
 
-    function detectWeatherByLocation() {
+    // ============================================================
+    // v10.9 — SEÇİLİ ŞEHRE GÖRE OTOMATİK HAVA DURUMU
+    // Konum izni istenmez; yalnızca seçilen şehrin koordinatı gönderilir.
+    // ============================================================
+    function weatherText(tr, en) {
+        const isEn = window.YakitI18n && window.YakitI18n.getLang() === 'en';
+        return isEn ? en : tr;
+    }
+
+    function updateWeatherCityBadge() {
+        const badge = document.getElementById('weather-city-badge');
+        if (!badge) return;
+        const city = window.YakitWeather && window.YakitWeather.selected();
+        if (city && city.name) {
+            badge.textContent = city.name;
+            badge.classList.remove('hidden');
+        } else {
+            badge.textContent = '';
+            badge.classList.add('hidden');
+        }
+    }
+
+    function applyWeatherResult(res) {
         const statusEl = document.getElementById('weather-status-text');
         const condEl = document.getElementById('refuel-weather-cond');
         const tempEl = document.getElementById('refuel-weather-temp');
+        const iconEl = document.getElementById('weather-icon');
+        const topBadge = document.getElementById('weather-badge-top');
+        if (!res || !res.ok) {
+            if (statusEl) {
+                const why = res && res.reason;
+                statusEl.textContent = why === 'no-city'
+                    ? weatherText('Şehir seçilmedi. “Şehir seç” ile bir şehir seçin.', 'No city selected. Use “Choose city” to pick one.')
+                    : why === 'offline'
+                        ? weatherText('Çevrimdışı: hava durumu alınamadı. Değerleri elle girebilirsiniz.', 'Offline: weather unavailable. You can enter values manually.')
+                        : weatherText('Hava durumu alınamadı. Değerleri elle girebilirsiniz.', 'Weather unavailable. You can enter values manually.');
+            }
+            return false;
+        }
+        if (condEl) condEl.value = res.cond;
+        if (tempEl) tempEl.value = res.temp;
+        if (iconEl && window.YakitWeather) iconEl.className = 'fa-solid ' + window.YakitWeather.iconFor(res.cond) + ' text-amber-500';
+        if (topBadge) { topBadge.textContent = res.temp + '°C'; topBadge.classList.remove('hidden'); }
+        const when = new Date(res.at || Date.now()).toTimeString().slice(0, 5);
+        const name = (res.city && res.city.name) || '';
+        if (statusEl) {
+            const base = name + ' · ' + res.cond + ', ' + res.temp + '°C · ' + when;
+            statusEl.textContent = res.stale
+                ? base + weatherText(' (önbellek, çevrimdışı)', ' (cached, offline)')
+                : res.cached ? base + weatherText(' (önbellek)', ' (cached)') : base;
+        }
+        return true;
+    }
+
+    // opts: { force, silent }
+    async function refreshWeatherForCity(opts) {
+        const o = opts || {};
+        if (!window.YakitWeather) return false;
+        const S = window.YakitSettings;
+        if (S && S.get && S.get().weatherAuto === false && !o.force) return false;
+        const city = window.YakitWeather.selected();
+        updateWeatherCityBadge();
+        const statusEl = document.getElementById('weather-status-text');
+        if (!city) { if (!o.silent) applyWeatherResult({ ok: false, reason: 'no-city' }); return false; }
+        const fresh = window.YakitWeather.freshFor(city.lat, city.lon);
+        if (!fresh && statusEl && !o.silent) statusEl.textContent = weatherText('Hava durumu alınıyor…', 'Fetching weather…') + ' ' + city.name;
+        const res = await window.YakitWeather.current({ force: !!o.force });
+        if (o.silent && !res.ok) return false;
+        applyWeatherResult(res);
+        return !!res.ok;
+    }
+
+    function openWeatherCityPicker() {
+        if (window.YakitSettingsUI && window.YakitSettingsUI.openCityPicker) window.YakitSettingsUI.openCityPicker();
+        else { switchView('settings'); showToast(weatherText('Ayarlar’dan “Hava durumu şehri”ni seçin', 'Pick “Weather city” in Settings')); }
+    }
+
+    function openContactModal() {
+        if (window.YakitContact) window.YakitContact.open();
+    }
+
+    // ============================================================
+    // v10.9 — UYGULAMADAN ÇIKIŞ
+    // Tarayıcı, kullanıcı açtığı sekmeyi kodla kapatmaya izin vermez.
+    // Bu yüzden: kaydet → OCR motorunu durdur → kapatmayı dene → veda ekranı.
+    // ============================================================
+    let exitAttempted = false;
+    async function exitApp() {
+        const ok = confirm(weatherText(
+            'Uygulamadan çıkılsın mı? Kayıtlarınız cihazınıza kaydedilecek.',
+            'Exit the app? Your records will be saved on this device.'));
+        if (!ok) return;
+        toggleDrawer(false);
+        try { saveState(); } catch (e) { console.warn('Çıkışta kayıt yazılamadı:', e); }
+        try { if (window.YakitSettings && window.YakitSettings.save) window.YakitSettings.save(); } catch (e) {}
+        try { if (window.YakitOCR && window.YakitOCR.terminate) await window.YakitOCR.terminate(); } catch (e) {}
+        try { if (window.YakitContact) window.YakitContact.close(); } catch (e) {}
+        exitAttempted = true;
+        // Script ile açılmamış sekmelerde window.close() sessizce reddedilir.
+        try { window.close(); } catch (e) {}
+        setTimeout(() => {
+            if (!exitAttempted) return;
+            const screen = document.getElementById('exit-screen');
+            const note = document.getElementById('exit-screen-note');
+            if (note) note.textContent = weatherText(
+                'Verileriniz cihazınıza kaydedildi. Tarayıcı sekmeyi kodla kapatmaya izin vermedi; bu sekmeyi elle kapatabilirsiniz.',
+                'Your records were saved on this device. The browser did not allow closing the tab from code; you can close it manually.');
+            if (screen) screen.classList.remove('hidden');
+        }, 400);
+    }
+
+    function cancelExit() {
+        exitAttempted = false;
+        const screen = document.getElementById('exit-screen');
+        if (screen) screen.classList.add('hidden');
+        renderAll();
+    }
+
+    // v10.9: tek seferlik konumdan güncelleme. Seçili şehri DEĞİŞTİRMEZ;
+    // yalnızca bu kayıt için hava durumunu doldurur. Kod→durum eşlemesi
+    // weather.js ile ortaktır (çift kod tablosu yok).
+    function detectWeatherByLocation() {
+        const statusEl = document.getElementById('weather-status-text');
         if (!statusEl) return;
-
-        statusEl.textContent = 'Konum ve hava durumu alınıyor...';
-
+        statusEl.textContent = weatherText('Konum ve hava durumu alınıyor…', 'Getting location and weather…');
         if (!navigator.geolocation) {
-            statusEl.textContent = 'Konum desteklenmiyor · Varsayılan değer yüklendi';
+            statusEl.textContent = weatherText('Konum desteklenmiyor. Değerleri elle girebilirsiniz.', 'Location is not supported. You can enter values manually.');
             return;
         }
-
         navigator.geolocation.getCurrentPosition(
             async (pos) => {
-                const { latitude, longitude } = pos.coords;
-                try {
-                    const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude.toFixed(4)}&longitude=${longitude.toFixed(4)}&current_weather=true`);
-                    const data = await res.json();
-                    if (data && data.current_weather) {
-                        const temp = Math.round(data.current_weather.temperature);
-                        const code = data.current_weather.weathercode;
-                        let cond = 'Güneşli';
-                        if (code >= 1 && code <= 2) cond = 'Parçalı Bulutlu';
-                        else if (code === 3 || (code >= 45 && code <= 48)) cond = 'Bulutlu';
-                        else if ((code >= 71 && code <= 77) || code === 85 || code === 86) cond = 'Karlı';
-                        else if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82) || code >= 95) cond = 'Yağmurlu';
-
-                        condEl.value = cond;
-                        tempEl.value = temp;
-                        statusEl.textContent = `Konum (${latitude.toFixed(2)}, ${longitude.toFixed(2)}) · ${cond}, ${temp}°C`;
-                        const topBadge = document.getElementById('weather-badge-top');
-                        if (topBadge) {
-                            topBadge.textContent = `${temp}°C`;
-                            topBadge.classList.remove('hidden');
-                        }
-                    }
-                } catch (err) {
-                    statusEl.textContent = 'Hava durumu alınamadı; manuel değerleri kullanabilirsiniz.';
+                const lat = pos.coords.latitude, lon = pos.coords.longitude;
+                if (!window.YakitWeather) { statusEl.textContent = weatherText('Hava durumu alınamadı.', 'Weather unavailable.'); return; }
+                const here = { id: '', name: weatherText('Konumum', 'My location'), lat: lat, lon: lon };
+                const res = await window.YakitWeather.current({ city: here, force: true });
+                if (res && res.ok) {
+                    applyWeatherResult(res);
+                    statusEl.textContent = weatherText('Konumum', 'My location') + ' · ' + res.cond + ', ' + res.temp + '°C · ' +
+                        weatherText('seçili şehir değişmedi', 'selected city unchanged');
+                } else {
+                    statusEl.textContent = weatherText('Hava durumu alınamadı; değerleri elle girebilirsiniz.', 'Weather unavailable; you can enter values manually.');
                 }
+                updateWeatherCityBadge();
             },
             () => {
-                statusEl.textContent = 'Konum izni verilmedi · Manuel seçebilirsiniz';
+                statusEl.textContent = weatherText('Konum izni verilmedi. “Şehir seç” ile şehir seçebilirsiniz.', 'Location permission denied. Use “Choose city” to pick a city.');
             },
             { timeout: 6000 }
         );
@@ -3733,6 +3940,9 @@
     window.addEventListener('DOMContentLoaded', () => {
         renderAll();
         initPhotonBaseSetting();
+        // v10.9: açılışta seçili şehrin hava durumunu sessizce güncelle
+        try { updateWeatherCityBadge(); } catch (e) {}
+        setTimeout(() => { try { refreshWeatherForCity({ silent: true }); } catch (e) {} }, 800);
         // v10.2: veri giriş uyarısı düğmeleri
         const gCancel = document.getElementById('guard-cancel');
         const gSave = document.getElementById('guard-save');

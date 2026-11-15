@@ -1,4 +1,4 @@
-/* Yakıt Takip v10.8 — Ayarlar, birimler, dosya yedekleme + uygulama içi otomatik yedek
+/* Yakıt Takip v10.9 — Ayarlar, birimler, dosya yedekleme + uygulama içi otomatik yedek
  * Bağımsız modül: window.YakitSettings
  * Veri modeli: state.settings (localStorage içinde, ana state ile birlikte)
  */
@@ -6,6 +6,8 @@
   'use strict';
 
   var SETTINGS_KEY = 'yakitTakipSettings';
+  // v10.9: tek kaynak — sürüm her yerde buradan okunur
+  var APP_VERSION = '10.9.0';
 
   var DEFAULTS = {
     distanceUnit: 'km',        // 'km' | 'mi'
@@ -20,7 +22,13 @@
     autoLocalBackup: true,     // uygulama açılışında günde 1 otomatik yedek
     localBackupKeep: 7,        // saklanacak yedek sayısı: 7 | 14 | 30
     dataGuards: true,          // v10.2: veri giriş uyarıları (mükerrer/sayaç/tüketim)
-    language: 'tr'             // v10.5: arayüz dili — 'tr' | 'en'
+    language: 'tr',            // v10.5: arayüz dili — 'tr' | 'en'
+    // v10.9: hava durumu şehri (koordinatlar cihazda; konum izni istenmez)
+    weatherCityId: '',         // 81 il için plaka kodu; özel yerde ''
+    weatherCityName: '',
+    weatherLat: null,
+    weatherLon: null,
+    weatherAuto: true          // açılışta ve dolum formunda otomatik güncelle
   };
 
   var CURRENCIES = {
@@ -96,6 +104,15 @@
     settings.localBackupKeep = Number(settings.localBackupKeep);
     settings.dataGuards = settings.dataGuards !== false;
     settings.language = settings.language === 'en' ? 'en' : 'tr';
+    // v10.9: hava durumu şehri doğrulaması
+    settings.weatherAuto = settings.weatherAuto !== false;
+    settings.weatherCityId = String(settings.weatherCityId == null ? '' : settings.weatherCityId).slice(0, 8);
+    settings.weatherCityName = String(settings.weatherCityName == null ? '' : settings.weatherCityName).slice(0, 80);
+    var wlat = Number(settings.weatherLat), wlon = Number(settings.weatherLon);
+    var okCoord = settings.weatherLat !== null && settings.weatherLon !== null &&
+      isFinite(wlat) && isFinite(wlon) && wlat >= -90 && wlat <= 90 && wlon >= -180 && wlon <= 180;
+    if (!okCoord) { settings.weatherLat = null; settings.weatherLon = null; settings.weatherCityId = ''; settings.weatherCityName = ''; }
+    else { settings.weatherLat = wlat; settings.weatherLon = wlon; }
     return settings;
   }
 
@@ -109,6 +126,21 @@
   function set(key, value) {
     if (!(key in DEFAULTS)) return false;
     settings[key] = value;
+    validate();
+    save();
+    return true;
+  }
+
+  // v10.9: birbiriyle ilişkili alanları TEK doğrulamada yaz.
+  // (Örn. şehir adı + enlem + boylam: tek tek yazılırsa validate() ara durumda
+  //  eksik koordinat görüp adı temizler ve seçim kaybolur.)
+  function setMany(obj) {
+    if (!obj || typeof obj !== 'object') return false;
+    var changed = false;
+    Object.keys(obj).forEach(function (k) {
+      if (k in DEFAULTS) { settings[k] = obj[k]; changed = true; }
+    });
+    if (!changed) return false;
     validate();
     save();
     return true;
@@ -291,7 +323,7 @@
       format: 'yakit-takip-backup',
       version: 7,
       createdAt: new Date().toISOString(),
-      appVersion: '10.8.0',
+      appVersion: APP_VERSION,
       settings: get(),
       state: JSON.parse(JSON.stringify(st)),
       photos: {},
@@ -579,12 +611,13 @@
 
   // ---------- dışa aktarım ----------
   window.YakitSettings = {
+    APP_VERSION: APP_VERSION,
     DEFAULTS: DEFAULTS,
     CURRENCIES: CURRENCIES,
     DATE_FORMATS: DATE_FORMATS,
     VEHICLE_ICONS: VEHICLE_ICONS,
     VEHICLE_COLORS: VEHICLE_COLORS,
-    load: load, save: save, get: get, set: set,
+    load: load, save: save, get: get, set: set, setMany: setMany,
     kmToDisplay: kmToDisplay, displayToKm: displayToKm,
     litersToDisplay: litersToDisplay, displayToLiters: displayToLiters,
     distanceLabel: distanceLabel, volumeLabel: volumeLabel,

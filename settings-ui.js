@@ -1,4 +1,4 @@
-/* Yakıt Takip v10.8 — Ayarlar ekranı (Fuelio tarzı gruplu liste)
+/* Yakıt Takip v10.9 — Ayarlar ekranı (Fuelio tarzı gruplu liste)
  * window.YakitSettingsUI
  */
 (function () {
@@ -81,6 +81,17 @@
             desc: 'Mükerrer dolum, sayaç gerilemesi ve tüketim sapması uyarısı', toggle: true, value: s.dataGuards, action: 'toggle-guards' })
     ].join(''));
 
+    // v10.9: hava durumu şehri
+    var wCity = (window.YakitWeather && window.YakitWeather.selected()) || null;
+    html += group('Hava durumu', [
+      row({ icon: 'city', iconBg: '#e0f2fe', iconFg: '#0284c7', title: 'Hava durumu şehri',
+            desc: 'Dolum formundaki hava durumu bu şehre göre güncellenir',
+            badge: wCity ? wCity.name : 'Seçilmedi', action: 'weather-city', arrow: true }),
+      row({ icon: 'cloud-sun', iconBg: '#fef3c7', iconFg: '#d97706', title: 'Otomatik güncelle',
+            desc: 'Uygulama açılınca ve dolum formunda havayı getir (internet gerekir)',
+            toggle: true, value: s.weatherAuto, action: 'toggle-weather-auto' })
+    ].join(''));
+
     html += group('Yedekleme', [
       row({ icon: 'clock-rotate-left', iconBg: '#f1f5f9', iconFg: '#64748b', title: 'Son yedek', desc: lastBackup }),
       row({ icon: 'download', iconBg: '#dbeafe', iconFg: '#2563eb', title: 'Yedek al (dosya indir)',
@@ -121,7 +132,7 @@
     ].join(''));
 
     html += group('Hakkında', [
-      row({ icon: 'circle-info', iconBg: '#e0e7ff', iconFg: '#4f46e5', title: 'Yakıt Takip', desc: 'Sürüm 10.8.0', badge: 'v10.8' }),
+      row({ icon: 'circle-info', iconBg: '#e0e7ff', iconFg: '#4f46e5', title: 'Yakıt Takip', desc: 'Sürüm 10.9.0', badge: 'v10.9' }),
       row({ icon: 'shield-halved', iconBg: '#dcfce7', iconFg: '#059669', title: 'Gizlilik',
             desc: 'Veriler cihazınızda kalır. Sunucuya hiçbir şey gönderilmez.' }),
       row({ icon: 'file-lines', iconBg: '#f1f5f9', iconFg: '#64748b', title: 'Açık kaynak lisansları',
@@ -239,6 +250,109 @@
     document.getElementById('settings-picker').classList.add('hidden');
   }
 
+  // ---------- v10.9: hava durumu şehri seçici ----------
+  function cityRowHtml(c, active) {
+    return '<button type="button" data-city=\'' + esc(JSON.stringify({ id: c.id || '', name: c.name, lat: c.lat, lon: c.lon })) + '\' class="w-full flex items-center gap-3 px-3.5 py-3 text-left hover:bg-slate-50 transition">' +
+      '<span class="flex-1 min-w-0"><span class="block text-[13px] font-semibold text-slate-800">' + esc(c.name) + '</span>' +
+      '<span class="block text-[11px] text-slate-400 mt-0.5">' + esc(c.desc || (c.id ? 'İl merkezi · plaka ' + c.id : Number(c.lat).toFixed(3) + ', ' + Number(c.lon).toFixed(3))) + '</span></span>' +
+      (active ? '<i class="fa-solid fa-circle-check text-slate-800"></i>' : '<i class="fa-regular fa-circle text-slate-200"></i>') +
+      '</button>';
+  }
+
+  function renderCityList(query) {
+    var W = window.YakitWeather;
+    var box = document.getElementById('city-picker-list');
+    if (!box || !W) return;
+    var sel = W.selected();
+    var items = W.filter(query);
+    if (!items.length) {
+      box.innerHTML = '<div class="px-3.5 py-4 text-[12px] text-slate-400">Listede bulunamadı. “İnternette ara” ile arayabilirsiniz.</div>';
+      return;
+    }
+    box.innerHTML = items.map(function (c) {
+      return cityRowHtml(c, !!(sel && sel.id && sel.id === c.id));
+    }).join('');
+  }
+
+  function pickCity(c) {
+    var W = window.YakitWeather;
+    if (!W || !c) return;
+    W.select(c);
+    closePicker();
+    render();
+    toast('Hava durumu şehri: ' + c.name);
+    if (window.refreshWeatherForCity) { try { window.refreshWeatherForCity({ force: true }); } catch (e) {} }
+  }
+
+  function openCityPicker() {
+    var W = window.YakitWeather;
+    var back = document.getElementById('settings-picker');
+    var body = document.getElementById('settings-picker-body');
+    if (!back || !body || !W) return;
+    document.getElementById('settings-picker-title').textContent = 'Hava durumu şehri';
+    body.onclick = null;
+    body.innerHTML =
+      '<div class="p-3 space-y-2 border-b border-slate-100">' +
+        '<input type="text" id="city-picker-search" placeholder="Şehir ara (81 il listesi)" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-slate-800">' +
+        '<div class="flex gap-2">' +
+          '<button type="button" id="city-picker-remote" class="flex-1 bg-slate-800 text-white text-[11px] font-semibold py-2 rounded-xl">İnternette ara</button>' +
+          '<button type="button" id="city-picker-clear" class="flex-1 bg-white border border-slate-200 text-slate-600 text-[11px] font-semibold py-2 rounded-xl">Seçimi kaldır</button>' +
+        '</div>' +
+        '<div id="city-picker-note" class="text-[10px] text-slate-400 leading-relaxed">Liste internet gerektirmez. “İnternette ara” yazdığınız metni Photon/OpenStreetMap servisine gönderir. Hava durumu için yalnızca seçilen şehrin koordinatı Open-Meteo’ya gönderilir.</div>' +
+      '</div>' +
+      '<div id="city-picker-list" class="divide-y divide-slate-100"></div>';
+    back.classList.remove('hidden');
+    renderCityList('');
+
+    var input = document.getElementById('city-picker-search');
+    if (input) {
+      input.addEventListener('input', function () { renderCityList(input.value); });
+      setTimeout(function () { input.focus(); }, 120);
+    }
+    var list = document.getElementById('city-picker-list');
+    if (list) {
+      list.onclick = function (e) {
+        var btn = e.target.closest('button[data-city]');
+        if (!btn) return;
+        try { pickCity(JSON.parse(btn.dataset.city)); } catch (err) { console.warn('Şehir seçilemedi:', err); }
+      };
+    }
+    var clear = document.getElementById('city-picker-clear');
+    if (clear) {
+      clear.onclick = function () {
+        W.clearSelection();
+        closePicker();
+        render();
+        toast('Şehir seçimi kaldırıldı');
+        if (window.updateWeatherCityBadge) { try { window.updateWeatherCityBadge(); } catch (e) {} }
+      };
+    }
+    var remote = document.getElementById('city-picker-remote');
+    if (remote) {
+      remote.onclick = async function () {
+        var q = input ? input.value.trim() : '';
+        var note = document.getElementById('city-picker-note');
+        if (q.length < 2) { if (note) note.textContent = 'En az 2 karakter yazın.'; return; }
+        if (note) note.textContent = 'Aranıyor…';
+        remote.disabled = true;
+        var res = await W.searchRemote(q, 8);
+        remote.disabled = false;
+        if (!res.ok) {
+          if (note) note.textContent = res.reason === 'offline' ? 'Çevrimdışı: internet araması yapılamadı.' : 'Arama başarısız. Listeden seçebilir veya tekrar deneyebilirsiniz.';
+          return;
+        }
+        if (!res.results.length) { if (note) note.textContent = 'Sonuç bulunamadı.'; return; }
+        if (note) note.textContent = res.results.length + ' sonuç bulundu. Birini seçin.';
+        var sel = W.selected();
+        if (list) {
+          list.innerHTML = res.results.map(function (c) {
+            return cityRowHtml(c, !!(sel && sel.name === c.name && Math.abs(sel.lat - c.lat) < 0.01));
+          }).join('');
+        }
+      };
+    }
+  }
+
   // ---------- eylemler ----------
   async function handle(action, id) {
     var s = S.get();
@@ -251,6 +365,14 @@
           if (window.YakitI18n && window.YakitI18n.setLang) window.YakitI18n.setLang(v);
           else { S.set('language', v); toast(v === 'en' ? 'Language updated' : 'Dil güncellendi'); }
         });
+        break;
+      case 'weather-city':
+        openCityPicker();
+        break;
+      case 'toggle-weather-auto':
+        S.set('weatherAuto', !s.weatherAuto);
+        toast(!s.weatherAuto ? 'Otomatik hava durumu açık' : 'Otomatik hava durumu kapalı');
+        if (!s.weatherAuto && window.refreshWeatherForCity) { try { window.refreshWeatherForCity({ silent: true }); } catch (e) {} }
         break;
       case 'units':
         openPicker('Mesafe birimi', [
@@ -610,6 +732,7 @@
   }
 
   window.YakitSettingsUI = {
+    openCityPicker: openCityPicker,
     render: render, init: init, handle: handle,
     openIconPicker: openIconPicker,
     renderReminder: renderReminder, backupReminderDue: backupReminderDue,

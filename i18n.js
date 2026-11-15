@@ -1,4 +1,4 @@
-/* Yakıt Takip v10.8 — İki dil desteği (Türkçe / English)
+/* Yakıt Takip v10.9 — İki dil desteği (Türkçe / English)
  * Bağımsız modül: window.YakitI18n
  *
  * Tasarım: kaynak kod ve veri değerleri Türkçe kalır (kanonik). Bu katman
@@ -534,6 +534,65 @@
     'Dördüncü geçiş başarısız:': 'Fourth pass failed:',
     'Kontrast ve eğiklik düzeltilerek okunuyor': 'Reading with contrast and skew correction',
     'Beşinci geçiş başarısız:': 'Fifth pass failed:',
+    // v10.9: iletişim, çıkış ve hava durumu şehri
+    'İletişim': 'Contact', 'Uygulamadan çıkış': 'Exit app',
+    'Çıkış yapıldı': 'Signed out', 'Uygulamaya geri dön': 'Return to the app',
+    'Ad': 'First name', 'Soyad': 'Last name', 'Telefon': 'Phone',
+    'Telefon (isteğe bağlı)': 'Phone (optional)', 'E-posta': 'Email', 'Mesaj': 'Message',
+    'Gönder': 'Send', 'Metni kopyala': 'Copy text', 'Metni oku': 'Read the text',
+    'Kurallar ve Şartlar': 'Terms and Conditions', 'Kurallar ve şartlar': 'Terms and conditions',
+    'Kuralları ve şartları okudum, kabul ediyorum.': 'I have read and accept the terms and conditions.',
+    'Okudum, kabul ediyorum': 'I have read and accept',
+    'Öneri, hata bildirimi veya sorununuzu yazın...': 'Write your suggestion, bug report or question...',
+    'Bu form sunucuya veri göndermez. “Gönder” düğmesi, yazdıklarınızı içeren hazır bir e-posta penceresi açar; mesajı kendi e-posta uygulamanız gönderir.':
+      'This form does not send data to a server. The “Send” button opens a pre-filled email window; your own email app sends the message.',
+    'Kurallar onaylandı': 'Terms accepted',
+    'Hava durumu': 'Weather', 'Hava durumu şehri': 'Weather city', 'Şehir seç': 'Choose city',
+    'Dolum formundaki hava durumu bu şehre göre güncellenir': 'The weather in the fill-up form follows this city',
+    'Otomatik güncelle': 'Update automatically',
+    'Uygulama açılınca ve dolum formunda havayı getir (internet gerekir)': 'Fetch weather on app open and in the fill-up form (needs internet)',
+    'Şehir ara (81 il listesi)': 'Search city (81 provinces)',
+    'İnternette ara': 'Search online', 'Seçimi kaldır': 'Clear selection',
+    'Listede bulunamadı. “İnternette ara” ile arayabilirsiniz.': 'Not in the list. You can use “Search online”.',
+    'Liste internet gerektirmez. “İnternette ara” yazdığınız metni Photon/OpenStreetMap servisine gönderir. Hava durumu için yalnızca seçilen şehrin koordinatı Open-Meteo’ya gönderilir.':
+      'The list works offline. “Search online” sends the text you type to Photon/OpenStreetMap. For weather, only the selected city’s coordinates are sent to Open-Meteo.',
+    'Şehir seçimi kaldırıldı': 'City selection cleared',
+    'Otomatik hava durumu açık': 'Automatic weather on', 'Otomatik hava durumu kapalı': 'Automatic weather off',
+    'En az 2 karakter yazın.': 'Type at least 2 characters.', 'Aranıyor…': 'Searching…',
+    'Çevrimdışı: internet araması yapılamadı.': 'Offline: online search unavailable.',
+    'Arama başarısız. Listeden seçebilir veya tekrar deneyebilirsiniz.': 'Search failed. Pick from the list or try again.',
+    'Sonuç bulunamadı.': 'No results found.',
+    'Şehir seçilmedi. Ayarlar’dan şehir seçin veya “Konumdan Güncelle”yi kullanın.':
+      'No city selected. Pick a city in Settings or use “Update from location”.',
+    'Adınızı girin.': 'Enter your first name.', 'Soyadınızı girin.': 'Enter your last name.',
+    'E-posta adresinizi girin.': 'Enter your email address.',
+    'Geçerli bir e-posta adresi girin.': 'Enter a valid email address.',
+    'Geçerli bir telefon girin veya boş bırakın.': 'Enter a valid phone number or leave it empty.',
+    'En az 10 karakterlik bir mesaj yazın.': 'Write a message of at least 10 characters.',
+    'Mesaj çok uzun (en fazla 4000 karakter).': 'Message is too long (max 4000 characters).',
+    'Kuralları ve şartları onaylamanız gerekir.': 'You must accept the terms and conditions.',
+    'Gönder’i açmak için alanları doldurun ve kuralları onaylayın.':
+      'Fill in the fields and accept the terms to enable "Send".',
+    'Konum ve hava durumu alınıyor…': 'Getting location and weather…',
+    'Konum desteklenmiyor. Değerleri elle girebilirsiniz.': 'Location is not supported. You can enter values manually.',
+    'Konumum': 'My location',
+    'seçili şehir değişmedi': 'selected city unchanged',
+    'Hava durumu alınamadı.': 'Weather unavailable.',
+    'Hava durumu alınamadı; değerleri elle girebilirsiniz.': 'Weather unavailable; you can enter values manually.',
+    'Konum izni verilmedi. “Şehir seç” ile şehir seçebilirsiniz.': 'Location permission denied. Use “Choose city” to pick a city.',
+    'Şehir seçilmedi. “Şehir seç” ile bir şehir seçin.': 'No city selected. Use “Choose city” to pick one.',
+    'Çevrimdışı: hava durumu alınamadı. Değerleri elle girebilirsiniz.': 'Offline: weather unavailable. You can enter values manually.',
+    'Hava durumu alınamadı. Değerleri elle girebilirsiniz.': 'Weather unavailable. You can enter values manually.',
+    'Hava durumu alınıyor…': 'Fetching weather…',
+    'Bu kayıtta hava durumu yok. İsterseniz elle seçin.': 'This record has no weather. Pick manually if you like.',
+    'Uygulamadan çıkılsın mı? Kayıtlarınız cihazınıza kaydedilecek.': 'Exit the app? Your records will be saved on this device.',
+    'Verileriniz cihazınıza kaydedildi. Tarayıcı sekmeyi kodla kapatmaya izin vermedi; bu sekmeyi elle kapatabilirsiniz.':
+      'Your records were saved on this device. The browser did not allow closing the tab from code; you can close it manually.',
+    'Ayarlar’dan “Hava durumu şehri”ni seçin': 'Pick “Weather city” in Settings',
+    'E-posta uygulamanız açılıyor. Açılmazsa "Metni kopyala" ile kopyalayıp o.elver@gmail.com adresine gönderin.':
+      'Your email app is opening. If nothing happens, use "Copy text" and send it to o.elver@gmail.com.',
+    'Kopyalandı. o.elver@gmail.com adresine e-posta olarak yapıştırabilirsiniz.': 'Copied. Paste it into an email to o.elver@gmail.com.',
+    'Kopyalanamadı; metni elle seçebilirsiniz.': 'Could not copy; select the text manually.',
     // v10.8: kod denetiminde bulunan çeviri boşlukları
     'Alanı düzenle': 'Edit field',
     'Menüyü aç': 'Open menu', 'Menü': 'Menu', 'Yeni kayıt ekle': 'Add new record',
@@ -554,6 +613,10 @@
     '(ODbL). Konumunuz yalnızca “Konumum” veya “Bu alanda ara” dediğinizde istasyon bulmak için Photon\'a gönderilir. Adres araması arama sorgusunu gönderir.': '(ODbL). Your location is sent to Photon only when you tap “My location” or “Search this area” to find stations. Address search sends the search query.'
   });
   PATTERNS.push(
+    // v10.9: şehir ve arama bildirimleri
+    [/^Hava durumu şehri: (.+)$/, 'Weather city: $1'],
+    [/^İl merkezi · plaka (.+)$/, 'Province centre · plate $1'],
+    [/^(\d+) sonuç bulundu\. Birini seçin\.$/, '$1 results found. Pick one.'],
     // v10.8: "Fiyat/L (₺)", "Fiyat/gal (US) ($)" gibi birim etiketleri
     [/^Fiyat\/(.+) \(([^()]*)\)$/, 'Price/$1 ($2)'],
     [/^Sürüm (.+)$/, 'Version $1'],
@@ -644,6 +707,16 @@
     return false;
   }
 
+  // v10.9: TEXTAREA/CODE/PRE içindeki METİN çevrilmez (kullanıcı verisi),
+  // ama placeholder/title/aria-label öznitelikleri çevrilmelidir.
+  var SKIP_ATTR_TAGS = { SCRIPT: 1, STYLE: 1, NOSCRIPT: 1 };
+  function skipAttrEl(el) {
+    if (!el || el.nodeType !== 1) return false;
+    if (SKIP_ATTR_TAGS[el.tagName]) return true;
+    if (el.hasAttribute && el.hasAttribute('data-noi18n')) return true;
+    return false;
+  }
+
   function applyToNode(node) {
     if (node.nodeType === 3) {
       var parent = node.parentElement;
@@ -656,7 +729,7 @@
       return;
     }
     if (node.nodeType === 1) {
-      if (skipEl(node) || node.closest('[data-noi18n]')) return;
+      if (skipAttrEl(node) || node.closest('[data-noi18n]')) return;
       for (var i = 0; i < ATTRS.length; i++) {
         var a = ATTRS[i];
         if (node.hasAttribute && node.hasAttribute(a)) {

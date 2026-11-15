@@ -543,3 +543,26 @@ limitations under the License.
 
 ===== tessdata_fast (tur.traineddata) =====
 Apache License 2.0 — https://github.com/tesseract-ocr/tessdata_fast
+
+===== v10.9 — İnternet servisleri (kod değil, veri kaynağı) =====
+Bu uygulamada aşağıdaki servislerin kodu yer almaz; yalnızca kullanıcı istediğinde
+HTTPS isteği yapılır. Veriler cihazda 30 dakika önbelleğe alınır.
+
+1) Open-Meteo — hava durumu
+   https://open-meteo.com/ · API: https://api.open-meteo.com/v1/forecast
+   Veri lisansı: Creative Commons Attribution 4.0 International (CC BY 4.0)
+   https://creativecommons.org/licenses/by/4.0/
+   Gönderilen: yalnızca seçilen şehrin enlem/boylamı. Kimlik, kayıt veya fotoğraf gönderilmez.
+   Hava durumu verisi kaynak olarak Open-Meteo'ya (ve hava modelleri için ilgili
+   ulusal meteoroloji servislerine) atıf gerektirir.
+
+2) Photon (Komoot) — şehir/istasyon arama
+   https://photon.komoot.io/ · Kaynak: https://github.com/komoot/photon
+   Yazılım lisansı: Apache License 2.0
+   Veri kaynağı: OpenStreetMap katkıcıları — Open Database License (ODbL)
+   https://www.openstreetmap.org/copyright
+   Gönderilen: yalnızca arama kutusuna yazdığınız metin.
+
+3) OpenStreetMap harita karoları
+   https://www.openstreetmap.org/copyright · ODbL
+   Karolar yalnızca harita ekranı açıldığında yüklenir.

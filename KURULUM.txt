@@ -1,67 +1,92 @@
-YAKIT TAKİP v10.8 — KOD DENETİMİ VE CİLÂ
-========================================
+YAKIT TAKİP v10.9 — HAVA DURUMU ŞEHRİ, İLETİŞİM, ÇIKIŞ
+=====================================================
 
 BU ZIP NE İŞE YARAR?
-Yeni özellik yok; kod denetiminde bulunan 18 küçük eksik kapatıldı.
-OCR motoru, fiş okuma mantığı ve yedekleme motoru AYNEN korundu (doğruluk 61/72 aynı).
+Üç yeni özellik:
+1. Ayarlar'dan hava durumu şehri seçilir; uygulama açılınca ve Dolum formunda
+   o şehrin havası otomatik gelir. 81 il internetsiz listede; "İnternette ara"
+   ile dünyadan herhangi bir yer de seçilebilir.
+2. Menüde "İletişim": ad, soyad, telefon, e-posta, mesaj + şartlar onayı.
+   Gönder, o.elver@gmail.com adresine hazır e-posta açar (sunucu yoktur).
+3. Menünün en altında "Uygulamadan çıkış": kaydeder, OCR'yi durdurur,
+   sekmeyi kapatmayı dener; tarayıcı izin vermezse veda ekranı gösterir.
 
-1. İngilizce arayüzde Türkçe kalan metinler çevrildi: dolum formundaki "Fiyat/L (₺)"
-   etiketi, uyarı penceresindeki "Alanı düzenle", boş durum cümleleri, "Kısmi dolum",
-   "Tam dolum", OCR'daki "düzeltildi", "Yedek almanız önerilir" ve fotoğraf uyarıları.
-2. Yarım çevrilen bildirimler düzeldi: "… 3 fotoğraf" yerine "… 3 photos",
-   "First day of week: Pazartesi" yerine "… Monday".
-3. EN + mil seçiliyken "(mil)" yerine uluslararası "(mi)" yazıyor. Türkçe "mil" kalır.
-4. Erişilebilirlik: menü ve + butonlarına ekran okuyucu adı eklendi; yaklaştırma
-   kilidi kaldırıldı (parmakla zoom serbest); giriş alanları 16px yapıldı.
-5. LICENSES.txt içine tesseract.js bildirimi eklendi.
-6. Bozuk bir kayıt artık listeyi çökertemez; service worker hatası anlaşılır metin gösterir.
+OCR motoru, fiş okuma mantığı ve yedekleme motoru AYNEN korundu (61/72 aynı).
 
-ÖNEMLİ: BU SÜRÜMDE index.html DE DEĞİŞTİ
-Güncelleme ZIP'ini kullanıyorsanız index.html'i de yükleyin; yoksa zoom ve 16px
-düzeltmesi gelmez. Toplam 8 dosya değişti (aşağıda listeli).
-ocr.js'te yalnızca sürüm başlığı değişti; fiş okuma mantığı v10.7 ile aynı.
+ÖNEMLİ: BU SÜRÜMDE 12 DOSYA DEĞİŞTİ
+İki YENİ dosya var (weather.js, contact.js) — bunlar GitHub'da "Add file >
+Upload files" ile eklenir. Diğerleri mevcut dosyaların üzerine yazılır.
+sw.js'i EN SON yükleyin; yoksa eski önbellek yeni dosyaları göstermeye devam eder.
 
 GÜNCELLEME (mevcut siteniz varsa — önerilen)
 1. ZIP'i telefonda/bilgisayarda açın (klasör yok, dosyalar kökte).
 2. Tarayıcıdan github.com > ozzkkk/yakit deposunu açın (main dalı).
 3. Add file > Upload files'a dokunun.
-4. ZIP'ten çıkan şu dosyaları seçip yükleyin (hepsi üzerine yazar):
+4. ZIP'ten çıkan şu dosyaları seçip yükleyin:
+   weather.js      (YENİ)
+   contact.js      (YENİ)
    index.html
-   ocr.js
-   i18n.js
    settings.js
    settings-ui.js
-   pwa.js
+   i18n.js
+   icons.css
+   fa-solid-subset.woff2
+   tailwind.css
    LICENSES.txt
-   sw.js           (en son)
+   ocr.js          (yalnızca başlık değişti; yüklemeniz önerilir)
+   sw.js           (EN SON)
    README.md       (isteğe bağlı)
    KURULUM.txt     (isteğe bağlı)
 5. Commit changes deyin.
 6. https://ozzkkk.github.io/yakit/ adresini bir kez yenileyin.
+   Görünüm eskiyse: sayfayı kapatıp açın veya Ayarlar > Hakkında'dan
+   "Güncellemeyi denetle"ye basın.
 
-TAM PAKET ZIP'i kullanıyorsanız: içindeki 33 dosyanın tamamını yükleyin.
+TAM PAKET ZIP'i kullanıyorsanız: içindeki 35 dosyanın tamamını yükleyin.
 serve.py gerekmez (yalnızca yerel test sunucusu).
 
 VERİLERİM SİLİNİR Mİ?
 Hayır. Kayıtlarınız tarayıcının localStorage/IndexedDB alanında durur.
 Dosya değiştirmek verileri silmez. OCR motoru da yeniden inmez (5,6 MB korunur).
-Dil seçiminiz (Türkçe/English) korunur.
+Dil seçiminiz (Türkçe/English) ve tüm ayarlarınız korunur.
 
-KONTROL
-- Ayarlar > Hakkında: "Sürüm 10.8.0" ve v10.8 yazmalı.
-- Ayarlar > Dil: Türkçe / English hâlâ çalışmalı.
-- İki parmağınızla sayfayı yakınlaştırabiliyor olmalısınız (zoom kilidi kalktı).
-- Dolum formunu açın: yazı alanları daha büyük (16px) ve iOS'ta odaklanınca sayfa zıplamamalı.
-- Ayarlar > Dil > English: dolum formunda "Price/L", uyarıda "Edit field",
-  boş ana sayfada "No fuel fill-ups added yet." görmelisiniz.
-- English + mile çevirin: etiketler "Odometer (mi)" olmalı.
-- Tekrar Türkçe'ye dönün: her şey eski hâline dönmeli.
-- Soluk/karanlık bir fiş taratın: OCR davranışı v10.7 ile aynı olmalı.
-- POS/kart slipi taratın: tutar (binlik dahil) + tarih gelmeli; litre uydurulmaz.
-- Sonuç ekranında değerleri kontrol edip "Dolum formuna aktar" deyin; Kaydet'e siz basarsınız.
+İLK KURULUM (siteniz yoksa)
+1. GitHub'da yeni bir depo açın (örn. "yakit"), Public seçin.
+2. Tam paket ZIP'indeki 35 dosyayı köke yükleyin, Commit changes deyin.
+3. Settings > Pages > Source: Deploy from a branch > main / (root) > Save.
+4. 1-2 dakika sonra https://KULLANICI.github.io/yakit/ adresi çalışır.
+5. Telefonda bu adresi açın; "Ana ekrana ekle" ile uygulama gibi kurabilirsiniz.
 
-SORUN OLURSA
-- Eski sürüm görünüyorsa: bir kez daha yenileyin; service worker güncellemeyi alır.
-- Çok silik/kırışık fişte eksik alan olursa kutulardan elle düzeltin; bu beklenen durumdur.
-- Zor görüntülerde tarama biraz daha uzun sürebilir (ek kırpma ve kontrast geçişleri devreye girer).
-- Yazı alanları büyük görünüyorsa bu beklenen durumdur: iOS otomatik zoom'unu önlemek için 16px yapıldı.
+KONTROL LİSTESİ
+- Ayarlar > Hakkında: "Sürüm 10.9.0" ve v10.9 yazmalı.
+- Ayarlar'da yeni "HAVA DURUMU" grubu görünmeli (Hava durumu şehri + Otomatik güncelle).
+- "Hava durumu şehri"ne basın: 81 il listelenmeli. "edir" yazın, Edirne kalmalı.
+- Edirne'yi seçin; ana sayfaya dönüp Dolum formunu açın:
+  hava kartında "Edirne · …°C · saat" yazmalı, sıcaklık ve durum dolu gelmeli.
+- Kartın sağ üstünde "Şehir seç", altında şehir etiketi ve "Konumdan Güncelle" olmalı.
+- Menüde Ayarlar'ın altında "İletişim" olmalı.
+- İletişim formu: alanlar boşken "Gönder" soluk/kapalı olmalı.
+  Ad, soyad, e-posta, mesaj yazıp kutuyu işaretleyince "Gönder" aktifleşmeli.
+- "Metni oku" 14 maddelik şartları açmalı; "Okudum, kabul ediyorum" kutuyu işaretlemeli.
+- "Gönder" mail uygulamanızı açmalı; alıcı o.elver@gmail.com olmalı.
+  Açılmazsa "Metni kopyala" ile metni kopyalayıp elle gönderebilirsiniz.
+- Menünün en altında "Uygulamadan çıkış" olmalı. Basınca onay sormalı;
+  onaylayınca ya sekme kapanmalı ya da "Çıkış yapıldı" ekranı gelmeli.
+  "Uygulamaya geri dön" sizi uygulamaya döndürmeli ve kayıtlar yerinde olmalı.
+- Ayarlar > Dil > English: menüde "Contact" ve "Exit app", ayarlarda "Weather city",
+  formda "First name / Last name / Send / Copy text" görmelisiniz.
+- Fiş tarama: eskisi gibi çalışmalı (bu sürümde OCR'ye dokunulmadı).
+
+SORUN GİDERME
+- Yeni menü satırları görünmüyor: index.html yüklenmemiş veya önbellek eski.
+  sw.js'i yükleyip sayfayı kapatıp açın.
+- İkonlar kare/boş görünüyor: icons.css VE fa-solid-subset.woff2 birlikte yüklenmeli.
+- Şehir listesi boş: weather.js yüklenmemiş.
+- İletişim formu açılmıyor: contact.js yüklenmemiş.
+- Hava durumu gelmiyor: internet gerekir; "Otomatik güncelle" açık olmalı ve
+  şehir seçili olmalı. Çevrimdışıysanız son değer önbellekten gösterilir.
+- "Gönder" hiçbir şey açmıyor: cihazda mail uygulaması tanımlı olmayabilir.
+  "Metni kopyala" ile kopyalayıp o.elver@gmail.com adresine elle gönderin.
+
+DESTEK
+Menü > İletişim veya doğrudan: o.elver@gmail.com
