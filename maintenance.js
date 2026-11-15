@@ -1,4 +1,4 @@
-/* Yakıt Takip v10.3 — Bakım hatırlatıcıları
+/* Oktanote v11.3 — Bakım hatırlatıcıları
  * Bağımsız modül: window.YakitMaintenance
  * Veri: state.reminders (localStorage, ana state ile birlikte).
  * İnternet/push yoktur; uygulama içi uyarı. Tarih veya km — hangisi önce gelirse.

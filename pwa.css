@@ -1,4 +1,4 @@
-/* Yakıt Takip v5 — PWA + harita yerel stilleri */
+/* Oktanote v11.3 — PWA + harita yerel stilleri */
 
     /* v4 harita katmanı: Leaflet'in yüksek z-index'lerini modal içinde izole et */
     #station-leaflet-map { isolation: isolate; }

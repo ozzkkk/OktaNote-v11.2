@@ -1,8 +1,8 @@
 {
   "id": "./",
-  "name": "Yakıt Takip",
-  "short_name": "Yakıt Takip",
-  "description": "Araç yakıt dolumları, tüketim, giderler, gezi kaydı, bakım hatırlatıcıları ve harita destekli istasyon seçimi için çevrimdışı çalışabilen kişisel takip uygulaması.",
+  "name": "Oktanote",
+  "short_name": "Oktanote",
+  "description": "Oktanote — araç yakıt dolumları, tüketim, giderler, gezi kaydı, bakım hatırlatıcıları ve harita destekli istasyon seçimi için çevrimdışı çalışabilen kişisel takip uygulaması.",
   "lang": "tr",
   "dir": "ltr",
   "start_url": "./",

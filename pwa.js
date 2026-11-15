@@ -1,4 +1,4 @@
-/* Yakıt Takip v5 — PWA / çevrimdışı durum katmanı
+/* Oktanote v11.3 — PWA / çevrimdışı durum katmanı
  * Service worker kaydı, güncelleme bildirimi, çevrimdışı rozeti ve kurulum istemi.
  * Uygulama verilerine dokunmaz; yalnızca kabuk önbelleği ve ağ durumuyla ilgilenir.
  */

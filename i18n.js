@@ -1,4 +1,4 @@
-/* Yakıt Takip v11.2 — İki dil desteği (Türkçe / English)
+/* Oktanote v11.3 — İki dil desteği (Türkçe / English)
  * Bağımsız modül: window.YakitI18n
  *
  * Tasarım: kaynak kod ve veri değerleri Türkçe kalır (kanonik). Bu katman
@@ -20,7 +20,7 @@
   // ------------------------------------------------------------------
   var DICT = {
     // marka / genel
-    'Yakıt Takip': 'Fuel Tracker', 'yakıt takip': 'fuel tracker',
+    'Oktanote': 'Oktanote', 'oktanote': 'Oktanote',
     'Kişisel Araç Asistanı': 'Personal Vehicle Assistant',
     'Ana sayfa': 'Home', 'Ayarlar': 'Settings', 'Harita': 'Map', 'Raporlar': 'Reports',
     'İstatistikler': 'Statistics', 'Taşıtlar': 'Vehicles', 'Taşıtlarım': 'My Vehicles',
@@ -277,7 +277,7 @@
     'Henüz uygulama içi yedek yok. “Şimdi yedek al” ile ilk yedeği oluşturabilirsiniz.': 'No in-app backups yet. Use “Back up now” to create the first one.',
     'Yedek geri yüklenecek': 'Backup will be restored',
     'Mevcut tüm kayıtlarınız bu yedekle değiştirilecek. Bu işlem geri alınamaz. Devam etmeden önce mevcut verinizin yedeğini almanız önerilir.': 'All your current records will be replaced by this backup. This cannot be undone. Backing up your current data first is recommended.',
-    'Bu bir Yakıt Takip yedeği değil.': 'This is not a Fuel Tracker backup.',
+    'Bu bir Oktanote yedeği değil.': 'This is not an Oktanote backup.',
     'Dosya geçerli bir JSON değil.': 'File is not valid JSON.', 'Dosya okunamadı (geçersiz JSON).': 'File could not be read (invalid JSON).',
     'Yedekte araç bilgisi yok.': 'Backup has no vehicle info.', 'Yedekte dolum listesi bozuk.': 'Backup fill-up list is corrupt.',
     'Yedekte kayıt verisi yok.': 'Backup has no record data.', 'Yedek bulunamadı': 'Backup not found',
@@ -332,7 +332,7 @@
     '⚠️ Kayıt yerel depoya yazılamadı, işlem geri alındı': '⚠️ Record could not be written to local storage; operation rolled back',
     '⚠️ Veri kaydedilemedi! Depolama alanı dolu olabilir (fotoğraflar çok yer kaplar).': '⚠️ Data could not be saved! Storage may be full (photos take a lot of space).',
     '(metin bulunamadı)': '(text not found)',
-    'Yakıt Takip yedeği': 'Fuel Tracker backup', 'Yakıt Takip veri yedeği': 'Fuel Tracker data backup',
+    'Oktanote yedeği': 'Oktanote backup', 'Oktanote veri yedeği': 'Oktanote data backup',
     'Otomatik yedek açık': 'Automatic backup on', 'Otomatik yedek kapalı': 'Automatic backup off',
     'Otomatik yedek tekrar deneniyor…': 'Retrying automatic backup…',
     'Dil': 'Language', 'Dil / Language': 'Language', 'Türkçe': 'Turkish', 'İngilizce': 'English',
@@ -895,7 +895,7 @@
     try {
       restore(document.body);
       document.documentElement.setAttribute('lang', next);
-      document.title = (next === 'en') ? 'Fuel Tracker' : 'Yakıt Takip';
+      document.title = 'Oktanote';
     } finally { applying = false; }
     // Dinamik görünümleri yeniden üret (kaynak Türkçe)
     if (typeof window.renderAll === 'function') { try { window.renderAll(); } catch (e) {} }
@@ -921,7 +921,7 @@
     wrapDialogs();
     document.documentElement.setAttribute('lang', lang);
     if (lang === 'en') {
-      document.title = 'Fuel Tracker';
+      document.title = 'Oktanote';
       apply(document.body);
       startObserver();
     }

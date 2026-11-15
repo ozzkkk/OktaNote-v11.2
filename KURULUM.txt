@@ -1,39 +1,48 @@
-YAKIT TAKİP v11.2 — KAMERADAN FİŞ ÇEKME
-========================================
+OKTANOTE v11.3 — MARKA DEĞİŞİKLİĞİ
+===================================
 
 BU ZIP NE İŞE YARAR?
-1. Fiş taramada iki ayrı düğme: "KAMERADAN ÇEK" (arka kamerayı doğrudan açar)
-   ve "GALERİDEN SEÇ" (kayıtlı fotoğraflar).
-2. Dolum formundaki Resimler bölümüne de "Kamera" düğmesi eklendi.
-3. Kamera olmayan bilgisayarlarda kamera düğmesi gizlenir; sadece galeri kalır.
-4. Kamera açılmazsa izinleri kontrol etmeniz için kısa bir açıklama gösterilir.
+1. Uygulamanın görünen adı artık OKTANOTE: sekme başlığı, üst bar, yan menü,
+   Hakkında/Bilgi, yasal metinler, iletişim formu, yedek paylaşımı.
+2. PWA/manifest adı Oktanote olur; ana ekrana eklenen uygulama yeni adla görünür.
+3. Yeni yedek dosyası adı "oktanote-yedek-…json" olur.
+   Eski yedekler AYNEN içe aktarılabilir (format değişmedi).
+4. Kod yorumlarındaki üçüncü taraf ürün atıfları temizlendi.
+5. v11.2 kamera + galeri fiş tarama ve diğer tüm özellikler korunur.
 
-v11.1'deki her şey (arama/filtre, grafikler, kılavuz, erişilebilirlik, PWA
-kısayolları, Paylaş → Yakıt Takip) AYNEN korunur.
-OCR motoru ve veri yapısı DEĞİŞMEDİ (62/72 doğruluk aynı).
-OCR_VERSION 6.0.0 korundu: 5,6 MB motor ve Türkçe model yeniden İNMEZ.
-Verileriniz, dil seçiminiz ve ayarlarınız güncellemede SİLİNMEZ.
+VERİLERİNİZ SİLİNMEZ:
+- Kayıtlar, araçlar, fotoğraflar, dil, ayarlar
+- İndirilmiş OCR motoru (5,6 MB yeniden inmez)
+- Eski yedek dosyaları
+Teknik saklama anahtarları bilerek eski adla bırakıldı; bu sayede güncelleme
+sorunsuz çalışır.
 
-ÖNEMLİ: BU SÜRÜMDE 12 DOSYA DEĞİŞTİ (+2 BELGE = ZIP'TE 14 DOSYA)
+ÖNEMLİ: BU SÜRÜMDE 17 DOSYA DEĞİŞTİ (+2 BELGE = ZIP'TE 19 DOSYA)
 YENİ DOSYA YOK — hepsi mevcut dosyaların üzerine yazılır.
 sw.js'i EN SON yükleyin; yoksa eski önbellek yeni dosyaları gösterir.
 
 GÜNCELLEME (mevcut siteniz varsa — önerilen)
 1. ZIP'i telefonda/bilgisayarda açın (klasör yok, dosyalar kökte).
 2. Tarayıcıdan github.com > ozzkkk/yakittakipv.10.3 deposunu açın (main dalı).
+   (Depo adı değişmez; uygulama adı Oktanote olur.)
 3. Add file > Upload files'a dokunun.
 4. ZIP'ten çıkan şu dosyaları seçip yükleyin (sw.js HARİÇ):
    index.html
-   ocr.js
+   manifest.webmanifest
    i18n.js
    legal.js
+   contact.js
    settings.js
+   settings-ui.js
+   ocr.js
+   pwa.js
    a11y.js
    browse.js
    charts.js
-   contact.js
-   settings-ui.js
+   guards.js
+   maintenance.js
    weather.js
+   pwa.css
    README.md
    KURULUM.txt
 5. "Commit changes" deyin.
@@ -41,24 +50,26 @@ GÜNCELLEME (mevcut siteniz varsa — önerilen)
 7. 1-2 dakika bekleyin (GitHub Pages yayını).
 8. Uygulamayı açın: Rapor oluştur > "Güncellemeleri denetle" > çıkan bildirimle
    yeni sürümü alın. Görünmezse uygulamayı tamamen kapatıp açın.
-9. Bilgi ekranında sürüm "v11.2" görünmeli.
+9. Bilgi ekranında uygulama adı "Oktanote", sürüm "v11.3" görünmeli.
+
+ANA EKRAN KISAYOLU
+- Güncellemeden sonra kısayol adı çoğu cihazda kendiliğinden Oktanote olur.
+- Eski ad kalırsa: kısayolu kaldırın ve tarayıcıdan "Ana ekrana ekle" ile yeniden
+  ekleyin. Aynı tarayıcı/site profilinde veriler silinmez.
+- Site adresi değişmediği için mevcut kayıtlarınız aynı kalır.
 
 KULLANIM
-- Fiş okutmak için: Dolum ekle > fiş düğmesi > "Kameradan çek".
-  Telefon ilk kullanımda kamera izni ister; "İzin ver" deyin.
-  Fişi düz zemine koyun, iyi ışıkta, tamamı kadraja girecek şekilde çekin.
-- Kayıtlı fotoğraf için "Galeriden seç"i kullanın.
-- Kamera açılmazsa: tarayıcı ayarlarından siteye kamera izni verin veya
-  fotoğrafı telefonun kamera uygulamasıyla çekip "Galeriden seç" ile okutun.
-- Dolum formunda Resimler > "Kamera" ile o anın fotoğrafını ekleyebilirsiniz.
+- Fiş okutma: Dolum ekle > fiş düğmesi > "Kameradan çek" veya "Galeriden seç".
+- Yedek: Ayarlar > Yedekleme > "Yedek al" veya "Yedeği paylaş".
+  Yeni dosya adı oktanote-yedek-…json olur; eski yedekleri de geri yükleyebilirsiniz.
 
 SORUN GİDERME
 - Eski görünüm kalırsa: sw.js yüklenmemiştir; 6. adımı tekrarlayın.
-- Düğmeler görünmüyor ama sürüm v11.2 ise: tarayıcı önbelleğini temizleyin
-  veya uygulamayı ana ekrandan kaldırıp yeniden ekleyin (veriler silinmez).
-- Kamera düğmesi bilgisayarda görünmez — bu normaldir, galeri düğmesi yeter.
+- Ad hâlâ eski ise: tarayıcı önbelleğini temizleyin veya kısayolu yeniden ekleyin.
+- Bilgi ekranında sürüm v11.3 değilse güncelleme tamamlanmamıştır.
 
-ZIP İÇERİĞİ (14 dosya)
-index.html, ocr.js, i18n.js, legal.js, settings.js, a11y.js, browse.js,
-charts.js, contact.js, settings-ui.js, weather.js, README.md, KURULUM.txt,
+ZIP İÇERİĞİ (19 dosya)
+index.html, manifest.webmanifest, i18n.js, legal.js, contact.js, settings.js,
+settings-ui.js, ocr.js, pwa.js, a11y.js, browse.js, charts.js, guards.js,
+maintenance.js, weather.js, pwa.css, README.md, KURULUM.txt,
 sw.js (EN SON yüklenir)

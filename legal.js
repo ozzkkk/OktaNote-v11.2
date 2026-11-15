@@ -1,8 +1,8 @@
-/* Yakıt Takip v11.2 — Yasal metinler ve bilgi ekranları
+/* Oktanote v11.3 — Yasal metinler ve bilgi ekranları
  * Kullanım Koşulları (EULA), Gizlilik Politikası (KVKK + GDPR),
  * Değişiklik Günlüğü, Hakkında ve Açık Kaynak Lisansları.
  *
- * Geliştirici adı kullanıcı tercihiyle isimsizdir: "Yakıt Takip geliştiricisi".
+ * Geliştirici adı kullanıcı tercihiyle isimsizdir: "Oktanote geliştiricisi".
  * Metinler tek kaynaktan (bölüm dizileri) hem HTML hem düz metin üretir.
  * Bu metinler bilgilendirme amaçlıdır; hukuki danışmanlık değildir.
  */
@@ -11,8 +11,8 @@
 
   var DOC_VERSION = '1.0';
   var EFFECTIVE = '2026-11-15';
-  var DEVELOPER_TR = 'Yakıt Takip geliştiricisi';
-  var DEVELOPER_EN = 'the Fuel Tracker developer';
+  var DEVELOPER_TR = 'Oktanote geliştiricisi';
+  var DEVELOPER_EN = 'the Oktanote developer';
   var EMAIL = 'o.elver@gmail.com';
   var REPO = 'https://github.com/ozzkkk/yakittakipv.10.3';
 
@@ -34,7 +34,7 @@
   // ==================================================================
   var EULA_TR = [
     { h: 'Taraflar ve kapsam', p: [
-      'Bu Kullanım Koşulları ("Koşullar"), Yakıt Takip adlı web uygulamasını ("Uygulama") kullanan siz ("Kullanıcı") ile ' + DEVELOPER_TR + ' ("Geliştirici") arasında kurulur. Uygulamayı açarak, kurarak veya kullanarak bu Koşulları kabul etmiş olursunuz.',
+      'Bu Kullanım Koşulları ("Koşullar"), Oktanote adlı web uygulamasını ("Uygulama") kullanan siz ("Kullanıcı") ile ' + DEVELOPER_TR + ' ("Geliştirici") arasında kurulur. Uygulamayı açarak, kurarak veya kullanarak bu Koşulları kabul etmiş olursunuz.',
       'Koşulları kabul etmiyorsanız Uygulamayı kullanmayınız ve ana ekrana eklediğiniz kısayolu kaldırınız.'
     ] },
     { h: 'Uygulamanın niteliği', p: [
@@ -110,7 +110,7 @@
 
   var EULA_EN = [
     { h: 'Parties and scope', p: [
-      'These Terms of Use ("Terms") are between you ("User") and ' + DEVELOPER_EN + ' ("Developer") and govern the web application named Fuel Tracker ("App"). By opening, installing or using the App you accept these Terms.',
+      'These Terms of Use ("Terms") are between you ("User") and ' + DEVELOPER_EN + ' ("Developer") and govern the web application named Oktanote ("App"). By opening, installing or using the App you accept these Terms.',
       'If you do not accept them, do not use the App and remove any home-screen shortcut.'
     ] },
     { h: 'Nature of the App', p: [
@@ -193,7 +193,7 @@
       'Veri sorumlusu: ' + DEVELOPER_TR + '. İletişim: ' + EMAIL + '. Uygulamanın bir tüzel kişiliği, çağrı merkezi veya veri koruma görevlisi atanmasını gerektiren bir örgütü yoktur.'
     ] },
     { h: 'Özet: verileriniz cihazınızda', p: [
-      'Yakıt Takip, kayıtlarınızı SUNUCUYA GÖNDERMEZ. Dolum, gider, gezi, araç, bakım kayıtlarınız, ayarlarınız ve fiş fotoğraflarınız yalnızca kendi cihazınızda, tarayıcının localStorage ve IndexedDB alanında saklanır.',
+      'Oktanote, kayıtlarınızı SUNUCUYA GÖNDERMEZ. Dolum, gider, gezi, araç, bakım kayıtlarınız, ayarlarınız ve fiş fotoğraflarınız yalnızca kendi cihazınızda, tarayıcının localStorage ve IndexedDB alanında saklanır.',
       'Geliştirici bu kayıtlara erişemez, göremez, kopyalayamaz, analiz edemez veya üçüncü kişilerle paylaşamaz. Uygulamada kullanıcı hesabı, oturum açma, analitik, reklam veya izleme kodu yoktur.'
     ] },
     { h: 'Cihazınızda tutulan veri kategorileri', p: [
@@ -274,7 +274,7 @@
       'Data controller: ' + DEVELOPER_EN + '. Contact: ' + EMAIL + '. The App has no legal entity, call centre or organisation requiring a data protection officer.'
     ] },
     { h: 'Summary: your data stays on your device', p: [
-      'Fuel Tracker DOES NOT SEND your records to a server. Fill-ups, expenses, trips, vehicles, maintenance, settings and receipt photos are stored only on your own device, in the browser\'s localStorage and IndexedDB.',
+      'Oktanote DOES NOT SEND your records to a server. Fill-ups, expenses, trips, vehicles, maintenance, settings and receipt photos are stored only on your own device, in the browser\'s localStorage and IndexedDB.',
       'The Developer cannot access, view, copy, analyse or share those records. There is no user account, sign-in, analytics, advertising or tracking code in the App.'
     ] },
     { h: 'Categories of data kept on your device', p: [
@@ -353,6 +353,17 @@
   // DEĞİŞİKLİK GÜNLÜĞÜ
   // ==================================================================
   var CHANGELOG = [
+    { v: '11.3.0', date: '2026-11-13', tr: [
+      'Uygulama adı Oktanote oldu. Başlık, ana ekran/PWA adı, manifest, hakkında ve yasal metinler yeni adla güncellendi.',
+      'Yedek paylaşımı ve yeni yedek dosyası adı Oktanote olarak değişti; eski yedekler aynen içe aktarılabilir.',
+      'Kod yorumlarındaki üçüncü taraf ürün atıfları temizlendi.',
+      'Veriler, dil, ayarlar ve indirilmiş OCR dosyaları korunur; kamera ve galeri akışı değişmedi.'
+    ], en: [
+      'The app is now named Oktanote. The title, home-screen/PWA name, manifest, About and legal texts were updated.',
+      'Backup sharing and new backup file names use Oktanote; older backups can still be imported.',
+      'Third-party product references in code comments were removed.',
+      'Your data, language, settings and downloaded OCR files are preserved; the camera and gallery flow is unchanged.'
+    ] },
     { v: '11.2.0', date: '2026-11-16', tr: [
       'Fiş taramada "Kameradan çek" ve "Galeriden seç" ayrı düğmeler oldu. Kameradan çek, telefonun arka kamerasını doğrudan açar.',
       'Dolum formundaki Resimler bölümüne de "Kamera" düğmesi eklendi; galeri düğmesi yanında durur.',
@@ -370,7 +381,7 @@
       'İstatistiklere çevrimdışı grafikler eklendi: tüketim eğrisi, yakıt fiyatı eğrisi ve son 12 ayın maliyet sütunları. Noktaya dokununca değeri okunur, klavyeyle de gezilir.',
       'Bilgi bölümüne "Nasıl kullanılır?" kılavuzu eklendi (15 bölüm, Türkçe ve İngilizce, internet gerektirmez).',
       'Erişilebilirlik: tüm pencerelere rol ve ad verildi, Esc en üstteki pencereyi kapatıyor, Tab odağı pencere içinde kalıyor, adsız alan ve düğme kalmadı, bildirimler ekran okuyucuya okunuyor, "İçeriğe geç" bağlantısı eklendi.',
-      'PWA: ana ekran kısayolları (Dolum ekle, Fiş okut, Gezi ekle), kurulum ekran görüntüleri ve "Paylaş → Yakıt Takip" ile gelen fiş fotoğrafını doğrudan okuma.',
+      'PWA: ana ekran kısayolları (Dolum ekle, Fiş okut, Gezi ekle), kurulum ekran görüntüleri ve "Paylaş → Oktanote" ile gelen fiş fotoğrafını doğrudan okuma.',
       'Sayfa açıklaması ve paylaşım etiketleri eklendi.'
     ], en: [
       'Search, date range, fuel type/category filters and sorting added to the Fill-ups and Trip log lists.',
@@ -378,7 +389,7 @@
       'Offline charts added to Statistics: consumption curve, fuel price curve and monthly cost bars for the last 12 months. Tap a point to read its value; keyboard navigation works too.',
       'A "How to use" guide was added to the Info section (15 sections, Turkish and English, no internet needed).',
       'Accessibility: every dialog has a role and a name, Esc closes the topmost dialog, Tab keeps focus inside it, no unlabelled fields or buttons remain, notifications are announced to screen readers, and a "Skip to content" link was added.',
-      'PWA: home-screen shortcuts (Add fill-up, Scan receipt, Add trip), install screenshots and reading a receipt photo shared via "Share → Fuel Tracker".',
+      'PWA: home-screen shortcuts (Add fill-up, Scan receipt, Add trip), install screenshots and reading a receipt photo shared via "Share → Oktanote".',
       'Page description and social sharing tags added.'
     ] },
     { v: '11.0.0', date: '2026-11-15', tr: [
@@ -687,17 +698,17 @@
   function aboutHtml(l) {
     var v = appVersion();
     var rows = l === 'en'
-      ? [['App', 'Fuel Tracker'], ['Version', v], ['Developer', DEVELOPER_EN], ['Contact', EMAIL],
+      ? [['App', 'Oktanote'], ['Version', v], ['Developer', DEVELOPER_EN], ['Contact', EMAIL],
          ['Receipt engine', 'Tesseract.js — runs on your device, offline'], ['Measured OCR accuracy', '62/72 fields (86%) on a 12-receipt test set'],
          ['Your data', 'Only on this device (localStorage + IndexedDB)'], ['Server', 'None'],
          ['Terms version', DOC_VERSION + ' · ' + enDate(EFFECTIVE)], ['Source', REPO]]
-      : [['Uygulama', 'Yakıt Takip'], ['Sürüm', v], ['Geliştirici', DEVELOPER_TR], ['İletişim', EMAIL],
+      : [['Uygulama', 'Oktanote'], ['Sürüm', v], ['Geliştirici', DEVELOPER_TR], ['İletişim', EMAIL],
          ['Fiş motoru', 'Tesseract.js — cihazınızda, çevrimdışı çalışır'], ['Ölçülen OCR doğruluğu', '12 fişlik test kümesinde 62/72 alan (%86)'],
          ['Verileriniz', 'Yalnızca bu cihazda (localStorage + IndexedDB)'], ['Sunucu', 'Yok'],
          ['Koşullar sürümü', DOC_VERSION + ' · ' + trDate(EFFECTIVE)], ['Kaynak', REPO]];
     var out = '<div class="flex items-center gap-3 mb-3">' +
       '<div class="w-12 h-12 rounded-2xl bg-rose-600 text-white flex items-center justify-center shrink-0"><i class="fa-solid fa-gauge-high text-xl"></i></div>' +
-      '<div><div class="font-bold text-slate-800 text-sm">' + (l === 'en' ? 'Fuel Tracker' : 'Yakıt Takip') + '</div>' +
+      '<div><div class="font-bold text-slate-800 text-sm">' + (l === 'en' ? 'Oktanote' : 'Oktanote') + '</div>' +
       '<div class="text-[10px] text-slate-400">' + (l === 'en' ? 'Personal vehicle assistant' : 'Kişisel araç asistanı') + '</div></div></div>';
     out += '<div class="divide-y divide-slate-100">';
     rows.forEach(function (r) {
@@ -717,7 +728,7 @@
   }
   function aboutPlain(l) {
     var v = appVersion();
-    return (l === 'en' ? 'Fuel Tracker\nVersion ' : 'Yakıt Takip\nSürüm ') + v +
+    return (l === 'en' ? 'Oktanote\nVersion ' : 'Oktanote\nSürüm ') + v +
       '\n' + (l === 'en' ? 'Developer: ' : 'Geliştirici: ') + (l === 'en' ? DEVELOPER_EN : DEVELOPER_TR) +
       '\n' + (l === 'en' ? 'Contact: ' : 'İletişim: ') + EMAIL + '\n' + REPO;
   }

@@ -1,4 +1,4 @@
-/* Yakıt Takip v11.2 — Çevrimdışı SVG grafikler (kütüphane yok)
+/* Oktanote v11.3 — Çevrimdışı SVG grafikler (kütüphane yok)
  * 1) Tüketim eğrisi (tam depo aralıkları)   2) Yakıt fiyatı eğrisi
  * 3) Son 12 ayın maliyet sütunları (yakıt + diğer)
  * Değerler kullanıcının birim ayarlarına göre çizilir; veri dışarı çıkmaz.

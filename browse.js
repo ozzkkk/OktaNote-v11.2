@@ -1,4 +1,4 @@
-/* Yakıt Takip v11.2 — Liste arama / filtre / sıralama / sayfalama
+/* Oktanote v11.3 — Liste arama / filtre / sıralama / sayfalama
  * Dolumlar (timeline) ve Gezi kaydı (trips) görünümlerinde çalışır.
  * Veriyi değiştirmez; yalnızca gösterilecek alt listeyi üretir.
  */

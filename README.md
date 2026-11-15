@@ -1,61 +1,55 @@
-# Yakıt Takip v11.2 — Kameradan fiş çekme
+# Oktanote v11.3 — marka değişikliği
 
-Bu sürüm tek bir isteğe odaklanır: **fiş taramada galeriden seçmenin yanına
-doğrudan kameradan çekme** eklemek.
+Bu sürüm uygulamanın adını **Oktanote** yapar ve kod içindeki üçüncü taraf ürün
+atıflarını temizler. Özellik tarafında v11.2 (kameradan fiş çekme) aynen korunur.
 
-1. **Fiş tarama**: "Fotoğraf Seç / Çek" tek düğmesi ikiye ayrıldı —
-   **Kameradan çek** (arka kamerayı doğrudan açar) ve **Galeriden seç**.
-2. **Dolum formu → Resimler**: galeri ("Ekle") düğmesinin yanına **Kamera** düğmesi eklendi.
-3. **Masaüstünde sade görünüm**: dokunmatik olmayan cihazlarda kamera düğmesi gizlenir,
-   galeri tek ana düğme olarak kalır.
-4. **İzin ipucu**: kamera açılmazsa tarayıcı izinlerini kontrol etmeniz için kısa açıklama.
+## Neler değişti?
 
-v11.1'in tamamı (arama/filtre/sıralama, sayfalama, grafikler, kılavuz, erişilebilirlik,
-PWA kısayolları ve "Paylaş → Yakıt Takip") aynen korunur.
-OCR motoru, yedekleme motoru ve veri yapısı **değişmedi**
-(`OCR_VERSION 6.0.0`, ölçülen doğruluk **62/72**). Fotoğraflar cihazdan çıkmaz.
+1. **Görünen ad**: sekme başlığı, üst bar, yan menü, Hakkında/Bilgi satırı,
+   yasal metinler, iletişim formu ve yedek paylaşımı artık **Oktanote**.
+2. **PWA / manifest**: `name`, `short_name`, `application-name`,
+   `apple-mobile-web-app-title`, Open Graph başlığı ve manifest açıklaması Oktanote.
+   Ana ekrana eklenen uygulamanın adı güncellemeden sonra Oktanote olur.
+3. **Yedekler**: yeni yedek dosyası adı `oktanote-yedek-…json`.
+   Yedek **formatı değişmedi**; eski `yakit-takip-backup` dosyaları aynen içe aktarılır.
+4. **Temizlik**: `settings-ui.js` ve diğer kod yorumlarındaki üçüncü taraf ürün atıfları kaldırıldı.
+5. **Sürüm**: `APP_VERSION 11.3.0`, `CACHE_VERSION 11.3.0`.
+   `OCR_VERSION 6.0.0` korundu; 5,6 MB motor yeniden inmez.
 
----
+## Korunanlar (önemli)
 
-## Nasıl çalışır?
+- Veri anahtarı: `yakit_takip_data_v1`
+- Fotoğraf veritabanı: `yakit_takip_photos`
+- Yedek format kimliği: `yakit-takip-backup`
+- Service Worker önbellek adları: `yakit-takip-shell-*`, `yakit-takip-ocr-*`,
+  `yakit-takip-share` (OCR ve paylaşım önbelleği bozulmaz)
+- JS API adları: `window.YakitSettings`, `YakitOCR`, `YakitPWA` vb.
+- Simgeler, kısayollar, `share_target`, `id: "./"`, `start_url`, `scope`
+- Kamera + galeri fiş tarama, çevrimdışı OCR, grafikler, arama/filtre, kılavuz
 
-- Kamera düğmesi gizli bir `<input type="file" accept="image/*" capture="environment">`
-  açar. `capture="environment"` Android ve iOS'ta **arka kamerayı** doğrudan başlatır;
-  çekilen fotoğraf eskisiyle **aynı OCR akışına** girer (`handleFile`).
-- Galeri düğmesi eski `#ocr-file-input`'tir; davranışı değişmedi.
-- "Başka fotoğraf" düğmesi artık **her iki girişi de** sıfırlar.
-- Dolum formundaki kamera girişi de aynı `handleRefuelPhotos` işleyicisini kullanır;
-  galeri tarafında çoklu seçim korunur.
-- Kamera varlığı `navigator.maxTouchPoints`, `pointer: coarse` ve userAgent ile
-  anlaşılır (`YakitOCR.cameraLikely()`); masaüstünde kamera düğmesi ve ipucu gizlenir.
-- Yeni ağ isteği, CDN veya izin istemi **yok**: her şey cihazda, çevrimdışı çalışır.
-  Kamera izini tarayıcı ilk çekimde bir kez sorar.
+> Not: Teknik anahtarların eski adla kalması bilinçlidir; değiştirilirse mevcut
+> kullanıcı verisi, yedek uyumluluğu veya indirilmiş OCR dosyaları kaybolabilirdi.
 
-## Değişen dosyalar (12 + 2 belge)
+## Değişen dosyalar (17 + 2 belge = 19)
 
-| Dosya | Değişiklik |
-|---|---|
-| `index.html` | Fiş tarama: kamera + galeri düğmeleri, izin ipucu; dolum: Kamera düğmesi |
-| `ocr.js` | Kamera girişi bağlandı, `cameraLikely()`/`setupPickButtons()`, retry iki girişi sıfırlar |
-| `i18n.js` | 5 yeni TR→EN anahtar (Kameradan çek, Galeriden seç, Kamera, Galeri, ipucu) |
-| `legal.js` | CHANGELOG 11.2.0; kılavuz "Fiş okutma" TR+EN güncellendi |
-| `settings.js` | `APP_VERSION 11.2.0` |
-| `sw.js` | `CACHE_VERSION 11.2.0` (APP_SHELL listesi aynı, `OCR_VERSION 6.0.0` korundu) |
-| `a11y.js`, `browse.js`, `charts.js`, `contact.js`, `settings-ui.js`, `weather.js` | Yalnızca sürüm başlığı (v11.2) |
-| `README.md`, `KURULUM.txt` | Bu belgeler |
+`index.html`, `manifest.webmanifest`, `i18n.js`, `legal.js`, `contact.js`,
+`settings.js`, `settings-ui.js`, `ocr.js`, `pwa.js`, `a11y.js`, `browse.js`,
+`charts.js`, `guards.js`, `maintenance.js`, `weather.js`, `pwa.css`, `sw.js`
+ve belgeler `README.md`, `KURULUM.txt`.
 
-Yeni dosya yok; PNG'ler ve manifest değişmedi. **sw.js her zaman EN SON yüklenir.**
+Yeni dosya yok; PNG/manifest görselleri değişmedi. **sw.js her zaman EN SON yüklenir.**
 
 ## Testler
 
-- Tam regresyon: **1559/1559 kontrol, 36 paket, 0 hata** (v11.1'in 35 paketi + yeni kamera paketi).
-- Yeni `test_v112_kamera.js`: **36 kontrol** — capture özniteliği, telefon/masaüstü
-  görünürlüğü, kamera dosyasının OCR'dan geçmesi (352,29 ₺ okundu), retry sıfırlama,
-  dolum fotoğrafı ekleme, TR/EN, taşma ve dokunma hedefi (≥44 px), sürümler.
+- Tam regresyon: **1605/1605 kontrol, 37 paket, 0 hata** (v11.2'nin 36 paketi + yeni marka paketi).
 - OCR test kümesi: **62/72 alan (%86)** — değişmedi.
-- Veri, dil ve OCR önbelleği güncellemede korunur (`yakit_takip_data_v1` aynen).
+- Veri, dil ve OCR önbelleği güncellemede korunur.
 
-## Güncelleme
+## Kurulum
 
-`KURULUM.txt`'e bakın. Kısaca: ZIP'teki 12 dosyayı depoya yükleyin (sw.js en son),
-ardından uygulamada Rapor oluştur → "Güncellemeleri denetle" ile yeni sürümü alın.
+`KURULUM.txt`'e bakın. Mevcut site adresi/depo değişmez. Güncellemeden sonra
+ana ekran kısayolunun adı hâlâ eski görünürse kısayolu kaldırıp yeniden ekleyin
+(aynı tarayıcı/site profilinde veriler silinmez).
+
+> Oktanote adı için marka tescili bu paketin kapsamında değildir; ticari kullanım
+> öncesi TÜRKPATENT / WIPO / EUIPO / USPTO araştırması önerilir.

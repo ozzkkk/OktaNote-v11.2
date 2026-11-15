@@ -1,4 +1,4 @@
-/* Yakıt Takip v10.2 — Veri giriş korumaları
+/* Oktanote v11.3 — Veri giriş korumaları
  * Bağımsız modül: window.YakitGuards
  * Kayıt ENGELLEMEZ; yalnızca uyarı üretir. Kullanıcı "Yine de kaydet" derse kayıt geçer.
  * Tüm değerler kanonik birimdedir: km, litre, TL. (Birim çevirimi index.html'de yapılır.)

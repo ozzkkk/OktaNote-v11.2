@@ -1,4 +1,4 @@
-/* Yakıt Takip v11.2 — İletişim formu, kurallar ve şartlar
+/* Oktanote v11.3 — İletişim formu, kurallar ve şartlar
  * Bağımsız modül: window.YakitContact
  *
  * Tasarım (sunucusuz):
@@ -25,8 +25,8 @@
   // Kurallar ve şartlar
   // ------------------------------------------------------------------
   var TERMS_TR = [
-    ['Kapsam', 'Bu metin, Yakıt Takip uygulamasını ve uygulama içindeki iletişim formunu kullanımınız için geçerli koşulları açıklar. Uygulamayı veya iletişim formunu kullanarak bu koşulları kabul etmiş olursunuz.'],
-    ['Uygulamanın niteliği', 'Yakıt Takip, araç yakıt dolumlarını, giderleri, yolculukları ve bakımı kişisel olarak takip etmenizi sağlayan bir araçtır. Uygulama ücretsizdir, hesap açmayı gerektirmez ve bir ticari hizmet taahhüdü içermez. Sunulan hesaplamalar (tüketim, maliyet, tahmin) yaklaşık değerlerdir; resmî kayıt, fatura veya vergi belgesi yerine geçmez.'],
+    ['Kapsam', 'Bu metin, Oktanote uygulamasını ve uygulama içindeki iletişim formunu kullanımınız için geçerli koşulları açıklar. Uygulamayı veya iletişim formunu kullanarak bu koşulları kabul etmiş olursunuz.'],
+    ['Uygulamanın niteliği', 'Oktanote, araç yakıt dolumlarını, giderleri, yolculukları ve bakımı kişisel olarak takip etmenizi sağlayan bir araçtır. Uygulama ücretsizdir, hesap açmayı gerektirmez ve bir ticari hizmet taahhüdü içermez. Sunulan hesaplamalar (tüketim, maliyet, tahmin) yaklaşık değerlerdir; resmî kayıt, fatura veya vergi belgesi yerine geçmez.'],
     ['Verileriniz nerede durur', 'Dolum, gider, yolculuk, araç ve bakım kayıtlarınız ile fotoğraflarınız yalnızca kendi cihazınızda (tarayıcının localStorage ve IndexedDB alanında) saklanır. Uygulamanın bir sunucusu yoktur; kayıtlarınız geliştiriciye veya üçüncü kişilere gönderilmez. Tarayıcı verilerini temizlemeniz hâlinde kayıtlar silinir; bu nedenle düzenli yedek almanız önerilir.'],
     ['İnternet gerektiren özellikler', 'Uygulama çevrimdışı çalışır. Yalnızca şu özellikler internet ister ve ilgili sağlayıcıya istek gönderir: (a) Hava durumu — seçtiğiniz şehrin koordinatı Open-Meteo servisine gönderilir. (b) İstasyon/şehir araması — yazdığınız arama metni Photon/OpenStreetMap servisine gönderilir. (c) Harita görüntüleri — OpenStreetMap karoları veya Google Haritalar yüklenir. Bu isteklerde kimliğiniz, kayıtlarınız veya fotoğraflarınız yer almaz. Konum izni yalnızca siz "Konumum" düğmesine basarsanız istenir.'],
     ['İletişim formu nasıl çalışır', 'Formda yazdığınız ad, soyad, telefon, e-posta ve mesaj uygulama tarafından hiçbir sunucuya iletilmez ve cihazda saklanmaz. "Gönder" düğmesi, bu bilgileri içeren hazır bir e-posta penceresi (mailto bağlantısı) açar. Mesajı gönderen taraf sizin kendi e-posta uygulamanız ve e-posta sağlayıcınızdır. Gönderme işlemini e-posta uygulamanızda siz onaylarsınız. E-posta uygulamanız yapılandırılmamışsa "Metni kopyala" ile metni panoya alıp elle gönderebilirsiniz.'],
@@ -42,8 +42,8 @@
   ];
 
   var TERMS_EN = [
-    ['Scope', 'This text explains the conditions that apply to your use of the Fuel Tracker app and its in-app contact form. By using the app or the contact form you accept these conditions.'],
-    ['Nature of the app', 'Fuel Tracker is a personal tool for recording fuel fill-ups, expenses, trips and maintenance. It is free, requires no account and carries no commercial service commitment. Its calculations (consumption, cost, estimates) are approximate and do not replace official records, invoices or tax documents.'],
+    ['Scope', 'This text explains the conditions that apply to your use of the Oktanote app and its in-app contact form. By using the app or the contact form you accept these conditions.'],
+    ['Nature of the app', 'Oktanote is a personal tool for recording fuel fill-ups, expenses, trips and maintenance. It is free, requires no account and carries no commercial service commitment. Its calculations (consumption, cost, estimates) are approximate and do not replace official records, invoices or tax documents.'],
     ['Where your data lives', 'Your fill-up, expense, trip, vehicle and maintenance records and your photos are stored only on your own device (in the browser’s localStorage and IndexedDB). The app has no server; your records are not sent to the developer or to third parties. If you clear your browser data the records are deleted, so taking regular backups is recommended.'],
     ['Features that need internet', 'The app works offline. Only these features require internet and send a request to the relevant provider: (a) Weather — the coordinates of the city you selected are sent to Open-Meteo. (b) Station/city search — the search text you type is sent to Photon/OpenStreetMap. (c) Map imagery — OpenStreetMap tiles or Google Maps are loaded. These requests do not include your identity, your records or your photos. Location permission is requested only if you tap the "My location" button.'],
     ['How the contact form works', 'The name, surname, phone, email and message you type are not transmitted to any server by the app and are not stored on the device. The "Send" button opens a pre-filled email window (a mailto link) containing this information. The message is sent by your own email app and email provider. You confirm the sending inside your email app. If no email app is configured, use "Copy text" to copy the message and send it manually.'],
@@ -80,7 +80,7 @@
   function termsPlain(which) {
     var l = which || lang();
     var rows = l === 'en' ? TERMS_EN : TERMS_TR;
-    var title = l === 'en' ? 'FUEL TRACKER — TERMS AND CONDITIONS' : 'YAKIT TAKİP — KURALLAR VE ŞARTLAR';
+    var title = l === 'en' ? 'OKTANOTE — TERMS AND CONDITIONS' : 'OKTANOTE — KURALLAR VE ŞARTLAR';
     var ver = l === 'en' ? ('Version ' + TERMS_VERSION + ' · Effective ' + TERMS_DATE) : ('Sürüm ' + TERMS_VERSION + ' · Yürürlük tarihi ' + TERMS_DATE.split('-').reverse().join('.'));
     return title + '\n' + ver + '\n\n' + rows.map(function (r, i) { return (i + 1) + '. ' + r[0] + '\n' + r[1]; }).join('\n\n') + '\n';
   }
@@ -126,7 +126,7 @@
     var en = (which || lang()) === 'en';
     var app = (window.YakitSettings && window.YakitSettings.APP_VERSION) || '';
     var lines = en ? [
-      'FUEL TRACKER — CONTACT FORM',
+      'OKTANOTE — CONTACT FORM',
       '',
       'First name: ' + d.first,
       'Last name: ' + d.last,
@@ -142,7 +142,7 @@
       'Language: ' + (en ? 'en' : 'tr'),
       'Date: ' + new Date().toISOString()
     ] : [
-      'YAKIT TAKİP — İLETİŞİM FORMU',
+      'OKTANOTE — İLETİŞİM FORMU',
       '',
       'Ad: ' + d.first,
       'Soyad: ' + d.last,
@@ -164,7 +164,7 @@
   function buildSubject(d, which) {
     var en = (which || lang()) === 'en';
     var name = (d.first + ' ' + d.last).trim();
-    return (en ? 'Fuel Tracker contact — ' : 'Yakıt Takip iletişim — ') + name;
+    return (en ? 'Oktanote contact — ' : 'Oktanote iletişim — ') + name;
   }
 
   function buildMailto(d, which) {

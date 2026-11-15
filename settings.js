@@ -1,4 +1,4 @@
-/* Yakıt Takip v11.2 — Ayarlar, birimler, dosya yedekleme + uygulama içi otomatik yedek
+/* Oktanote v11.3 — Ayarlar, birimler, dosya yedekleme + uygulama içi otomatik yedek
  * Bağımsız modül: window.YakitSettings
  * Veri modeli: state.settings (localStorage içinde, ana state ile birlikte)
  */
@@ -7,7 +7,7 @@
 
   var SETTINGS_KEY = 'yakitTakipSettings';
   // v10.9: tek kaynak — sürüm her yerde buradan okunur
-  var APP_VERSION = '11.2.0';
+  var APP_VERSION = '11.3.0';
 
   var DEFAULTS = {
     distanceUnit: 'km',        // 'km' | 'mi'
@@ -351,7 +351,7 @@
   function backupFileName() {
     var d = new Date();
     function p(n) { return String(n).padStart(2, '0'); }
-    return 'yakit-yedek-' + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes()) + '.json';
+    return 'oktanote-yedek-' + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes()) + '.json';
   }
 
   async function downloadBackup(opts) {
@@ -375,7 +375,7 @@
     var name = backupFileName();
     var file = new File([blob], name, { type: 'application/json' });
     if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
-      await navigator.share({ files: [file], title: 'Yakıt Takip yedeği', text: 'Yakıt Takip veri yedeği' });
+      await navigator.share({ files: [file], title: 'Oktanote yedeği', text: 'Oktanote veri yedeği' });
       set('lastBackupAt', payload.createdAt);
       return { shared: true, name: name, bytes: blob.size, photoCount: payload.photoCount };
     }
@@ -387,7 +387,7 @@
 
   function validateBackup(obj) {
     if (!obj || typeof obj !== 'object') return 'Dosya okunamadı (geçersiz JSON).';
-    if (obj.format !== 'yakit-takip-backup') return 'Bu bir Yakıt Takip yedeği değil.';
+    if (obj.format !== 'yakit-takip-backup') return 'Bu bir Oktanote yedeği değil.';
     if (!obj.state || typeof obj.state !== 'object') return 'Yedekte kayıt verisi yok.';
     if (!Array.isArray(obj.state.vehicles) || !obj.state.vehicles.length) return 'Yedekte araç bilgisi yok.';
     if (!Array.isArray(obj.state.refuels)) return 'Yedekte dolum listesi bozuk.';

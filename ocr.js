@@ -1,4 +1,4 @@
-/* Yakıt Takip v11.2 — Gerçek OCR (Tesseract.js, tamamen yerel/çevrimdışı)
+/* Oktanote v11.3 — Gerçek OCR (Tesseract.js, tamamen yerel/çevrimdışı)
  * - Motor ve Türkçe model aynı klasörden yüklenir, CDN yoktur.
  * - Görüntü cihazdan çıkmaz; işleme WebWorker içinde yapılır.
  * - Çıkarılan alanlar: yakıt türü, litre, birim fiyat, toplam tutar, tarih, saat.
@@ -1629,7 +1629,7 @@
 
   // Eski çağrı adları index.html içinde kullanılıyor
   window.openReceiptModal = openReceiptModal;
-  // v11.1: "Paylaş → Yakıt Takip" ile gelen fotoğrafı bir kez oku ve sil.
+  // v11.1: "Paylaş → Oktanote" ile gelen fotoğrafı bir kez oku ve sil.
   async function consumeShared() {
     if (!/[?&]shared=1/.test(location.search || '')) return false;
     try {

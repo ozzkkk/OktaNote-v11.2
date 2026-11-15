@@ -1,4 +1,4 @@
-/* Yakıt Takip v11.2 — Ayarlar ekranı (Fuelio tarzı gruplu liste)
+/* Oktanote v11.3 — Ayarlar ekranı (gruplu ayar listesi)
  * window.YakitSettingsUI
  */
 (function () {
@@ -131,13 +131,13 @@
             desc: 'Kayıtlar silinir, demo veriler yüklenir', action: 'reset', arrow: true })
     ].join(''));
 
-    // v11.0 — Bilgi bölümü (Fuelio düzeni): günlük, hakkında, EULA, gizlilik, lisanslar
+    // v11.0 — Bilgi bölümü: günlük, hakkında, EULA, gizlilik, lisanslar
     html += group('Bilgi', [
       row({ icon: 'circle-question', iconBg: '#dbeafe', iconFg: '#1d4ed8', title: 'Nasıl kullanılır?',
             desc: 'Adım adım kullanım kılavuzu', action: 'legal-help', arrow: true }),
       row({ icon: 'clock-rotate-left', iconBg: '#fbcfe8', iconFg: '#9d174d', title: 'Değişiklik Günlüğü',
             desc: 'Sürümlerde neler değişti', action: 'legal-changelog', arrow: true }),
-      row({ icon: 'circle-info', iconBg: '#fbcfe8', iconFg: '#9d174d', title: 'Yakıt Takip',
+      row({ icon: 'circle-info', iconBg: '#fbcfe8', iconFg: '#9d174d', title: 'Oktanote',
             desc: 'Sürüm ' + S.APP_VERSION, badge: 'v' + S.APP_VERSION.split('.').slice(0, 2).join('.'), action: 'legal-about', arrow: true }),
       row({ icon: 'gavel', iconBg: '#ddd6fe', iconFg: '#5b21b6', title: 'Kullanım koşulları (EULA)',
             desc: 'Son kullanıcı lisans sözleşmesi', action: 'legal-eula', arrow: true }),
