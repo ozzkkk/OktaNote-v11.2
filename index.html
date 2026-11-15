@@ -26,6 +26,7 @@
     <script src="./maintenance.js" defer></script>
     <script src="./weather.js" defer></script>
     <script src="./contact.js" defer></script>
+    <script src="./legal.js" defer></script>
     <style>
         /* v10.8: Yakınlaştırma kilidi kaldırıldı (WCAG 1.4.4). iOS Safari, yazı
            boyutu 16px'ten küçük bir alana odaklanınca sayfayı kendi kendine
@@ -200,7 +201,7 @@
         <!-- 2. ZAMAN ÇİZELGESİ / KİLOMETRE GÜNLÜĞÜ GÖRÜNÜMÜ -->
         <section id="view-timeline" class="hidden space-y-3 pt-1">
             <div class="flex items-center justify-between px-1">
-                <h2 class="font-bold text-slate-800 text-base">Kilometre Günlüğü</h2>
+                <h2 class="font-bold text-slate-800 text-base">Dolumlar</h2>
                 <span id="timeline-count" class="text-xs bg-slate-200 text-slate-700 px-2.5 py-0.5 rounded-full font-medium">1 kayıt</span>
             </div>
             <div id="timeline-list" class="space-y-3"></div>
@@ -423,10 +424,10 @@
             </div>
         </section>
 
-        <!-- 5. YOLCULUK KAYDI GÖRÜNÜMÜ -->
+        <!-- 5. GEZİ KAYDI GÖRÜNÜMÜ -->
         <section id="view-trips" class="hidden space-y-3 pt-1">
             <div class="flex items-center justify-between px-1">
-                <h2 class="font-bold text-slate-800 text-base">Yolculuk Kayıtları</h2>
+                <h2 class="font-bold text-slate-800 text-base">Gezi Kayıtları</h2>
                 <button onclick="openTripModal()" class="text-xs bg-slate-800 text-white px-3 py-1.5 rounded-xl font-medium">+ Yeni Gezi</button>
             </div>
             <div id="trips-list" class="space-y-2.5"></div>
@@ -467,7 +468,7 @@
                         <button type="button" id="pwa-update-btn" class="hidden bg-blue-600 text-white px-3 py-1.5 rounded-xl text-[11px] font-semibold">Yeni sürümü uygula</button>
                         <button type="button" id="pwa-check-btn" class="bg-white border border-slate-200 text-slate-700 px-3 py-1.5 rounded-xl text-[11px] font-semibold">Güncellemeleri denetle</button>
                     </div>
-                    <p class="text-[10px] text-slate-400 leading-relaxed">Kayıtlarınız bu cihazda kalır. Çevrimdışıyken dolum, gider, yolculuk ve fotoğraflar çalışır; harita karoları, istasyon araması ve Google Haritalar internet ister.</p>
+                    <p class="text-[10px] text-slate-400 leading-relaxed">Kayıtlarınız bu cihazda kalır. Çevrimdışıyken dolum, gider, gezi ve fotoğraflar çalışır; harita karoları, istasyon araması ve Google Haritalar internet ister.</p>
                 </div>
                 <button onclick="downloadCSVReport()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-semibold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 transition">
                     <i class="fa-solid fa-file-csv"></i>
@@ -582,11 +583,11 @@
             </button>
             <button onclick="switchView('trips'); toggleDrawer(false)" class="w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl hover:bg-slate-50 text-slate-700 font-medium">
                 <i class="fa-solid fa-route w-5 text-center text-slate-500"></i>
-                <span>Yolculuk kaydı</span>
+                <span>Gezi kaydı</span>
             </button>
             <button onclick="switchView('timeline'); toggleDrawer(false)" class="w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl hover:bg-slate-50 text-slate-700 font-medium">
                 <i class="fa-solid fa-list-ul w-5 text-center text-slate-500"></i>
-                <span>Kilometre günlüğü</span>
+                <span>Dolumlar</span>
             </button>
             <button onclick="switchView('stats'); toggleDrawer(false)" class="w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl hover:bg-slate-50 text-slate-700 font-medium">
                 <i class="fa-solid fa-chart-column w-5 text-center text-slate-500"></i>
@@ -1359,7 +1360,7 @@
                 <div class="min-w-0 flex-1 font-bold text-slate-800 text-sm">Kurallar ve Şartlar</div>
                 <button type="button" onclick="YakitContact.closeTerms()" aria-label="Kapat" class="w-8 h-8 rounded-lg hover:bg-slate-100 text-slate-400 flex items-center justify-center shrink-0"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <div id="contact-terms-body" class="px-4 py-3 overflow-y-auto no-scrollbar"></div>
+            <div id="contact-terms-body" data-noi18n class="px-4 py-3 overflow-y-auto no-scrollbar"></div>
             <div class="p-4 pt-2 flex gap-2 shrink-0 border-t border-slate-100">
                 <button type="button" onclick="YakitContact.closeTerms()" class="flex-1 bg-white border border-slate-200 text-slate-700 py-2.5 rounded-xl text-xs font-semibold">Kapat</button>
                 <button type="button" onclick="YakitContact.acceptFromTerms()" class="flex-1 bg-slate-800 text-white py-2.5 rounded-xl text-xs font-semibold">Okudum, kabul ediyorum</button>
@@ -1368,6 +1369,25 @@
     </div>
 
     <!-- v10.9: ÇIKIŞ EKRANI (tarayıcı sekmeyi kapatmaya izin vermezse) -->
+    <!-- v11.0 — BİLGİ / YASAL METİN OKUYUCU -->
+    <div id="legal-modal" style="z-index:88" class="hidden absolute inset-0 bg-slate-900/60 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-md flex flex-col shadow-2xl overflow-hidden" style="max-height:88%">
+            <div class="flex items-center gap-3 px-4 py-3 border-b border-slate-100 shrink-0">
+                <div class="w-9 h-9 rounded-xl bg-violet-100 text-violet-700 flex items-center justify-center shrink-0"><i id="legal-icon" class="fa-solid fa-circle-info"></i></div>
+                <div class="min-w-0 flex-1">
+                    <div id="legal-title" class="font-bold text-slate-800 text-sm truncate">Bilgi</div>
+                    <div id="legal-desc" class="text-[10px] text-slate-400 truncate"></div>
+                </div>
+                <button type="button" onclick="YakitLegal.close()" aria-label="Kapat" class="w-8 h-8 rounded-lg hover:bg-slate-100 text-slate-400 flex items-center justify-center shrink-0"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="legal-body" data-noi18n class="px-4 py-3 overflow-y-auto text-[11px] leading-relaxed text-slate-600"></div>
+            <div class="p-4 pt-2 shrink-0 border-t border-slate-100 flex gap-2">
+                <button type="button" onclick="YakitLegal.copy()" class="flex-1 bg-white border border-slate-200 text-slate-700 py-2 rounded-xl text-[11px] font-semibold">Metni kopyala</button>
+                <button type="button" onclick="YakitLegal.close()" class="flex-1 bg-slate-800 text-white py-2 rounded-xl text-[11px] font-semibold">Kapat</button>
+            </div>
+        </div>
+    </div>
+
     <div id="exit-screen" style="z-index:95;position:fixed" class="hidden absolute inset-0 bg-slate-900 flex flex-col items-center justify-center text-center p-8 gap-4">
         <div class="w-16 h-16 rounded-2xl bg-white/10 text-white flex items-center justify-center"><i class="fa-solid fa-power-off text-2xl"></i></div>
         <div class="text-white font-bold text-lg">Çıkış yapıldı</div>
@@ -2009,7 +2029,7 @@
         return state.vehicles.find(v => v.id === state.activeVehicleId) || state.vehicles[0];
     }
 
-    // Kilometre Günlüğü Kayıt Menüsü İşlemleri
+    // Dolumlar (eski ad: Kilometre Günlüğü) Kayıt Menüsü İşlemleri
     function toggleTimelineMenu(event, id) {
         event.stopPropagation();
         openTimelineMenuId = (openTimelineMenuId === id) ? null : id;

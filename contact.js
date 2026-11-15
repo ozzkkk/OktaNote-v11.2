@@ -1,4 +1,4 @@
-/* Yakıt Takip v10.9 — İletişim formu, kurallar ve şartlar
+/* Yakıt Takip v11.0 — İletişim formu, kurallar ve şartlar
  * Bağımsız modül: window.YakitContact
  *
  * Tasarım (sunucusuz):
@@ -12,8 +12,8 @@
   'use strict';
 
   var EMAIL = 'o.elver@gmail.com';
-  var TERMS_VERSION = '1.0';
-  var TERMS_DATE = '2026-11-13';
+  var TERMS_VERSION = '1.1';
+  var TERMS_DATE = '2026-11-15';
 
   function lang() {
     return (window.YakitI18n && window.YakitI18n.getLang && window.YakitI18n.getLang() === 'en') ? 'en' : 'tr';
@@ -64,10 +64,17 @@
     var head = l === 'en'
       ? '<p class="text-[11px] text-slate-500 mb-3">Version ' + TERMS_VERSION + ' · Effective ' + TERMS_DATE + '</p>'
       : '<p class="text-[11px] text-slate-500 mb-3">Sürüm ' + TERMS_VERSION + ' · Yürürlük tarihi ' + TERMS_DATE.split('-').reverse().join('.') + '</p>';
-    return head + rows.map(function (r, i) {
+    var body = rows.map(function (r, i) {
       return '<div class="mb-3"><div class="text-[12px] font-bold text-slate-800 mb-0.5">' + (i + 1) + '. ' + esc(r[0]) + '</div>' +
         '<div class="text-[11px] text-slate-600 leading-relaxed">' + esc(r[1]) + '</div></div>';
     }).join('');
+    // v11.0: ayrıntılı yasal metinlere bağlantı (Bilgi bölümünde tam metin var)
+    var links = '<div class="mt-1 pt-2 border-t border-slate-100 flex flex-wrap gap-2">' +
+      '<button type="button" onclick="YakitLegal.open(\'eula\')" class="text-[11px] font-semibold text-blue-600 underline">' +
+      (l === 'en' ? 'Full Terms of Use (EULA)' : 'Kullanım Koşulları’nın tamamı (EULA)') + '</button>' +
+      '<button type="button" onclick="YakitLegal.open(\'privacy\')" class="text-[11px] font-semibold text-blue-600 underline">' +
+      (l === 'en' ? 'Privacy Policy' : 'Gizlilik Politikası') + '</button></div>';
+    return head + body + links;
   }
 
   function termsPlain(which) {

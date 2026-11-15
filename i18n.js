@@ -1,4 +1,4 @@
-/* Yakıt Takip v10.9 — İki dil desteği (Türkçe / English)
+/* Yakıt Takip v11.0 — İki dil desteği (Türkçe / English)
  * Bağımsız modül: window.YakitI18n
  *
  * Tasarım: kaynak kod ve veri değerleri Türkçe kalır (kanonik). Bu katman
@@ -49,10 +49,12 @@
     'Bakım / Servis': 'Maintenance / Service', 'Sigorta / Kasko': 'Insurance',
     'Lastik': 'Tires', 'Araç Yıkama': 'Car Wash', 'Otopark / HGS': 'Parking / Tolls',
     'Diğer Maliyet Ekle': 'Add Other Cost', 'Diğer maliyetler': 'Other costs',
-    'Yakıt Dolumları': 'Fuel Fill-ups', 'Yolculuk Kayıtları': 'Trip Records',
-    'Kilometre Günlüğü': 'Odometer Log', 'Kilometre günlüğü': 'Odometer log',
+    'Yakıt Dolumları': 'Fuel Fill-ups', 'Yolculuk Kayıtları': 'Trip Records', 'Gezi Kayıtları': 'Trip Records',
+    // v11.0: ad değişiklikleri (Kilometre günlüğü → Dolumlar, Yolculuk kaydı → Gezi kaydı)
+    'Gezi kaydı': 'Trip log',
+    'Kilometre Günlüğü': 'Fill-ups', 'Kilometre günlüğü': 'Fill-ups',
     'Yolculuk Hesaplayıcı': 'Trip Calculator', 'Yolculuk Maliyeti Hesapla': 'Calculate Trip Cost',
-    'Yolculuk kaydı': 'Trip record', 'Gezi Ekle': 'Add Trip', 'Gezi ekle': 'Add trip',
+    'Yolculuk kaydı': 'Trip log', 'Gezi Ekle': 'Add Trip', 'Gezi ekle': 'Add trip',
     '+ Yeni Gezi': '+ New Trip', 'Dolum Ekle': 'Add Fill-up', 'Dolumu Düzenle': 'Edit Fill-up',
     'Yeni yakıt alımı kaydet': 'Record a new fuel purchase', 'Yeni yakıt dolumu eklendi': 'New fuel fill-up added',
     'Dolum kaydı güncellendi': 'Fill-up record updated', 'Maliyet eklendi': 'Cost added',
@@ -534,6 +536,22 @@
     'Dördüncü geçiş başarısız:': 'Fourth pass failed:',
     'Kontrast ve eğiklik düzeltilerek okunuyor': 'Reading with contrast and skew correction',
     'Beşinci geçiş başarısız:': 'Fifth pass failed:',
+    // v11.0: Bilgi bölümü, yasal metinler ve OCR alternatif okumalar
+    'Bilgi': 'Info', 'Değişiklik Günlüğü': 'Changelog',
+    'Sürümlerde neler değişti': 'What changed in each version',
+    'Sürüm ve geliştirici bilgisi': 'Version and developer information',
+    'Kullanım koşulları (EULA)': 'Terms of Use (EULA)',
+    'Son kullanıcı lisans sözleşmesi': 'End-user licence agreement',
+    'Gizlilik politikası': 'Privacy Policy',
+    'KVKK ve GDPR kapsamında aydınlatma': 'KVKK and GDPR disclosure',
+    'Açık kaynak lisansları': 'Open-source licences',
+    'Üçüncü taraf bileşen bildirimleri': 'Third-party component notices',
+    'Diğer okumalar:': 'Other readings:',
+    'Değer uygulandı — kontrol edin': 'Value applied — please check',
+    'Kopyalanamadı': 'Could not copy',
+    'Yükleniyor…': 'Loading…',
+    'LICENSES.txt yüklenemedi. Uygulama klasöründen açabilirsiniz.':
+      'LICENSES.txt could not be loaded. Open it from the app folder.',
     // v10.9: iletişim, çıkış ve hava durumu şehri
     'İletişim': 'Contact', 'Uygulamadan çıkış': 'Exit app',
     'Çıkış yapıldı': 'Signed out', 'Uygulamaya geri dön': 'Return to the app',

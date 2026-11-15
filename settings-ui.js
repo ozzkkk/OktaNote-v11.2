@@ -1,4 +1,4 @@
-/* Yakıt Takip v10.9 — Ayarlar ekranı (Fuelio tarzı gruplu liste)
+/* Yakıt Takip v11.0 — Ayarlar ekranı (Fuelio tarzı gruplu liste)
  * window.YakitSettingsUI
  */
 (function () {
@@ -131,12 +131,18 @@
             desc: 'Kayıtlar silinir, demo veriler yüklenir', action: 'reset', arrow: true })
     ].join(''));
 
-    html += group('Hakkında', [
-      row({ icon: 'circle-info', iconBg: '#e0e7ff', iconFg: '#4f46e5', title: 'Yakıt Takip', desc: 'Sürüm 10.9.0', badge: 'v10.9' }),
-      row({ icon: 'shield-halved', iconBg: '#dcfce7', iconFg: '#059669', title: 'Gizlilik',
-            desc: 'Veriler cihazınızda kalır. Sunucuya hiçbir şey gönderilmez.' }),
-      row({ icon: 'file-lines', iconBg: '#f1f5f9', iconFg: '#64748b', title: 'Açık kaynak lisansları',
-            desc: 'LICENSES.txt — Tesseract, Leaflet, Inter, Font Awesome', action: 'licenses', arrow: true })
+    // v11.0 — Bilgi bölümü (Fuelio düzeni): günlük, hakkında, EULA, gizlilik, lisanslar
+    html += group('Bilgi', [
+      row({ icon: 'clock-rotate-left', iconBg: '#fbcfe8', iconFg: '#9d174d', title: 'Değişiklik Günlüğü',
+            desc: 'Sürümlerde neler değişti', action: 'legal-changelog', arrow: true }),
+      row({ icon: 'circle-info', iconBg: '#fbcfe8', iconFg: '#9d174d', title: 'Yakıt Takip',
+            desc: 'Sürüm ' + S.APP_VERSION, badge: 'v' + S.APP_VERSION.split('.').slice(0, 2).join('.'), action: 'legal-about', arrow: true }),
+      row({ icon: 'gavel', iconBg: '#ddd6fe', iconFg: '#5b21b6', title: 'Kullanım koşulları (EULA)',
+            desc: 'Son kullanıcı lisans sözleşmesi', action: 'legal-eula', arrow: true }),
+      row({ icon: 'shield-halved', iconBg: '#ddd6fe', iconFg: '#5b21b6', title: 'Gizlilik politikası',
+            desc: 'KVKK ve GDPR kapsamında aydınlatma', action: 'legal-privacy', arrow: true }),
+      row({ icon: 'file-lines', iconBg: '#ddd6fe', iconFg: '#5b21b6', title: 'Açık kaynak lisansları',
+            desc: 'Tesseract, Leaflet, Inter, Font Awesome, Open-Meteo', action: 'legal-licenses', arrow: true })
     ].join(''));
 
     host.innerHTML = html;
@@ -201,8 +207,8 @@
   }
 
   function viewLabel(v) {
-    return { home: 'Ana sayfa', timeline: 'Kilometre günlüğü', stats: 'İstatistikler',
-             vehicles: 'Taşıtlar', trips: 'Yolculuk kaydı', calculator: 'Hesaplayıcı',
+    return { home: 'Ana sayfa', timeline: 'Dolumlar', stats: 'İstatistikler',
+             vehicles: 'Taşıtlar', trips: 'Gezi kaydı', calculator: 'Hesaplayıcı',
              reports: 'Raporlar', maintenance: 'Bakım' }[v] || 'Ana sayfa';
   }
 
@@ -473,6 +479,15 @@
       case 'csv': if (window.downloadCSVReport) window.downloadCSVReport(); break;
       case 'reset': if (window.resetDemoData) window.resetDemoData(); break;
       case 'licenses': window.open('./LICENSES.txt', '_blank'); break;
+      // v11.0 — Bilgi / yasal ekranlar
+      case 'legal-changelog':
+      case 'legal-about':
+      case 'legal-eula':
+      case 'legal-privacy':
+      case 'legal-licenses':
+        if (window.YakitLegal) window.YakitLegal.open(action.replace('legal-', ''));
+        else window.open('./LICENSES.txt', '_blank');
+        break;
     }
   }
 

@@ -1,48 +1,52 @@
-YAKIT TAKİP v10.9 — HAVA DURUMU ŞEHRİ, İLETİŞİM, ÇIKIŞ
-=====================================================
+YAKIT TAKİP v11.0 — BİLGİ BÖLÜMÜ, YASAL METİNLER, FİŞ OKUMA
+==========================================================
 
 BU ZIP NE İŞE YARAR?
-Üç yeni özellik:
-1. Ayarlar'dan hava durumu şehri seçilir; uygulama açılınca ve Dolum formunda
-   o şehrin havası otomatik gelir. 81 il internetsiz listede; "İnternette ara"
-   ile dünyadan herhangi bir yer de seçilebilir.
-2. Menüde "İletişim": ad, soyad, telefon, e-posta, mesaj + şartlar onayı.
-   Gönder, o.elver@gmail.com adresine hazır e-posta açar (sunucu yoktur).
-3. Menünün en altında "Uygulamadan çıkış": kaydeder, OCR'yi durdurur,
-   sekmeyi kapatmayı dener; tarayıcı izin vermezse veda ekranı gösterir.
+1. Ayarlar'ın en altında "BİLGİ" bölümü: Değişiklik Günlüğü, Hakkında,
+   Kullanım koşulları (EULA), Gizlilik politikası, Açık kaynak lisansları.
+   Hepsi uygulamanın içinde okunur, internet gerekmez, "Metni kopyala" vardır.
+2. EULA ve Gizlilik Politikası KVKK + GDPR çerçevesinde yazıldı (TR + EN,
+   18'er madde, sürüm 1.0, yürürlük 15.11.2026). Sorumlu: "Yakıt Takip
+   geliştiricisi", iletişim o.elver@gmail.com.
+3. Fiş okumada "Diğer okumalar": motor bir alan için birden fazla değer
+   okuduysa, doğru olanı tek dokunuşla seçebilirsiniz. Ayrıca miktar × fiyat
+   satırındaki tutar artık satır sonu gürültüsüne rağmen okunuyor.
+   Ölçülen doğruluk 61/72'den 62/72'ye (%86) çıktı; gerileyen alan yok.
+4. Adlar değişti: "Kilometre günlüğü" > DOLUMLAR,
+   "Yolculuk kaydı" > GEZİ KAYDI. Verileriniz ve kayıtlarınız aynen durur.
 
-OCR motoru, fiş okuma mantığı ve yedekleme motoru AYNEN korundu (61/72 aynı).
+OCR motoru ve Türkçe model yeniden İNMEZ (OCR_VERSION 6.0.0 korundu).
 
-ÖNEMLİ: BU SÜRÜMDE 12 DOSYA DEĞİŞTİ
-İki YENİ dosya var (weather.js, contact.js) — bunlar GitHub'da "Add file >
-Upload files" ile eklenir. Diğerleri mevcut dosyaların üzerine yazılır.
+ÖNEMLİ: BU SÜRÜMDE 12 DOSYA DEĞİŞTİ (+2 BELGE)
+Bir YENİ dosya var: legal.js — GitHub'da "Add file > Upload files" ile eklenir.
+Diğerleri mevcut dosyaların üzerine yazılır.
 sw.js'i EN SON yükleyin; yoksa eski önbellek yeni dosyaları göstermeye devam eder.
 
 GÜNCELLEME (mevcut siteniz varsa — önerilen)
 1. ZIP'i telefonda/bilgisayarda açın (klasör yok, dosyalar kökte).
-2. Tarayıcıdan github.com > ozzkkk/yakit deposunu açın (main dalı).
+2. Tarayıcıdan github.com > ozzkkk/yakittakipv.10.3 deposunu açın (main dalı).
 3. Add file > Upload files'a dokunun.
 4. ZIP'ten çıkan şu dosyaları seçip yükleyin:
-   weather.js      (YENİ)
-   contact.js      (YENİ)
+   legal.js        (YENİ — yasal metinler ve Bilgi pencereleri)
    index.html
    settings.js
    settings-ui.js
+   ocr.js
+   contact.js
    i18n.js
    icons.css
    fa-solid-subset.woff2
    tailwind.css
-   LICENSES.txt
-   ocr.js          (yalnızca başlık değişti; yüklemeniz önerilir)
+   weather.js      (yalnızca sürüm başlığı)
    sw.js           (EN SON)
    README.md       (isteğe bağlı)
    KURULUM.txt     (isteğe bağlı)
 5. Commit changes deyin.
-6. https://ozzkkk.github.io/yakit/ adresini bir kez yenileyin.
-   Görünüm eskiyse: sayfayı kapatıp açın veya Ayarlar > Hakkında'dan
-   "Güncellemeyi denetle"ye basın.
+6. https://ozzkkk.github.io/yakittakipv.10.3/ adresini bir kez yenileyin.
+   Görünüm eskiyse: sayfayı kapatıp açın veya menü > Rapor oluştur ekranındaki
+   "Güncellemeleri denetle" düğmesine basın.
 
-TAM PAKET ZIP'i kullanıyorsanız: içindeki 35 dosyanın tamamını yükleyin.
+TAM PAKET ZIP'i kullanıyorsanız: içindeki 36 dosyanın tamamını yükleyin.
 serve.py gerekmez (yalnızca yerel test sunucusu).
 
 VERİLERİM SİLİNİR Mİ?
@@ -51,42 +55,46 @@ Dosya değiştirmek verileri silmez. OCR motoru da yeniden inmez (5,6 MB korunur
 Dil seçiminiz (Türkçe/English) ve tüm ayarlarınız korunur.
 
 İLK KURULUM (siteniz yoksa)
-1. GitHub'da yeni bir depo açın (örn. "yakit"), Public seçin.
-2. Tam paket ZIP'indeki 35 dosyayı köke yükleyin, Commit changes deyin.
+1. GitHub'da yeni bir depo açın (örn. "yakit-takip"), Public seçin.
+2. Tam paket ZIP'indeki 36 dosyayı köke yükleyin, Commit changes deyin.
 3. Settings > Pages > Source: Deploy from a branch > main / (root) > Save.
-4. 1-2 dakika sonra https://KULLANICI.github.io/yakit/ adresi çalışır.
+4. 1-2 dakika sonra https://KULLANICI.github.io/yakit-takip/ adresi çalışır.
 5. Telefonda bu adresi açın; "Ana ekrana ekle" ile uygulama gibi kurabilirsiniz.
 
 KONTROL LİSTESİ
-- Ayarlar > Hakkında: "Sürüm 10.9.0" ve v10.9 yazmalı.
-- Ayarlar'da yeni "HAVA DURUMU" grubu görünmeli (Hava durumu şehri + Otomatik güncelle).
-- "Hava durumu şehri"ne basın: 81 il listelenmeli. "edir" yazın, Edirne kalmalı.
-- Edirne'yi seçin; ana sayfaya dönüp Dolum formunu açın:
-  hava kartında "Edirne · …°C · saat" yazmalı, sıcaklık ve durum dolu gelmeli.
-- Kartın sağ üstünde "Şehir seç", altında şehir etiketi ve "Konumdan Güncelle" olmalı.
-- Menüde Ayarlar'ın altında "İletişim" olmalı.
-- İletişim formu: alanlar boşken "Gönder" soluk/kapalı olmalı.
-  Ad, soyad, e-posta, mesaj yazıp kutuyu işaretleyince "Gönder" aktifleşmeli.
-- "Metni oku" 14 maddelik şartları açmalı; "Okudum, kabul ediyorum" kutuyu işaretlemeli.
-- "Gönder" mail uygulamanızı açmalı; alıcı o.elver@gmail.com olmalı.
-  Açılmazsa "Metni kopyala" ile metni kopyalayıp elle gönderebilirsiniz.
-- Menünün en altında "Uygulamadan çıkış" olmalı. Basınca onay sormalı;
-  onaylayınca ya sekme kapanmalı ya da "Çıkış yapıldı" ekranı gelmeli.
-  "Uygulamaya geri dön" sizi uygulamaya döndürmeli ve kayıtlar yerinde olmalı.
-- Ayarlar > Dil > English: menüde "Contact" ve "Exit app", ayarlarda "Weather city",
-  formda "First name / Last name / Send / Copy text" görmelisiniz.
-- Fiş tarama: eskisi gibi çalışmalı (bu sürümde OCR'ye dokunulmadı).
+- Ayarlar'ın en altında "BİLGİ" grubu görünmeli (eski "Hakkında" kalktı).
+- Bilgi'de 5 satır olmalı: Değişiklik Günlüğü / Yakıt Takip (v11.0 rozeti,
+  "Sürüm 11.0.0") / Kullanım koşulları (EULA) / Gizlilik politikası /
+  Açık kaynak lisansları. Puanlama satırı YOKTUR.
+- Değişiklik Günlüğü: en üstte 11.0.0 olmalı.
+- EULA ve Gizlilik: 18'er madde, başta "Sürüm 1.0 · Yürürlük tarihi 15.11.2026".
+- Açık kaynak lisansları: Tesseract, Leaflet, Inter, Font Awesome, Open-Meteo,
+  Photon bildirimleri gelmeli (internet gerekmez).
+- Her pencerede "Metni kopyala" çalışmalı, "Kapat" / Esc / dışına dokunma kapatmalı.
+- Menüde ve sayfa başlığında "Dolumlar" ve "Gezi kaydı" yazmalı.
+- Menü > İletişim > "Metni oku": şartlar sürümü 1.1 olmalı ve altta
+  "Kullanım koşulları (EULA)" ile "Gizlilik politikası" düğmeleri bulunmalı.
+- Fiş tarama: bir fiş okutun. Bazı alanların altında "Diğer okumalar:" ve
+  sayı çipleri çıkmalı. Çipe dokununca alan o değerle güncellenmeli.
+- Ayarlar > Dil > English: menüde "Fill-ups" ve "Trip log", ayarlarda "Info",
+  "Changelog", "Terms of Use (EULA)", "Privacy Policy" görmelisiniz.
+  EULA/Gizlilik İngilizce açılmalı.
 
 SORUN GİDERME
-- Yeni menü satırları görünmüyor: index.html yüklenmemiş veya önbellek eski.
-  sw.js'i yükleyip sayfayı kapatıp açın.
+- Bilgi satırları görünmüyor: settings-ui.js yüklenmemiş veya önbellek eski.
+- Bilgi satırına basınca hiçbir şey açılmıyor: legal.js yüklenmemiş (YENİ dosya).
+  GitHub'da legal.js'in depo kökünde olduğunu doğrulayın.
+- Açık kaynak lisansları "yüklenemedi" diyor: LICENSES.txt depoda olmalı
+  (v10.9'dan beri var) ve sw.js güncellenmiş olmalı.
 - İkonlar kare/boş görünüyor: icons.css VE fa-solid-subset.woff2 birlikte yüklenmeli.
-- Şehir listesi boş: weather.js yüklenmemiş.
-- İletişim formu açılmıyor: contact.js yüklenmemiş.
-- Hava durumu gelmiyor: internet gerekir; "Otomatik güncelle" açık olmalı ve
-  şehir seçili olmalı. Çevrimdışıysanız son değer önbellekten gösterilir.
-- "Gönder" hiçbir şey açmıyor: cihazda mail uygulaması tanımlı olmayabilir.
-  "Metni kopyala" ile kopyalayıp o.elver@gmail.com adresine elle gönderin.
+- Yeni adlar görünmüyor: index.html + i18n.js yüklenmemiş.
+- Her şey eski görünüyor: sw.js'i yükleyin, sayfayı tamamen kapatıp açın.
+  Gerekirse menü > Rapor oluştur > "Güncellemeleri denetle", sonra
+  "Yeni sürümü uygula" düğmesine basın (veriler silinmez).
 
 DESTEK
 Menü > İletişim veya doğrudan: o.elver@gmail.com
+
+NOT
+EULA ve Gizlilik Politikası bilgilendirme amaçlıdır, hukuki danışmanlık değildir.
+Uygulamayı bir şirket adına yayımlayacaksanız metni bir hukukçuya gözden geçirtin.
