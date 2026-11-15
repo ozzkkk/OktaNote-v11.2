@@ -1,11 +1,11 @@
-/* Yakıt Takip v11.0 — Service Worker
+/* Yakıt Takip v11.1 — Service Worker
  * App shell: sürümlü, kurulumda önceden önbelleğe alınır.
  * Gezinme: network-first, çevrimdışıyken önbellekteki index.html.
  * Aynı origin statik dosyalar: cache-first.
  * Üçüncü taraf API/harita/Google istekleri önbelleğe ALINMAZ (gizlilik + tazelik).
  * Kullanıcı verileri localStorage/IndexedDB'dedir; SW bunlara dokunmaz.
  */
-const CACHE_VERSION = '11.0.0';
+const CACHE_VERSION = '11.1.0';
 const SHELL_CACHE = `yakit-takip-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `yakit-takip-runtime-${CACHE_VERSION}`;
 // OCR motor dosyaları v6'dan beri değişmedi. Önbellek adı sürümden BAĞIMSIZ;
@@ -13,6 +13,9 @@ const RUNTIME_CACHE = `yakit-takip-runtime-${CACHE_VERSION}`;
 const OCR_VERSION = '6.0.0';
 const OCR_CACHE = `yakit-takip-ocr-${OCR_VERSION}`;
 const CACHE_PREFIX = 'yakit-takip-';
+// v11.1: "Paylaş → Yakıt Takip" ile gelen fiş fotoğrafı (yalnızca cihazda, geçici)
+const SHARE_CACHE = 'yakit-takip-share';
+const SHARE_KEY = './__shared_receipt__';
 
 const APP_SHELL = [
   './',
@@ -31,6 +34,9 @@ const APP_SHELL = [
   './weather.js',
   './contact.js',
   './legal.js',
+  './a11y.js',
+  './browse.js',
+  './charts.js',
   './LICENSES.txt',
   './settings.js',
   './i18n.js',
@@ -43,7 +49,9 @@ const APP_SHELL = [
   './icon-192.png',
   './icon-512.png',
   './icon-maskable-512.png',
-  './apple-touch-icon.png'
+  './apple-touch-icon.png',
+  './screenshot-phone.png',
+  './screenshot-desktop.png'
 ];
 
 // OCR varlıkları büyük (~5,6 MB); kurulumda değil, kullanıcı istediğinde önbelleğe alınır.
@@ -134,8 +142,42 @@ async function handleStatic(request) {
   }
 }
 
+// v11.1: Web Share Target — başka uygulamadan paylaşılan fiş fotoğrafını
+// geçici olarak cihaz önbelleğine koyar ve uygulamayı ?shared=1 ile açar.
+// Fotoğraf hiçbir sunucuya gönderilmez; uygulama okuduktan sonra silinir.
+async function handleShareTarget(request) {
+  try {
+    const form = await request.formData();
+    let file = form.get('receipt');
+    if (!file || typeof file.arrayBuffer !== 'function') {
+      const files = form.getAll('receipt');
+      file = files && files.length ? files[0] : null;
+    }
+    if (file && typeof file.arrayBuffer === 'function') {
+      const buf = await file.arrayBuffer();
+      const cache = await caches.open(SHARE_CACHE);
+      await cache.put(SHARE_KEY, new Response(buf, {
+        headers: {
+          'Content-Type': file.type || 'image/jpeg',
+          'X-File-Name': encodeURIComponent(file.name || 'fis.jpg'),
+          'X-Shared-At': String(Date.now())
+        }
+      }));
+    }
+  } catch (e) { /* paylaşım okunamadı: uygulama normal açılır */ }
+  return Response.redirect(new URL('./?shared=1', self.location.href).href, 303);
+}
+
 self.addEventListener('fetch', (event) => {
   const { request } = event;
+  if (request.method === 'POST') {
+    let purl;
+    try { purl = new URL(request.url); } catch (e) { return; }
+    if (purl.origin === self.location.origin && purl.searchParams.get('share') === 'receipt') {
+      event.respondWith(handleShareTarget(request));
+    }
+    return;
+  }
   if (request.method !== 'GET') return;
   if (request.headers.has('range')) return;
 

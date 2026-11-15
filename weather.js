@@ -1,4 +1,4 @@
-/* Yakıt Takip v11.0 — Hava durumu ve şehir seçimi
+/* Yakıt Takip v11.1 — Hava durumu ve şehir seçimi
  * Bağımsız modül: window.YakitWeather
  *
  * Tasarım:

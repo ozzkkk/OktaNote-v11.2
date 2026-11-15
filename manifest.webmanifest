@@ -2,21 +2,118 @@
   "id": "./",
   "name": "Yakıt Takip",
   "short_name": "Yakıt Takip",
-  "description": "Araç yakıt dolumları, tüketim, giderler, yolculuklar ve harita destekli istasyon seçimi için çevrimdışı çalışabilen kişisel takip uygulaması.",
+  "description": "Araç yakıt dolumları, tüketim, giderler, gezi kaydı, bakım hatırlatıcıları ve harita destekli istasyon seçimi için çevrimdışı çalışabilen kişisel takip uygulaması.",
   "lang": "tr",
   "dir": "ltr",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui"],
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
   "orientation": "portrait-primary",
   "background_color": "#f8fafc",
   "theme_color": "#ffffff",
-  "categories": ["travel", "utilities", "productivity"],
+  "categories": [
+    "travel",
+    "utilities",
+    "productivity"
+  ],
   "prefer_related_applications": false,
   "icons": [
-    { "src": "./icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "./icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
-  ]
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dolum ekle",
+      "short_name": "Dolum",
+      "description": "Yeni yakıt dolumu kaydet",
+      "url": "./?action=refuel",
+      "icons": [
+        {
+          "src": "./icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Fiş okut",
+      "short_name": "Fiş",
+      "description": "Fiş fotoğrafından dolum oku",
+      "url": "./?action=ocr",
+      "icons": [
+        {
+          "src": "./icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Gezi ekle",
+      "short_name": "Gezi",
+      "description": "Yeni gezi kaydı ekle",
+      "url": "./?action=trip",
+      "icons": [
+        {
+          "src": "./icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "./screenshot-phone.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Dolumlar, arama ve filtre"
+    },
+    {
+      "src": "./screenshot-desktop.png",
+      "sizes": "1280x900",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "İstatistikler ve grafikler"
+    }
+  ],
+  "share_target": {
+    "action": "./?share=receipt",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "files": [
+        {
+          "name": "receipt",
+          "accept": [
+            "image/png",
+            "image/jpeg",
+            "image/webp",
+            "image/*"
+          ]
+        }
+      ]
+    }
+  }
 }

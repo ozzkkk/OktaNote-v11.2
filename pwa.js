@@ -30,7 +30,7 @@
     el.innerHTML = `
       <i id="pwa-banner-icon" class="fa-solid fa-circle-check text-emerald-600 text-sm shrink-0"></i>
       <span id="pwa-banner-text" class="flex-1 text-[11px] font-semibold text-slate-700 leading-snug"></span>
-      <button type="button" id="pwa-banner-action" class="hidden shrink-0 bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-xl"></button>
+      <button type="button" id="pwa-banner-action" aria-hidden="true" class="hidden shrink-0 bg-slate-800 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-xl"></button>
       <button type="button" id="pwa-banner-dismiss" aria-label="Kapat" class="shrink-0 w-6 h-6 rounded-full hover:bg-slate-100 text-slate-400 flex items-center justify-center">
         <i class="fa-solid fa-xmark text-xs"></i>
       </button>`;
@@ -50,9 +50,12 @@
     const action = $('pwa-banner-action');
     if (actionLabel && onAction) {
       action.textContent = actionLabel;
+      action.setAttribute('aria-label', actionLabel);
+      action.removeAttribute('aria-hidden');
       action.classList.remove('hidden');
       action.onclick = onAction;
     } else {
+      action.setAttribute('aria-hidden', 'true');
       action.classList.add('hidden');
       action.onclick = null;
     }

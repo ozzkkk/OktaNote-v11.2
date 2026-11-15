@@ -1,132 +1,134 @@
-# Yakıt Takip v11.0 — Bilgi bölümü, yasal metinler ve fiş okuma iyileştirmesi
+# Yakıt Takip v11.1 — Cila ve kullanım kolaylığı
 
-Bu sürüm **dört iş** getirir:
+Bu sürüm yeni bir "modül" değil, **var olan uygulamanın eksik kalan 6 tarafını** tamamlar:
 
-1. **Bilgi** bölümü (Değişiklik Günlüğü, Hakkında, EULA, Gizlilik politikası, Açık kaynak lisansları)
-2. **Kullanım Koşulları (EULA)** ve **Gizlilik Politikası** — KVKK + GDPR çerçevesinde, TR + EN
-3. **Fiş okuma**: "Diğer okumalar" + satır sonu gürültü toleransı → doğruluk **61/72 → 62/72 (%86)**
-4. **Ad değişiklikleri**: "Kilometre günlüğü" → **Dolumlar**, "Yolculuk kaydı" → **Gezi kaydı**
+1. **Erişilebilirlik**: Esc, odak yönetimi, ekran okuyucu adları, "İçeriğe geç"
+2. **Dolumlar ve Gezi kaydı'nda arama / filtre / sıralama**
+3. **Sayfalama** (ilk 50 + "Daha fazla yükle") — binlerce kayıtta hızlı açılış
+4. **Çevrimdışı grafikler**: tüketim eğrisi, yakıt fiyatı eğrisi, aylık maliyet
+5. **Bilgi → "Nasıl kullanılır?"** kılavuzu (15 bölüm, TR + EN)
+6. **PWA cilası**: ana ekran kısayolları, kurulum ekran görüntüleri, "Paylaş → Yakıt Takip"
 
-Fotoğraflar cihazdan çıkmaz; kayıtlar yalnızca sizin cihazınızda durur. Sunucu, hesap, abonelik yoktur.
-
----
-
-## 1) Bilgi bölümü (Ayarlar → en altta "Bilgi")
-
-Eski "Hakkında" grubu yerine **Bilgi** grubu geldi. Beş satır:
-
-| Satır | İçerik |
-|---|---|
-| **Değişiklik Günlüğü** | 11.0.0'dan v5–v9'a kadar sürüm sürüm ne değişti (TR/EN) |
-| **Yakıt Takip** · `v11.0` | Sürüm 11.0.0, geliştirici, iletişim, ölçülen OCR doğruluğu, veri yeri |
-| **Kullanım koşulları (EULA)** | 18 maddelik son kullanıcı lisans sözleşmesi |
-| **Gizlilik politikası** | 18 maddelik KVKK + GDPR aydınlatma metni |
-| **Açık kaynak lisansları** | `LICENSES.txt` uygulama içinde okunur (Tesseract, Leaflet, Inter, Font Awesome, Open-Meteo, Photon…) |
-
-Her metin penceresinde **Metni kopyala** ve **Kapat** düğmesi var; `Esc` ve dışına dokunma da kapatır.
-Metinler uygulamanın içindedir, **internet gerekmez** (yalnızca lisans dosyası ilk açılışta
-yerelden okunur ve önbelleğe alınır).
-
-**Bilgi bölümünde puanlama/oylama satırı yoktur** (istek üzerine eklenmedi).
-
-### Yasal metinlerin çerçevesi
-
-- Sorumlu taraf: **"Yakıt Takip geliştiricisi"** (tüzel kişilik adı uydurulmadı), iletişim **o.elver@gmail.com**
-- **KVKK**: m.10 aydınlatma, m.11 ilgili kişi hakları, hukuki sebepler, 30 gün yanıt süresi
-- **GDPR**: m.6 hukuki temel, m.15–22 haklar, m.77 denetim makamına şikâyet, yurt dışı aktarım
-- Açıkça yazılı olanlar: veriler **cihazda** durur, **fotoğraf dışarı çıkmaz**, çerez yok,
-  hesap yok, hangi özellik hangi servise hangi veriyi gönderir (Open-Meteo: şehir koordinatı;
-  Photon: arama metni; harita: karo görselleri)
-- EULA'da: OCR sonuçlarının **tahmin** olduğu, tüketici haklarının saklı olduğu, yedek
-  sorumluluğunun kullanıcıda olduğu, metnin **hukuki danışmanlık olmadığı**
-- Sürüm **1.0**, yürürlük **15.11.2026**. İletişim formundaki "Kurallar ve Şartlar" metni
-  **1.1 / 15.11.2026** oldu ve artık EULA + Gizlilik Politikası'na bağlantı veriyor.
-
-> Bu metinler bilgilendirme amaçlıdır, hukuki danışmanlık değildir. Uygulamayı ticari bir
-> tüzel kişilik adına yayımlayacaksanız bir hukukçuya gözden geçirtin.
+OCR motoru, yedekleme motoru, veri giriş uyarıları ve veri yapısı **aynen korundu**
+(`OCR_VERSION 6.0.0`, ölçülen doğruluk **62/72**). Fotoğraflar cihazdan çıkmaz.
 
 ---
 
-## 2) Fiş okuma (OCR)
+## 1) Erişilebilirlik (yeni `a11y.js`)
 
-### a) "Diğer okumalar" — doğruluğu kullanıcının lehine çeviren yenilik
-
-Motor aynı alan için birden fazla değer okuduğunda artık sessizce birini seçip diğerlerini
-atmıyor. Alan satırının altında **Diğer okumalar:** çipleri çıkıyor; doğru değere **tek
-dokunuşla** geçiliyor (alan anında güncellenir, bildirim gösterilir).
-
-- Litre, birim fiyat, toplam, tarih ve saat için çalışır; en fazla **3** alternatif gösterilir.
-- Alternatifler kaç okuma geçişinde görüldüğüne göre sıralanır.
-- Tek geçişte okunan fişlerde de seçilmeyen ham adaylar gösterilir.
-- Seçilen değer hiçbir zaman alternatif listesinde tekrarlamaz.
-
-### b) Satır sonu gürültü toleransı (ölçülebilir doğruluk artışı)
-
-Türk fişlerinin en güvenilir satırı `miktar LT X birim fiyat  toplam` satırıdır. OCR satırın
-sonuna `—`, `"`, `...` gibi gürültü eklediğinde bu tutar eskiden **hiç aday olmuyordu**.
-
-Artık satır sonundaki gürültü tolere ediliyor, **ama** bulunan tutar aynı satırdaki
-`miktar × birim fiyat` çarpımıyla **%3 içinde** uyuşmak zorunda. Böylece `20 TL` (KDV oranı)
-gibi ilgisiz sayılar toplam adayı olamaz. Miktar ya da fiyat okunamadıysa gürültülü satırdan
-tutar alınmaz (eski katı davranış korunur).
-
-**Sonuç:** W5 fişinde toplam `357,20` yerine doğru olan **352,29** okunuyor.
-
-### c) Denenip reddedilen yaklaşımlar (bilgi için)
-
-- Tam ayrıştırmalı 6. geçiş (PSM 4): temiz POS fişlerinde tutar uydurdu → 60/72.
-- Başlık kırpma + tarih doğrulama: temiz fişlerin tarihini bozdu → 60/72.
-
-İkisi de geri alındı. **Ölçülen doğruluk 62/72 alan (%86)** — 12 fiş × 6 alan, hiçbir alan
-gerilemedi. Kalan hatalar okunaksız fotoğraflarda (W1 yalnızca toplam, U1 tarih/saat).
-
-`OCR_VERSION 6.0.0` korundu: **5,6 MB'lık OCR motoru ve Türkçe modeli yeniden inmez.**
-
----
-
-## 3) Ad değişiklikleri
-
-| Eski ad | Yeni ad | İngilizce |
+| Ölçüm | v11.0 | v11.1 |
 |---|---|---|
-| Kilometre günlüğü | **Dolumlar** | Fill-ups |
-| Yolculuk kaydı | **Gezi kaydı** | Trip log |
+| Erişilebilir adı olmayan form alanı | 24 | **0** |
+| Adı olmayan ikon buton | 18 | **0** |
+| `role="dialog"` + `aria-modal` taşıyan pencere | 0 | **17/17** |
+| Esc ile kapanan pencere | yalnızca EULA | **hepsi** |
+| Pencere açılınca odak | BODY'de kalıyordu | **pencereye geçiyor**, kapanınca geri dönüyor |
+| Tab odağı | dışarı kaçabiliyordu | **pencere içinde döngü** |
+| Bildirim (toast) | sessiz | `role="status"` + `aria-live="polite"` |
+| "İçeriğe geç" bağlantısı | yok | **var** (klavyeyle ilk Tab) |
 
-Menüde, sayfa başlığında, zaman çizelgesinde ve tüm metinlerde değişti. Eski Türkçe
-anahtarlar çeviri sözlüğünde **takma ad** olarak duruyor; eski kayıtlarda görünen metinler
-bozulmaz. Veri yapısı, kimlikler ve URL'ler değişmedi.
+Odak, metin alanına değil pencere kabına verilir; böylece telefonda klavye kendiliğinden açılmaz.
+Ayarlar'daki anahtarlara da ad verildi (`aria-label` = satır başlığı), İngilizceye çevrilir.
+
+## 2) Arama, filtre, sıralama (yeni `browse.js`)
+
+Dolumlar ve Gezi kaydı ekranlarının üstünde bir arama çubuğu var:
+
+- **Arama**: istasyon, adres, not, yakıt türü, tarih, tutar, litre, km (gezilerde başlık, yer, kategori, not).
+  Türkçe harfe duyarsız: `sise`, `SİŞE`, `sise` aynı sonucu verir. Birden çok kelime AND ile aranır.
+- **Filtre paneli** (yanındaki düğme): başlangıç/bitiş tarihi, yakıt türü veya gezi kategorisi.
+- **Sıralama**: tarih, kilometre, tutar, litre, birim fiyat (gezilerde tarih ve mesafe).
+- **Filtreleri temizle** ile hepsi sıfırlanır; sayaç `68 / 137 kayıt` biçimini alır.
+- Filtre sırasında **sıra numarası (#137) ve km farkı bozulmaz**: gerçek komşu kayıttan hesaplanır.
+- Arama kutusuna yazarken odak ve imleç konumu korunur (220 ms gecikmeli arama).
+
+## 3) Sayfalama
+
+Liste ilk **50** kaydı çizer; altta **"Daha fazla yükle (N kayıt kaldı)"** düğmesi çıkar.
+
+| 5.000 dolum | v11.0 | v11.1 |
+|---|---|---|
+| Liste çizimi | 853 ms | **70 ms** |
+| DOM düğümü | 101.215 | **2.469** |
+| İstatistik ekranı | 1.088 ms | **108 ms** |
+
+İstatistikler ve ana sayfa tüm veriyi kullanmaya devam eder; sayfalama yalnızca listeyi etkiler.
+
+## 4) Grafikler (yeni `charts.js`, kütüphane yok)
+
+İstatistikler ekranına üç kart eklendi:
+
+- **Tüketim eğrisi** — tam depo aralıkları, son 30 nokta, ortalama çizgisi kesikli.
+- **Yakıt fiyatı eğrisi** — son 30 dolum, birim fiyat.
+- **Aylık maliyet** — son 12 ay, yakıt + diğer gider yığılmış sütunlar.
+
+Özellikler: tamamen **SVG** (canvas yok, kütüphane yok, ~9 KB), birim ayarlarına uyar
+(L/100km, km/L, MPG; L/galon; para birimi), noktaya dokununca değer + tarih altta yazar,
+klavyeyle ← → Home End gezilir, her grafikte ekran okuyucu için özet `aria-label` vardır.
+Veri yoksa açıklayıcı boş durum gösterilir.
+
+## 5) Bilgi → "Nasıl kullanılır?"
+
+Bilgi bölümü artık **6 satır**. Kılavuz 15 bölüm: başlarken, araç, dolum, fiş okutma,
+diğer okumalar, giderler, gezi, bakım hatırlatıcıları, arama/filtre, grafikler, yedekleme,
+birimler/dil, internet isteyen özellikler, sorun giderme, iletişim.
+Türkçe ve İngilizce, **internet gerektirmez**, "Metni kopyala" ile kopyalanabilir.
+
+## 6) PWA cilası
+
+- **Ana ekran kısayolları** (uygulama simgesine uzun basınca): **Dolum ekle**, **Fiş okut**, **Gezi ekle**
+  (`?action=refuel|ocr|trip` — açılışta ilgili ekran gelir, adres temizlenir).
+- **Kurulum ekran görüntüleri**: `screenshot-phone.png` (390×844), `screenshot-desktop.png` (1280×900).
+- **"Paylaş → Yakıt Takip"**: galeriden bir fiş fotoğrafını paylaşınca uygulama doğrudan fiş okumayı açar.
+  Teknik: `share_target` POST → service worker fotoğrafı **cihazdaki geçici önbelleğe** koyar → uygulama
+  okur ve **hemen siler**. Fotoğraf hiçbir sunucuya gitmez.
+- `meta description` + Open Graph etiketleri; manifest açıklaması güncel adlarla düzeltildi.
 
 ---
 
-## Bu sürümde değişen dosyalar (12 + 2 belge)
+## Bu sürümde değişen dosyalar (17 + 2 belge)
 
 | Dosya | Ne değişti |
 |---|---|
-| `legal.js` | **YENİ** — EULA/Gizlilik (TR+EN, 18'er madde), değişiklik günlüğü, hakkında, lisans okuyucu |
-| `index.html` | `#legal-modal` (z88), `legal.js` bağlantısı, Dolumlar/Gezi kaydı adları |
-| `settings-ui.js` | "Hakkında" → **Bilgi** grubu, 5 satır, sürüm rozeti v11.0 |
-| `settings.js` | `APP_VERSION 11.0.0` |
-| `ocr.js` | "Diğer okumalar" + satır sonu gürültü toleransı (çarpım kapılı) |
-| `contact.js` | Şartlar 1.1 / 15.11.2026, EULA + Gizlilik bağlantıları |
-| `i18n.js` | v11.0 EN karşılıkları (Bilgi, EULA, Gizlilik, Diğer okumalar, Dolumlar, Gezi kaydı) |
-| `icons.css` | 4 yeni ikon (tokmak, terazi, kullanıcı-kalkan, dosya-kalkan) → 101 sınıf |
-| `fa-solid-subset.woff2` | Yeni glifler (96 → 100 glif, 10.024 B) |
-| `tailwind.css` | Yeniden derlendi: 332 → **340 sınıf**, hiçbiri kaybolmadı |
-| `weather.js` | Yalnızca sürüm başlığı |
-| `sw.js` | `CACHE_VERSION 11.0.0`, kabuk listesi 26 → **28 dosya** (**en son yükleyin**) |
+| `a11y.js` | **YENİ** — erişilebilirlik katmanı (rol, ad, odak, Esc, Tab, toast, atlama bağlantısı) |
+| `browse.js` | **YENİ** — arama/filtre/sıralama/sayfalama |
+| `charts.js` | **YENİ** — SVG grafikler |
+| `screenshot-phone.png` | **YENİ** — kurulum ekran görüntüsü |
+| `screenshot-desktop.png` | **YENİ** — kurulum ekran görüntüsü |
+| `index.html` | Yeni bölümler ve betikler, meta etiketleri, kısayol/paylaşım açılışı, alan adları |
+| `sw.js` | `CACHE_VERSION 11.1.0`, kabuk 28 → **33 dosya**, paylaşım hedefi (**en son yükleyin**) |
+| `manifest.webmanifest` | Kısayollar, ekran görüntüleri, `share_target`, açıklama |
+| `legal.js` | "Nasıl kullanılır?" (TR/EN, 15 bölüm) + 11.1.0 günlüğü |
+| `settings-ui.js` | Bilgi'ye kılavuz satırı, anahtarlara `aria-label`, sürüm rozeti v11.1 |
+| `settings.js` | `APP_VERSION 11.1.0` |
+| `i18n.js` | v11.1 EN karşılıkları + 7 yeni desen |
+| `ocr.js` | `consumeShared()` — paylaşılan fişi okur ve geçici kopyayı siler (tanıma mantığı aynı) |
+| `pwa.js` | Bildirim düğmesine ad/aria-hidden |
+| `tailwind.css` | 340 → **347 sınıf** (7 yeni, hiçbiri kaybolmadı) |
+| `contact.js`, `weather.js` | Yalnızca sürüm başlığı |
 | `README.md`, `KURULUM.txt` | Bu belgeler |
+
+`icons.css` ve `fa-solid-subset.woff2` **değişmedi**: gereken ikonlar zaten alt kümede vardı.
+`OCR_VERSION 6.0.0` korundu → **5,6 MB motor yeniden inmez.**
 
 ---
 
 ## Test sonuçları
 
-- **1438 / 1438** test geçti — **33 paket**, 0 hata.
-  - Yeni: `test_v110_bilgi_yasal.js` **76/76** (adlar, Bilgi grubu, 5 pencere, 18'er madde,
-    KVKK/GDPR atıfları, kopyalama, z-sırası, İngilizce metinler, OCR alternatifleri)
-  - Yeni: `test_v110_ocr_aday.js` **31/31** (gürültü toleransı, çarpım kapısı, alternatifler)
-- **OCR doğruluğu: 62/72 (%86)** — v10.9'da 61/72 idi; gerileyen alan yok.
-- Görsel denetim: 390×844 telefon ve 1280×900 masaüstünde **0 taşma**, yatay kaydırma yok,
-  **0 sayfa hatası**.
-- İngilizce taraması: yasal metinlerde Türkçe karakter yok (özel ad `Türkiye` hariç).
+- **1523 / 1523** test geçti — **35 paket**, 0 hata.
+  - Yeni: `test_v111_cila.js` **64/64** (erişilebilirlik, Esc/odak/Tab, arama-filtre-sıralama-sayfalama,
+    grafikler + birim değişimi + boş durum, kılavuz, İngilizce, manifest/meta)
+  - Yeni: `test_v111_pwa_paylas.js` **21/21** (önbellek, 3 kısayol, POST → geçici önbellek → OCR → silme,
+    çevrimdışı açılış)
+- **OCR doğruluğu: 62/72 (%86)** — değişmedi.
+- İngilizce taraması: yeni ekranlarda çevrilmemiş metin ve öznitelik **yok**.
+- Görsel denetim: 390×844 ve 1280×900, taşma yok, sayfa hatası yok.
+
+## Eski depolar için yönlendirme (ayrı paket)
+
+`yakit-eski-depo-yonlendirme.zip` içindeki `index.html` + `sw.js`, `ozzkkk/yakit` ve
+`ozzkkk/yakit-takip` depolarına yüklenir. Eski adres artık "Bu uygulama taşındı" sayfası gösterir ve
+güncel adrese yönlendirir; kapatma service worker'ı eski önbelleği temizler. **Verileri silmez.**
 
 ## Kurulum
 

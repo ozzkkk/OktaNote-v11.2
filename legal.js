@@ -1,4 +1,4 @@
-/* Yakıt Takip v11.0 — Yasal metinler ve bilgi ekranları
+/* Yakıt Takip v11.1 — Yasal metinler ve bilgi ekranları
  * Kullanım Koşulları (EULA), Gizlilik Politikası (KVKK + GDPR),
  * Değişiklik Günlüğü, Hakkında ve Açık Kaynak Lisansları.
  *
@@ -353,6 +353,23 @@
   // DEĞİŞİKLİK GÜNLÜĞÜ
   // ==================================================================
   var CHANGELOG = [
+    { v: '11.1.0', date: '2026-11-16', tr: [
+      'Dolumlar ve Gezi kaydı listelerine arama, tarih aralığı, yakıt türü/kategori filtresi ve sıralama eklendi.',
+      'Listeler artık ilk 50 kaydı gösteriyor; "Daha fazla yükle" ile devamı geliyor. Binlerce kayıtta ekran çok daha hızlı açılıyor.',
+      'İstatistiklere çevrimdışı grafikler eklendi: tüketim eğrisi, yakıt fiyatı eğrisi ve son 12 ayın maliyet sütunları. Noktaya dokununca değeri okunur, klavyeyle de gezilir.',
+      'Bilgi bölümüne "Nasıl kullanılır?" kılavuzu eklendi (15 bölüm, Türkçe ve İngilizce, internet gerektirmez).',
+      'Erişilebilirlik: tüm pencerelere rol ve ad verildi, Esc en üstteki pencereyi kapatıyor, Tab odağı pencere içinde kalıyor, adsız alan ve düğme kalmadı, bildirimler ekran okuyucuya okunuyor, "İçeriğe geç" bağlantısı eklendi.',
+      'PWA: ana ekran kısayolları (Dolum ekle, Fiş okut, Gezi ekle), kurulum ekran görüntüleri ve "Paylaş → Yakıt Takip" ile gelen fiş fotoğrafını doğrudan okuma.',
+      'Sayfa açıklaması ve paylaşım etiketleri eklendi.'
+    ], en: [
+      'Search, date range, fuel type/category filters and sorting added to the Fill-ups and Trip log lists.',
+      'Lists now show the first 50 records with "Load more"; screens open much faster with thousands of records.',
+      'Offline charts added to Statistics: consumption curve, fuel price curve and monthly cost bars for the last 12 months. Tap a point to read its value; keyboard navigation works too.',
+      'A "How to use" guide was added to the Info section (15 sections, Turkish and English, no internet needed).',
+      'Accessibility: every dialog has a role and a name, Esc closes the topmost dialog, Tab keeps focus inside it, no unlabelled fields or buttons remain, notifications are announced to screen readers, and a "Skip to content" link was added.',
+      'PWA: home-screen shortcuts (Add fill-up, Scan receipt, Add trip), install screenshots and reading a receipt photo shared via "Share → Fuel Tracker".',
+      'Page description and social sharing tags added.'
+    ] },
     { v: '11.0.0', date: '2026-11-15', tr: [
       'Bilgi bölümü eklendi: Değişiklik Günlüğü, Hakkında, Kullanım Koşulları (EULA), Gizlilik Politikası ve Açık Kaynak Lisansları artık uygulama içinde okunabiliyor.',
       'Kullanım Koşulları ve Gizlilik Politikası KVKK + GDPR çerçevesinde yazıldı (Türkçe ve İngilizce).',
@@ -435,8 +452,180 @@
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
+  // ==================================================================
+  // NASIL KULLANILIR? (v11.1) — çevrimdışı kullanım kılavuzu
+  // ==================================================================
+  var HELP_TR = [
+    { h: 'Başlarken', p: [
+      'Uygulama hesap istemez; tüm kayıtlar yalnızca bu cihazda durur. Sağ alttaki + düğmesiyle dolum, gider veya gezi ekleyebilirsiniz.',
+      'Telefonda tarayıcının "Ana ekrana ekle" seçeneğiyle uygulama gibi kurabilirsiniz; kurulumdan sonra internetsiz de çalışır.'
+    ] },
+    { h: 'Araç ekleme ve seçme', p: [
+      'Menü → Araçlar bölümünden araç ekleyin: ad, güncel kilometre, tank kapasitesi ve yakıt türü yeterlidir. Simge ve renk seçebilirsiniz.',
+      'Üstteki araç kartına dokunarak aktif aracı değiştirin; tüm ekranlar ve istatistikler seçili araca göre hesaplanır.'
+    ] },
+    { h: 'Dolum ekleme', p: [
+      '+ → Dolum ekle. Tarih, saat, kilometre, litre, birim fiyat ve toplam tutar girin; ikisini girdiğinizde üçüncüsü otomatik hesaplanır.',
+      'Depoyu tam doldurmadıysanız "Depo dolu" anahtarını kapatın. Kısmi dolumlar tüketim hesabında bir sonraki tam doluma kadar biriktirilir.',
+      'İstasyon alanından haritadan veya aramayla istasyon seçebilirsiniz; seçmezseniz elle yazabilirsiniz.'
+    ] },
+    { h: 'Fiş okutma (OCR)', p: [
+      'Dolum formunda fiş düğmesine basın, fotoğrafı çekin veya galeriden seçin. Okuma tamamen cihazda yapılır, fotoğraf hiçbir yere gönderilmez.',
+      'İlk kullanımda Ayarlar → Fiş okuma (OCR) → "OCR dosyalarını indir" ile yaklaşık 5,6 MB motor ve Türkçe model bir kez indirilir; sonra internetsiz çalışır.',
+      'Sonuçlar düzenlenebilir gelir. Yeşil "doğrulandı" etiketi litre × fiyat = toplam tutarlılığını gösterir; sarı alanları kontrol edin.',
+      'Fişi düz bir zemide, iyi ışıkta, tamamı kadraja girecek şekilde çekmek doğruluğu en çok artıran şeydir.'
+    ] },
+    { h: 'Diğer okumalar', p: [
+      'Motor bir alan için birden fazla değer okuduysa alanın altında "Diğer okumalar:" çipleri çıkar. Doğru değere dokununca alan hemen güncellenir.',
+      'Hiçbiri doğru değilse alanı elle yazabilirsiniz; kaydetmeden önce hiçbir şey kayda geçmez.'
+    ] },
+    { h: 'Giderler', p: [
+      '+ → Gider ekle. Bakım/servis, sigorta/kasko, yıkama, otopark/HGS ve lastik kategorilerinden birini seçin, tutar ve tarih girin.',
+      'Giderler maliyet raporlarına ve aylık maliyet grafiğine dahil edilir; yakıt tüketimini etkilemez.'
+    ] },
+    { h: 'Gezi kaydı', p: [
+      '+ → Gezi ekle. Başlangıç ve bitiş için yer adı, tarih/saat ve kilometre girin; mesafe otomatik hesaplanır.',
+      'Yer adını haritadan seçmek için konum düğmesini kullanın. Gezi kaydı yakıt kaydından bağımsızdır; iş/kişisel ayrımı için kategori seçebilirsiniz.'
+    ] },
+    { h: 'Bakım hatırlatıcıları', p: [
+      'Menü → Bakım bölümünden yağ/servis, muayene, sigorta, lastik veya özel bir hatırlatıcı ekleyin.',
+      'Tarih hedefi, kilometre hedefi veya ikisini birlikte verebilirsiniz; tekrar aralığı (km veya ay) girerseniz tamamlandığında bir sonraki hedef otomatik ilerler.',
+      'Geciken ve yaklaşan hatırlatıcılar ana sayfada görünür. İlgili gideri kaydettiğinizde hatırlatıcı kendiliğinden tamamlanabilir.'
+    ] },
+    { h: 'Listelerde arama, filtre ve sıralama', p: [
+      'Dolumlar ve Gezi kaydı ekranlarının üstündeki arama kutusuna istasyon, not, yer veya tarih yazabilirsiniz; arama Türkçe harflere duyarsızdır.',
+      'Yanındaki filtre düğmesiyle tarih aralığı, yakıt türü (veya gezi kategorisi) ve sıralama seçilir. "Filtreleri temizle" hepsini sıfırlar.',
+      'Liste ilk 50 kaydı gösterir; alttaki "Daha fazla yükle" ile devamı gelir. Sayaçta kaç kaydın eşleştiği yazar.'
+    ] },
+    { h: 'İstatistikler ve grafikler', p: [
+      'İstatistikler ekranında tüketim eğrisi (tam depo aralıkları), yakıt fiyatı eğrisi ve son 12 ayın maliyet sütunları bulunur.',
+      'Grafikte bir noktaya dokununca değeri ve tarihi altta yazılır. Klavyeyle ok tuşları, Home ve End tuşları da noktalar arasında gezinir.',
+      'Tüketim, fiyat ve maliyet kartları seçtiğiniz birimlere göre hesaplanır.'
+    ] },
+    { h: 'Yedekleme ve geri yükleme', p: [
+      'Ayarlar → Yedekleme → "Yedek al" tüm kayıtları tek bir JSON dosyasına yazar. "Yedeği paylaş" ile dosyayı buluta, e-postaya veya başka bir cihaza gönderebilirsiniz.',
+      'Ayarlar → Uygulama içi yedekler, her değişiklikten sonra cihaz içinde otomatik yedek tutar; saklanacak sayıyı siz seçersiniz.',
+      'Geri yükleme öncesi özet gösterilir ve onay istenir. Otomatik yedek hatırlatması uzun süre yedek almadıysanız sizi uyarır.',
+      'Veriler tarayıcıda durduğu için tarayıcı verilerini temizlemek kayıtları siler. Düzenli yedek almak en güvenli yoldur.'
+    ] },
+    { h: 'Birimler, dil ve tarih', p: [
+      'Ayarlar → Ana tercihler: mesafe (km/mil), hacim (L/galon), tüketim (L/100km, km/L, MPG), para birimi, tarih biçimi ve haftanın ilk günü.',
+      'Kayıtlar içeride her zaman km ve litre olarak saklanır; birimi değiştirmek geçmişi bozmaz, yalnızca gösterimi değiştirir.',
+      'Dil Türkçe veya İngilizce seçilebilir; yasal metinler ve bu kılavuz da seçilen dilde açılır.'
+    ] },
+    { h: 'İnternet isteyen özellikler', p: [
+      'Hava durumu (Open-Meteo) yalnızca seçilen şehrin koordinatını gönderir. Şehir Ayarlar → Hava durumu bölümünden seçilir; 81 il internetsiz listelenir.',
+      'İstasyon/yer araması (Photon) yalnızca arama kutusuna yazdığınız metni gönderir. Harita karoları görüntülenmek için indirilir.',
+      'Fiş okuma, kayıtlar, istatistikler, grafikler, yedekleme ve bu kılavuz internet gerektirmez.'
+    ] },
+    { h: 'Sorun giderme', p: [
+      'Ekran eski görünüyorsa Menü → Rapor oluştur → "Güncellemeleri denetle", ardından "Yeni sürümü uygula" düğmesine basın; kayıtlarınız silinmez.',
+      'Fiş okuma başlamıyorsa OCR dosyalarının indirilmiş olduğundan emin olun; çevrimdışıysanız bir kez internetle açın.',
+      'Depolama uyarısı alırsanız fotoğraflar yer kaplıyor olabilir: Ayarlar → Veri → Depolama bölümünden kullanımı görün, yedek alıp eski fotoğrafları kaldırın.',
+      'Klavye ile gezinirken Esc en üstteki pencereyi kapatır, Tab odağını pencere içinde tutar; ekran okuyucu için tüm alanlar adlandırılmıştır.'
+    ] },
+    { h: 'İletişim', p: [
+      'Menü → İletişim formundan yazabilirsiniz; form sunucuya değil, kendi e-posta uygulamanıza hazır bir e-posta açar.',
+      'Doğrudan e-posta: ' + EMAIL + '. Kullanım koşulları ve gizlilik politikası yine bu Bilgi bölümündedir.'
+    ] }
+  ];
+
+  var HELP_EN = [
+    { h: 'Getting started', p: [
+      'The app needs no account; every record stays on this device only. Use the + button at the bottom right to add a fill-up, an expense or a trip.',
+      'On a phone you can install it with your browser\'s "Add to home screen"; after that it works offline too.'
+    ] },
+    { h: 'Adding and switching vehicles', p: [
+      'Menu → Vehicles: add a vehicle with a name, current odometer, tank capacity and fuel type. You can pick an icon and a colour.',
+      'Tap the vehicle card at the top to switch the active vehicle; every screen and statistic follows that vehicle.'
+    ] },
+    { h: 'Adding a fill-up', p: [
+      '+ → Add fill-up. Enter date, time, odometer, litres, unit price and total; enter any two of the three numbers and the third is calculated.',
+      'If you did not fill the tank completely, turn off "Full tank". Partial fill-ups are accumulated until the next full tank for consumption figures.',
+      'In the station field you can pick a station from the map or by search, or simply type it yourself.'
+    ] },
+    { h: 'Scanning a receipt (OCR)', p: [
+      'In the fill-up form tap the receipt button, take a photo or pick one from the gallery. Recognition runs entirely on your device; the photo is never uploaded.',
+      'Before the first use, Settings → Receipt scanning (OCR) → "Download OCR files" fetches the engine and Turkish model once (about 5.6 MB); afterwards it works offline.',
+      'Results are editable. A green "verified" badge means litres × price matches the total; check the amber fields.',
+      'A flat surface, good light and the whole receipt inside the frame improve accuracy more than anything else.'
+    ] },
+    { h: 'Other readings', p: [
+      'When the engine reads several values for one field, "Other readings:" chips appear under it. Tap the right one and the field updates immediately.',
+      'If none is correct, type the value yourself; nothing is saved until you confirm.'
+    ] },
+    { h: 'Expenses', p: [
+      '+ → Add expense. Choose service, insurance, washing, parking/tolls or tyres, then enter the amount and date.',
+      'Expenses appear in cost reports and in the monthly cost chart; they do not affect fuel consumption.'
+    ] },
+    { h: 'Trip log', p: [
+      '+ → Add trip. Enter start and end places, date/time and odometer readings; the distance is calculated for you.',
+      'Use the location button to pick a place from the map. Trips are independent of fill-ups; pick a category to separate business and private use.'
+    ] },
+    { h: 'Maintenance reminders', p: [
+      'Menu → Maintenance: add an oil/service, inspection, insurance, tyre or custom reminder.',
+      'Set a due date, a due odometer, or both. With a repeat interval (km or months) the next target moves forward automatically when you complete it.',
+      'Overdue and upcoming reminders show on the home screen, and saving the matching expense can complete a reminder automatically.'
+    ] },
+    { h: 'Search, filter and sort lists', p: [
+      'Use the search box above the Fill-ups and Trip log lists for station, note, place or date; the search ignores Turkish diacritics.',
+      'The filter button next to it opens date range, fuel type (or trip category) and sorting. "Clear filters" resets everything.',
+      'Lists show the first 50 records; "Load more" fetches the rest. The counter shows how many records matched.'
+    ] },
+    { h: 'Statistics and charts', p: [
+      'The Statistics screen has a consumption curve (full-tank intervals), a fuel price curve and monthly cost bars for the last 12 months.',
+      'Tap a point to see its value and date below the chart. Arrow keys, Home and End also move between points.',
+      'Consumption, price and cost figures follow the units you selected.'
+    ] },
+    { h: 'Backup and restore', p: [
+      'Settings → Backup → "Take backup" writes every record into one JSON file. "Share backup" sends it to cloud storage, e-mail or another device.',
+      'Settings → In-app backups keeps automatic snapshots on the device after each change; you choose how many to keep.',
+      'Before a restore you see a summary and must confirm. The backup reminder warns you if you have not taken a backup for a long time.',
+      'Because data lives in the browser, clearing browser data deletes your records. Taking regular backups is the safest habit.'
+    ] },
+    { h: 'Units, language and dates', p: [
+      'Settings → Main preferences: distance (km/miles), volume (L/gallon), consumption (L/100km, km/L, MPG), currency, date format and first day of week.',
+      'Records are always stored in km and litres; changing units never breaks history, it only changes the display.',
+      'The interface is Turkish or English; the legal texts and this guide open in the selected language as well.'
+    ] },
+    { h: 'Features that need internet', p: [
+      'Weather (Open-Meteo) sends only the coordinates of the selected city. Pick the city in Settings → Weather; all 81 Turkish provinces are listed offline.',
+      'Station/place search (Photon) sends only the text you type in the search box. Map tiles are downloaded to be displayed.',
+      'Receipt scanning, records, statistics, charts, backups and this guide need no internet.'
+    ] },
+    { h: 'Troubleshooting', p: [
+      'If the screen looks outdated, use Menu → Create report → "Check for updates", then "Apply new version"; your records are kept.',
+      'If receipt scanning does not start, make sure the OCR files were downloaded; open the app once with internet if you are offline.',
+      'If you see a storage warning, photos may be using the space: check Settings → Data → Storage, take a backup and remove old photos.',
+      'With a keyboard, Esc closes the topmost dialog and Tab keeps focus inside it; every field is labelled for screen readers.'
+    ] },
+    { h: 'Contact', p: [
+      'Use Menu → Contact; the form opens a ready-made message in your own e-mail app instead of sending anything to a server.',
+      'Direct e-mail: ' + EMAIL + '. The terms of use and the privacy policy are in this Info section as well.'
+    ] }
+  ];
+
   function sections(l) { return l === 'en' ? EULA_EN : EULA_TR; }
   function privacySections(l) { return l === 'en' ? PRIVACY_EN : PRIVACY_TR; }
+
+  function helpSections(l) { return l === 'en' ? HELP_EN : HELP_TR; }
+  function helpHtml(l) {
+    var out = '';
+    helpSections(l).forEach(function (s, i) {
+      out += '<h3 class="font-bold text-slate-800 text-[12px] mt-3 mb-1">' + (i + 1) + '. ' + esc(s.h) + '</h3>';
+      s.p.forEach(function (p) { out += '<p class="mb-1.5">' + esc(p) + '</p>'; });
+    });
+    return out;
+  }
+  function helpPlain(l) {
+    var out = [];
+    helpSections(l).forEach(function (s, i) {
+      out.push((i + 1) + '. ' + s.h);
+      s.p.forEach(function (p) { out.push(p); });
+      out.push('');
+    });
+    return out.join('\n');
+  }
 
   function docHtml(list, l) {
     var head = l === 'en'
@@ -534,7 +723,8 @@
       about: { tr: ['Hakkında', 'Sürüm ve geliştirici bilgisi'], en: ['About', 'Version and developer information'], icon: 'circle-info' },
       eula: { tr: ['Kullanım Koşulları (EULA)', 'Son kullanıcı lisans sözleşmesi'], en: ['Terms of Use (EULA)', 'End-user licence agreement'], icon: 'gavel' },
       privacy: { tr: ['Gizlilik Politikası', 'KVKK ve GDPR kapsamında aydınlatma'], en: ['Privacy Policy', 'KVKK and GDPR disclosure'], icon: 'shield-halved' },
-      licenses: { tr: ['Açık Kaynak Lisansları', 'Üçüncü taraf bileşen bildirimleri'], en: ['Open-source licences', 'Third-party component notices'], icon: 'file-lines' }
+      licenses: { tr: ['Açık Kaynak Lisansları', 'Üçüncü taraf bileşen bildirimleri'], en: ['Open-source licences', 'Third-party component notices'], icon: 'file-lines' },
+      help: { tr: ['Nasıl kullanılır?', 'Adım adım kullanım kılavuzu'], en: ['How to use', 'Step-by-step guide'], icon: 'circle-question' }
     };
     var m = T[kind] || T.about;
     return { title: m[l][0], desc: m[l][1], icon: m.icon };
@@ -545,6 +735,7 @@
     if (kind === 'privacy') return docHtml(privacySections(l), l);
     if (kind === 'changelog') return changelogHtml(l);
     if (kind === 'about') return aboutHtml(l);
+    if (kind === 'help') return helpHtml(l);
     return '<p class="text-[11px] text-slate-400">' + (l === 'en' ? 'Loading…' : 'Yükleniyor…') + '</p>';
   }
   function bodyPlain(kind, l) {
@@ -552,6 +743,7 @@
     if (kind === 'privacy') return docPlain(privacySections(l), l);
     if (kind === 'changelog') return changelogPlain(l);
     if (kind === 'about') return aboutPlain(l);
+    if (kind === 'help') return helpPlain(l);
     return licensesCache || '';
   }
 
@@ -634,15 +826,17 @@
   window.YakitLegal = {
     DOC_VERSION: DOC_VERSION, EFFECTIVE: EFFECTIVE, EMAIL: EMAIL, REPO: REPO,
     EULA_TR: EULA_TR, EULA_EN: EULA_EN, PRIVACY_TR: PRIVACY_TR, PRIVACY_EN: PRIVACY_EN,
-    CHANGELOG: CHANGELOG,
+    CHANGELOG: CHANGELOG, HELP_TR: HELP_TR, HELP_EN: HELP_EN,
     eulaHtml: function (l) { return docHtml(sections(lang(l)), lang(l)); },
     privacyHtml: function (l) { return docHtml(privacySections(lang(l)), lang(l)); },
     changelogHtml: function (l) { return changelogHtml(lang(l)); },
     aboutHtml: function (l) { return aboutHtml(lang(l)); },
+    helpHtml: function (l) { return helpHtml(lang(l)); },
     eulaPlain: function (l) { return docPlain(sections(lang(l)), lang(l)); },
     privacyPlain: function (l) { return docPlain(privacySections(lang(l)), lang(l)); },
     changelogPlain: function (l) { return changelogPlain(lang(l)); },
     aboutPlain: function (l) { return aboutPlain(lang(l)); },
+    helpPlain: function (l) { return helpPlain(lang(l)); },
     open: open, close: close, copy: copy, loadLicenses: loadLicenses,
     get current() { return current; }
   };

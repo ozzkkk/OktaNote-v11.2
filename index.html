@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#ffffff">
+    <meta name="description" content="Araç yakıt dolumları, tüketim, giderler, gezi kaydı ve bakım hatırlatıcıları. Fiş fotoğrafından okuma, grafikler ve yedekleme — veriler cihazınızda kalır, çevrimdışı çalışır.">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Yakıt Takip — çevrimdışı yakıt ve gider takibi">
+    <meta property="og:description" content="Dolum, gider, gezi ve bakım kayıtları; fiş okuma (OCR), grafikler, arama/filtre ve yedekleme. Hesap yok, sunucu yok, veriler cihazda.">
+    <meta property="og:image" content="./icon-512.png">
+    <meta name="twitter:card" content="summary">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -27,6 +33,9 @@
     <script src="./weather.js" defer></script>
     <script src="./contact.js" defer></script>
     <script src="./legal.js" defer></script>
+    <script src="./a11y.js" defer></script>
+    <script src="./browse.js" defer></script>
+    <script src="./charts.js" defer></script>
     <style>
         /* v10.8: Yakınlaştırma kilidi kaldırıldı (WCAG 1.4.4). iOS Safari, yazı
            boyutu 16px'ten küçük bir alana odaklanınca sayfayı kendi kendine
@@ -204,7 +213,9 @@
                 <h2 class="font-bold text-slate-800 text-base">Dolumlar</h2>
                 <span id="timeline-count" class="text-xs bg-slate-200 text-slate-700 px-2.5 py-0.5 rounded-full font-medium">1 kayıt</span>
             </div>
+            <div id="timeline-browse"></div>
             <div id="timeline-list" class="space-y-3"></div>
+            <div id="timeline-more"></div>
         </section>
 
         <!-- 3. HESAP MAKİNESİ GÖRÜNÜMÜ -->
@@ -274,7 +285,29 @@
                     </div>
                 </div>
 
-                <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
+                <!-- v11.1: Grafikler -->
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-2">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xs font-bold text-slate-700">Tüketim eğrisi</h3>
+                    <span class="text-[10px] text-slate-400">tam depo aralıkları · son 30</span>
+                </div>
+                <div id="chart-consumption"></div>
+            </div>
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-2">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xs font-bold text-slate-700">Yakıt fiyatı eğrisi</h3>
+                    <span class="text-[10px] text-slate-400">son 30 dolum</span>
+                </div>
+                <div id="chart-price"></div>
+            </div>
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-2">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xs font-bold text-slate-700">Aylık maliyet</h3>
+                    <span class="text-[10px] text-slate-400">son 12 ay</span>
+                </div>
+                <div id="chart-monthly"></div>
+            </div>
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
                     <div id="label-consumption-analysis" class="text-xs font-bold text-slate-700">Yakıt Tüketim Analizi (L/100km)</div>
                     <div class="grid grid-cols-3 gap-2 text-center">
                         <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200/60">
@@ -430,7 +463,9 @@
                 <h2 class="font-bold text-slate-800 text-base">Gezi Kayıtları</h2>
                 <button onclick="openTripModal()" class="text-xs bg-slate-800 text-white px-3 py-1.5 rounded-xl font-medium">+ Yeni Gezi</button>
             </div>
+            <div id="trips-browse"></div>
             <div id="trips-list" class="space-y-2.5"></div>
+            <div id="trips-more"></div>
         </section>
 
         <!-- 6. RAPOR OLUŞTUR GÖRÜNÜMÜ -->
@@ -495,7 +530,7 @@
                     <input type="number" id="new-vehicle-tank" placeholder="Tank (L)" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs">
                 </div>
                 <div>
-                    <select id="new-vehicle-fuel" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs">
+                    <select id="new-vehicle-fuel" aria-label="Yakıt türü" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs">
                         <option value="Benzin">Benzin</option>
                         <option value="Dizel">Dizel</option>
                         <option value="LPG">LPG</option>
@@ -779,7 +814,7 @@
                 </div>
                 <div id="weather-status-text" class="text-[11px] text-slate-500">Şehir seçilmedi. Ayarlar’dan şehir seçin veya “Konumdan Güncelle”yi kullanın.</div>
                 <div class="grid grid-cols-2 gap-2">
-                    <select id="refuel-weather-cond" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700">
+                    <select id="refuel-weather-cond" aria-label="Hava durumu" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700">
                         <option value="Güneşli">☀️ Güneşli</option>
                         <option value="Parçalı Bulutlu">⛅ Parçalı Bulutlu</option>
                         <option value="Bulutlu">☁️ Bulutlu</option>
@@ -787,7 +822,7 @@
                         <option value="Karlı">❄️ Karlı</option>
                     </select>
                     <div class="flex items-center bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
-                        <input type="number" id="refuel-weather-temp" value="18" class="w-full bg-transparent text-xs font-bold text-slate-800 focus:outline-none">
+                        <input type="number" id="refuel-weather-temp" aria-label="Sıcaklık" value="18" class="w-full bg-transparent text-xs font-bold text-slate-800 focus:outline-none">
                         <span class="text-xs font-semibold text-slate-500">°C</span>
                     </div>
                 </div>
@@ -837,7 +872,7 @@
 
         <div id="station-address-pane" class="flex-1 min-h-0 overflow-y-auto p-4 space-y-3">
             <div class="flex gap-2">
-                <input type="text" id="station-search-input" onkeydown="if(event.key==='Enter'){event.preventDefault();searchStations();}" placeholder="İstasyon, adres veya semt ara..." class="flex-1 bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-medium focus:outline-none focus:border-slate-800">
+                <input type="text" id="station-search-input" aria-label="İstasyon, adres veya semt ara" onkeydown="if(event.key==='Enter'){event.preventDefault();searchStations();}" placeholder="İstasyon, adres veya semt ara..." class="flex-1 bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-medium focus:outline-none focus:border-slate-800">
                 <button type="button" id="station-search-btn" onclick="searchStations()" class="bg-slate-800 text-white px-3.5 py-2 rounded-xl text-xs font-semibold shrink-0">Ara</button>
             </div>
             <div class="flex items-center gap-2">
@@ -856,7 +891,7 @@
                 <button type="button" id="station-locate-btn" onclick="locateAndFindNearby()" class="flex-1 bg-slate-800 text-white py-2 rounded-xl text-[11px] font-semibold flex items-center justify-center gap-1.5">
                     <i class="fa-solid fa-location-crosshairs"></i> Konumum ve yakınımdakiler
                 </button>
-                <select id="station-radius" class="bg-white border border-slate-200 rounded-xl px-2 py-2 text-[11px] font-semibold text-slate-700">
+                <select id="station-radius" aria-label="Arama yarıçapı" class="bg-white border border-slate-200 rounded-xl px-2 py-2 text-[11px] font-semibold text-slate-700">
                     <option value="1">1 km</option>
                     <option value="3">3 km</option>
                     <option value="5" selected>5 km</option>
@@ -928,7 +963,7 @@
                             <span>Google Haritalar'dan Seç</span>
                         </button>
                     </div>
-                    <input type="text" id="trip-start" placeholder="Örn: Ev / İstanbul" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-800 focus:outline-none">
+                    <input type="text" id="trip-start" aria-label="Başlangıç yeri" placeholder="Örn: Ev / İstanbul" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-800 focus:outline-none">
                 </div>
                 <div class="grid grid-cols-2 gap-2.5">
                     <div>
@@ -959,7 +994,7 @@
                             <span>Google Haritalar'dan Seç</span>
                         </button>
                     </div>
-                    <input type="text" id="trip-end" placeholder="Örn: Ofis / Ankara" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-800 focus:outline-none">
+                    <input type="text" id="trip-end" aria-label="Bitiş yeri" placeholder="Örn: Ofis / Ankara" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-800 focus:outline-none">
                 </div>
                 <div class="grid grid-cols-2 gap-2.5">
                     <div>
@@ -1000,7 +1035,7 @@
 
         <div class="p-3 bg-white border-b border-slate-100 space-y-2 shrink-0">
             <div class="flex gap-2">
-                <input type="text" id="trip-map-search" onkeydown="if(event.key==='Enter') searchTripMapQuery()" placeholder="Google Haritalar'da yer veya adres ara..." class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-medium focus:outline-none">
+                <input type="text" id="trip-map-search" aria-label="Haritada yer ara" onkeydown="if(event.key==='Enter') searchTripMapQuery()" placeholder="Google Haritalar'da yer veya adres ara..." class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-medium focus:outline-none">
                 <button type="button" onclick="searchTripMapQuery()" class="bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2 rounded-xl text-xs font-semibold transition">Ara</button>
             </div>
             <div class="flex items-center justify-between text-[11px]">
@@ -3584,12 +3619,22 @@
 
         const timelineCountEl = document.getElementById('timeline-count');
         const timelineListEl = document.getElementById('timeline-list');
-        if (timelineCountEl) timelineCountEl.textContent = `${vRefuels.length} kayıt`;
+        // v11.1: arama / filtre / sıralama / sayfalama
+        const sortedAllTimeline = [...vRefuels].sort(compareRefuelsDesc);
+        const prevMapTimeline = new Map(sortedAllTimeline.map((r, i) => [r.id, sortedAllTimeline[i + 1]]));
+        const seqMapTimeline = new Map(sortedAllTimeline.map((r, i) => [r.id, sortedAllTimeline.length - i]));
+        const tlBrowse = window.YakitBrowse
+            ? window.YakitBrowse.applyRefuels(sortedAllTimeline)
+            : { items: sortedAllTimeline, shown: sortedAllTimeline.length, filtered: sortedAllTimeline.length, total: sortedAllTimeline.length, hasMore: false, active: false };
+        if (timelineCountEl) timelineCountEl.textContent = tlBrowse.active ? `${tlBrowse.filtered} / ${vRefuels.length} kayıt` : `${vRefuels.length} kayıt`;
+        if (window.YakitBrowse) {
+            const fuels = [...new Set(vRefuels.map(r => r.fuelType).filter(Boolean))].sort();
+            window.YakitBrowse.render('timeline', tlBrowse, fuels, []);
+        }
         if (timelineListEl) {
-            const sortedRefuelsTimeline = [...vRefuels].sort(compareRefuelsDesc);
-            const tlTotal = sortedRefuelsTimeline.length;
+            const sortedRefuelsTimeline = tlBrowse.items;
             timelineListEl.innerHTML = sortedRefuelsTimeline.map((r, i) => {
-                const prev = sortedRefuelsTimeline[i + 1];
+                const prev = prevMapTimeline.get(r.id);
                 const isFull = r.fullTank !== false;
                 const iv = consByEndId.get(r.id);
                 let consText;
@@ -3613,7 +3658,7 @@
                         <div class="flex justify-between items-start gap-2">
                             <div class="flex items-center gap-2.5 min-w-0">
                                 <div class="w-9 h-9 rounded-full bg-slate-800 text-white flex items-center justify-center font-bold text-xs shrink-0">
-                                    #${tlTotal - i}
+                                    #${seqMapTimeline.get(r.id)}
                                 </div>
                                 <div class="min-w-0">
                                     <div class="font-bold text-slate-800 text-sm truncate">Dolum · ${Number(r.liters || 0).toFixed(2).replace('.', ',')} L</div>
@@ -3653,7 +3698,14 @@
                         </div>
                     </div>
                 `;
-            }).join('') || '<div class="text-center text-xs text-slate-400 py-8">Henüz kayıt bulunmuyor.</div>';
+            }).join('') || (tlBrowse.active
+                ? '<div class="text-center text-xs text-slate-400 py-8">Filtreye uyan kayıt yok. Filtreleri temizleyebilirsiniz.</div>'
+                : '<div class="text-center text-xs text-slate-400 py-8">Henüz kayıt bulunmuyor.</div>');
+        }
+
+        // v11.1: SVG grafikler (çevrimdışı)
+        if (window.YakitCharts) {
+            try { window.YakitCharts.render({ refuels: vRefuels, expenses: vExpenses, intervals: consumptionAnalysis.intervals }); } catch (e) { console.error('Grafik çizilemedi:', e); }
         }
 
         const totalSpent = vRefuels.reduce((s, r) => s + r.totalCost, 0) + vExpenses.reduce((s, e) => s + e.amount, 0);
@@ -3875,9 +3927,17 @@
         }
 
         const tripsListEl = document.getElementById('trips-list');
+        // v11.1: gezi arama / filtre / sıralama / sayfalama
+        const tripBrowse = window.YakitBrowse
+            ? window.YakitBrowse.applyTrips(vTrips)
+            : { items: vTrips, shown: vTrips.length, filtered: vTrips.length, total: vTrips.length, hasMore: false, active: false };
+        if (window.YakitBrowse) {
+            const cats = [...new Set(vTrips.map(t => t.category).filter(Boolean))].sort();
+            window.YakitBrowse.render('trips', tripBrowse, [], cats);
+        }
         if (tripsListEl) {
-            tripsListEl.innerHTML = vTrips.length
-                ? vTrips.map(t => `
+            tripsListEl.innerHTML = tripBrowse.items.length
+                ? tripBrowse.items.map(t => `
                     <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-100 space-y-2">
                         <div class="flex items-start justify-between">
                             <div>
@@ -3895,7 +3955,9 @@
                         </div>
                     </div>
                 `).join('')
-                : '<div class="bg-white rounded-2xl p-6 text-center text-xs text-slate-400 border border-slate-100">Henüz kaydedilmiş bir gezi yok.</div>';
+                : (tripBrowse.active
+                    ? '<div class="bg-white rounded-2xl p-6 text-center text-xs text-slate-400 border border-slate-100">Filtreye uyan gezi yok. Filtreleri temizleyebilirsiniz.</div>'
+                    : '<div class="bg-white rounded-2xl p-6 text-center text-xs text-slate-400 border border-slate-100">Henüz kaydedilmiş bir gezi yok.</div>');
         }
 
         const reportBox = document.getElementById('report-summary-box');
@@ -3977,6 +4039,25 @@
             const pane = document.getElementById('station-map-pane');
             if (stationMap && pane && !pane.classList.contains('hidden')) stationMap.invalidateSize();
         });
+        // v11.1: kısayollar (?action=) ve paylaşılan fiş (?shared=1)
+        setTimeout(() => {
+            try {
+                const params = new URLSearchParams(location.search || '');
+                const action = params.get('action');
+                if (action) {
+                    if (window.history && history.replaceState) history.replaceState(null, '', location.pathname);
+                    if (action === 'refuel') openRefuelModal();
+                    else if (action === 'trip') openTripModal();
+                    else if (action === 'ocr') {
+                        openRefuelModal();
+                        setTimeout(() => { if (window.YakitOCR) window.YakitOCR.openReceiptModal(); }, 250);
+                    }
+                }
+                if (window.YakitOCR && window.YakitOCR.consumeShared) {
+                    window.YakitOCR.consumeShared().catch(() => {});
+                }
+            } catch (e) { console.warn('Kısayol açılamadı:', e); }
+        }, 300);
         // Fotoğraf deposunu başlat: eski base64'leri taşı, yetimleri temizle
         photoInitPromise = (async () => {
             try {

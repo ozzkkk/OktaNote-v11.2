@@ -1,4 +1,4 @@
-/* Yakıt Takip v11.0 — Ayarlar ekranı (Fuelio tarzı gruplu liste)
+/* Yakıt Takip v11.1 — Ayarlar ekranı (Fuelio tarzı gruplu liste)
  * window.YakitSettingsUI
  */
 (function () {
@@ -21,7 +21,7 @@
     var iconFg = opts.iconFg || '#4f46e5';
     var right = '';
     if (opts.toggle) {
-      right = '<button type="button" role="switch" aria-checked="' + (opts.value ? 'true' : 'false') + '" ' +
+      right = '<button type="button" role="switch" aria-label="' + esc(opts.title) + '" aria-checked="' + (opts.value ? 'true' : 'false') + '" ' +
         'data-action="' + esc(opts.action) + '" class="st-toggle shrink-0 w-11 h-6 rounded-full transition relative ' +
         (opts.value ? 'bg-slate-800' : 'bg-slate-300') + '">' +
         '<span class="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all" style="left:' +
@@ -133,6 +133,8 @@
 
     // v11.0 — Bilgi bölümü (Fuelio düzeni): günlük, hakkında, EULA, gizlilik, lisanslar
     html += group('Bilgi', [
+      row({ icon: 'circle-question', iconBg: '#dbeafe', iconFg: '#1d4ed8', title: 'Nasıl kullanılır?',
+            desc: 'Adım adım kullanım kılavuzu', action: 'legal-help', arrow: true }),
       row({ icon: 'clock-rotate-left', iconBg: '#fbcfe8', iconFg: '#9d174d', title: 'Değişiklik Günlüğü',
             desc: 'Sürümlerde neler değişti', action: 'legal-changelog', arrow: true }),
       row({ icon: 'circle-info', iconBg: '#fbcfe8', iconFg: '#9d174d', title: 'Yakıt Takip',
@@ -480,6 +482,7 @@
       case 'reset': if (window.resetDemoData) window.resetDemoData(); break;
       case 'licenses': window.open('./LICENSES.txt', '_blank'); break;
       // v11.0 — Bilgi / yasal ekranlar
+      case 'legal-help':
       case 'legal-changelog':
       case 'legal-about':
       case 'legal-eula':

@@ -1,4 +1,4 @@
-/* Yakıt Takip v11.0 — İki dil desteği (Türkçe / English)
+/* Yakıt Takip v11.1 — İki dil desteği (Türkçe / English)
  * Bağımsız modül: window.YakitI18n
  *
  * Tasarım: kaynak kod ve veri değerleri Türkçe kalır (kanonik). Bu katman
@@ -379,6 +379,14 @@
   // Birleşik (sayı içeren) metinler için desenler
   // ------------------------------------------------------------------
   var PATTERNS = [
+    // v11.1 desenleri
+    [/^(\d+) \/ (\d+) kayıt$/, '$1 / $2 records'],
+    [/^(\d+) kayıttan (\d+) tanesi gösteriliyor$/, 'Showing $2 of $1 records'],
+    [/^(\d+) \/ (\d+) kayıt eşleşti · (\d+) tanesi gösteriliyor$/, '$1 / $2 records matched · showing $3'],
+    [/^Daha fazla yükle \((\d+) kayıt kaldı\)$/, 'Load more ($1 records left)'],
+    [/^En yüksek ay: (.+)$/, 'Highest month: $1'],
+    [/^(.+): (\d+) kayıt, en düşük (.+), en yüksek (.+), ortalama (.+), son (.+)$/, '$1: $2 records, lowest $3, highest $4, average $5, latest $6'],
+    [/^(.+): son (\d+) ay, toplam (.+), en yüksek ay (.+)$/, '$1: last $2 months, total $3, highest month $4'],
     [/^(\d+(?:[.,]\d+)?) kayıt$/, '$1 records'],
     [/^1 kayıt$/, '1 record'],
     [/^(\d+(?:[.,]\d+)?) dolum$/, '$1 fill-ups'],
@@ -536,6 +544,45 @@
     'Dördüncü geçiş başarısız:': 'Fourth pass failed:',
     'Kontrast ve eğiklik düzeltilerek okunuyor': 'Reading with contrast and skew correction',
     'Beşinci geçiş başarısız:': 'Fifth pass failed:',
+    // v11.1: arama/filtre/sıralama, grafikler, kullanım kılavuzu, erişilebilirlik
+    'Nasıl kullanılır?': 'How to use', 'Adım adım kullanım kılavuzu': 'Step-by-step guide',
+    'Tüm kategoriler': 'All categories', 'Tüm yakıtlar': 'All fuels',
+    'Tarih (yeni → eski)': 'Date (new → old)', 'Tarih (eski → yeni)': 'Date (old → new)',
+    'Kilometre (çok → az)': 'Odometer (high → low)', 'Kilometre (az → çok)': 'Odometer (low → high)',
+    'Tutar (çok → az)': 'Amount (high → low)', 'Tutar (az → çok)': 'Amount (low → high)',
+    'Litre (çok → az)': 'Litres (high → low)',
+    'Birim fiyat (ucuz → pahalı)': 'Unit price (cheap → dear)',
+    'Birim fiyat (pahalı → ucuz)': 'Unit price (dear → cheap)',
+    'Mesafe (çok → az)': 'Distance (long → short)', 'Mesafe (az → çok)': 'Distance (short → long)',
+    'Başlangıç tarihi': 'Start date', 'Bitiş tarihi': 'End date',
+    'Filtreleri temizle': 'Clear filters', 'Filtreler ve sıralama': 'Filters and sorting',
+    'Dolumlarda ara': 'Search fill-ups', 'Gezilerde ara': 'Search trips',
+    'Sıralama': 'Sort order', 'Arama yarıçapı': 'Search radius', 'Sıcaklık': 'Temperature',
+    'İstasyon, adres veya semt ara': 'Search station, address or district',
+    'Başlangıç yeri': 'Start place', 'Bitiş yeri': 'End place', 'Haritada yer ara': 'Search a place on the map',
+    'İstasyon, not, tarih ara…': 'Search station, note, date…',
+    'Başlık, yer, not ara…': 'Search title, place, note…',
+    'Filtreye uyan kayıt yok. Filtreleri temizleyebilirsiniz.': 'No records match the filter. You can clear the filters.',
+    'Filtreye uyan gezi yok. Filtreleri temizleyebilirsiniz.': 'No trips match the filter. You can clear the filters.',
+    'Tüketim eğrisi': 'Consumption curve', 'tam depo aralıkları · son 30': 'full-tank intervals · last 30',
+    'Yakıt fiyatı eğrisi': 'Fuel price curve', 'son 30 dolum': 'last 30 fill-ups',
+    'Aylık maliyet': 'Monthly cost', 'son 12 ay': 'last 12 months',
+    'ort.': 'avg.', 'Son:': 'Latest:', 'Yakıt': 'Fuel', 'Diğer': 'Other',
+    'Tüketim grafiği için arka arkaya iki tam depo dolumu gerekir.':
+      'The consumption chart needs two consecutive full-tank fill-ups.',
+    'Fiyat grafiği için en az 2 dolum gerekir.': 'The price chart needs at least 2 fill-ups.',
+    'Son 12 ayda kayıt yok.': 'No records in the last 12 months.',
+    'Grafik için en az 2 kayıt gerekir.': 'The chart needs at least 2 records.',
+    'Grafik için kayıt gerekir.': 'The chart needs records.',
+    'Yakıt tüketimi': 'Fuel consumption', 'Yakıt fiyatı': 'Fuel price',
+    'İçeriğe geç': 'Skip to content', 'Kayıt menüsü': 'Record menu',
+    'Fotoğraf ekle': 'Add photo', 'Haritadan seç': 'Pick from map',
+    'Konumumu kullan': 'Use my location', 'Anahtar': 'Toggle',
+    'Araç simgesi seç': 'Choose vehicle icon', 'Seçim': 'Selection',
+    'İstasyon veya konum seç': 'Choose station or location',
+    'Haritadan konum seç': 'Pick a location on the map',
+    'Bakım hatırlatıcısı': 'Maintenance reminder', 'Aracı düzenle': 'Edit vehicle',
+    'Yeni kayıt': 'New record', 'Fiş oku': 'Scan receipt',
     // v11.0: Bilgi bölümü, yasal metinler ve OCR alternatif okumalar
     'Bilgi': 'Info', 'Değişiklik Günlüğü': 'Changelog',
     'Sürümlerde neler değişti': 'What changed in each version',

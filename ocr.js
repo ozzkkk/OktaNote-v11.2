@@ -1,4 +1,4 @@
-/* Yakıt Takip v11.0 — Gerçek OCR (Tesseract.js, tamamen yerel/çevrimdışı)
+/* Yakıt Takip v11.1 — Gerçek OCR (Tesseract.js, tamamen yerel/çevrimdışı)
  * - Motor ve Türkçe model aynı klasörden yüklenir, CDN yoktur.
  * - Görüntü cihazdan çıkmaz; işleme WebWorker içinde yapılır.
  * - Çıkarılan alanlar: yakıt türü, litre, birim fiyat, toplam tutar, tarih, saat.
@@ -1588,11 +1588,35 @@
     verifyNumericCrops, cropRecognize, groupLines, reconcileNumeric,
     REFUEL_FUEL_TYPES,
     recognizeFile, ensureWorker, terminate, warmUp,
-    openReceiptModal, closeReceiptModal, applyToRefuel, handleFile,
+    openReceiptModal, closeReceiptModal, applyToRefuel, handleFile, consumeShared,
     state, preprocessImage, pickAlternative
   };
 
   // Eski çağrı adları index.html içinde kullanılıyor
   window.openReceiptModal = openReceiptModal;
+  // v11.1: "Paylaş → Yakıt Takip" ile gelen fotoğrafı bir kez oku ve sil.
+  async function consumeShared() {
+    if (!/[?&]shared=1/.test(location.search || '')) return false;
+    try {
+      if (window.history && history.replaceState) {
+        history.replaceState(null, '', location.pathname);
+      }
+      if (!window.caches) return false;
+      const cache = await caches.open('yakit-takip-share');
+      const res = await cache.match('./__shared_receipt__');
+      if (!res) return false;
+      const blob = await res.blob();
+      const name = decodeURIComponent(res.headers.get('X-File-Name') || 'fis.jpg');
+      await cache.delete('./__shared_receipt__');
+      const file = new File([blob], name, { type: blob.type || 'image/jpeg' });
+      openReceiptModal();
+      await handleFile(file);
+      return true;
+    } catch (e) {
+      console.warn('Paylaşılan fiş okunamadı:', e);
+      return false;
+    }
+  }
+
   window.processReceiptScan = function (e) { handleFile(e && e.target && e.target.files && e.target.files[0]); };
 })();

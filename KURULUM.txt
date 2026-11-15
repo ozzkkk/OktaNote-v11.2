@@ -1,25 +1,27 @@
-YAKIT TAKİP v11.0 — BİLGİ BÖLÜMÜ, YASAL METİNLER, FİŞ OKUMA
-==========================================================
+YAKIT TAKİP v11.1 — CİLA VE KULLANIM KOLAYLIĞI
+=============================================
 
 BU ZIP NE İŞE YARAR?
-1. Ayarlar'ın en altında "BİLGİ" bölümü: Değişiklik Günlüğü, Hakkında,
-   Kullanım koşulları (EULA), Gizlilik politikası, Açık kaynak lisansları.
-   Hepsi uygulamanın içinde okunur, internet gerekmez, "Metni kopyala" vardır.
-2. EULA ve Gizlilik Politikası KVKK + GDPR çerçevesinde yazıldı (TR + EN,
-   18'er madde, sürüm 1.0, yürürlük 15.11.2026). Sorumlu: "Yakıt Takip
-   geliştiricisi", iletişim o.elver@gmail.com.
-3. Fiş okumada "Diğer okumalar": motor bir alan için birden fazla değer
-   okuduysa, doğru olanı tek dokunuşla seçebilirsiniz. Ayrıca miktar × fiyat
-   satırındaki tutar artık satır sonu gürültüsüne rağmen okunuyor.
-   Ölçülen doğruluk 61/72'den 62/72'ye (%86) çıktı; gerileyen alan yok.
-4. Adlar değişti: "Kilometre günlüğü" > DOLUMLAR,
-   "Yolculuk kaydı" > GEZİ KAYDI. Verileriniz ve kayıtlarınız aynen durur.
+1. Dolumlar ve Gezi kaydı listelerinde ARTIK ARAMA, FİLTRE ve SIRALAMA var.
+   Listeler ilk 50 kaydı gösterir, "Daha fazla yükle" ile devamı gelir.
+   (5.000 kayıtta liste 853 ms yerine 70 ms'de açılıyor.)
+2. İstatistiklere ÇEVİRİMDIŞI GRAFİKLER eklendi: tüketim eğrisi, yakıt fiyatı
+   eğrisi, son 12 ayın maliyet sütunları. Noktaya dokununca değeri yazar.
+3. Bilgi bölümüne "NASIL KULLANILIR?" kılavuzu eklendi (15 bölüm, TR + EN).
+4. ERİŞİLEBİLİRLİK: Esc en üstteki pencereyi kapatır, Tab odağı pencere içinde
+   kalır, tüm alan ve düğmeler adlandırıldı, bildirimler ekran okuyucuya okunur,
+   "İçeriğe geç" bağlantısı eklendi.
+5. PWA: ana ekran kısayolları (Dolum ekle / Fiş okut / Gezi ekle), kurulum ekran
+   görüntüleri ve "Paylaş → Yakıt Takip" ile gelen fişi doğrudan okuma.
 
-OCR motoru ve Türkçe model yeniden İNMEZ (OCR_VERSION 6.0.0 korundu).
+OCR motoru, yedekleme ve veri yapısı AYNEN korundu (62/72 doğruluk değişmedi).
+OCR_VERSION 6.0.0 korundu: 5,6 MB motor ve Türkçe model yeniden İNMEZ.
 
-ÖNEMLİ: BU SÜRÜMDE 12 DOSYA DEĞİŞTİ (+2 BELGE)
-Bir YENİ dosya var: legal.js — GitHub'da "Add file > Upload files" ile eklenir.
-Diğerleri mevcut dosyaların üzerine yazılır.
+ÖNEMLİ: BU SÜRÜMDE 17 DOSYA DEĞİŞTİ (+2 BELGE = ZIP'TE 19 DOSYA)
+BEŞ YENİ dosya var:
+   a11y.js, browse.js, charts.js, screenshot-phone.png, screenshot-desktop.png
+Bunlar GitHub'da "Add file > Upload files" ile eklenir.
+PNG dosyaları metin olarak yapıştırılamaz; ZIP'ten yükleyin.
 sw.js'i EN SON yükleyin; yoksa eski önbellek yeni dosyaları göstermeye devam eder.
 
 GÜNCELLEME (mevcut siteniz varsa — önerilen)
@@ -27,74 +29,76 @@ GÜNCELLEME (mevcut siteniz varsa — önerilen)
 2. Tarayıcıdan github.com > ozzkkk/yakittakipv.10.3 deposunu açın (main dalı).
 3. Add file > Upload files'a dokunun.
 4. ZIP'ten çıkan şu dosyaları seçip yükleyin:
-   legal.js        (YENİ — yasal metinler ve Bilgi pencereleri)
+   a11y.js                 (YENİ)
+   browse.js               (YENİ)
+   charts.js               (YENİ)
+   screenshot-phone.png    (YENİ)
+   screenshot-desktop.png  (YENİ)
    index.html
+   manifest.webmanifest
+   legal.js
    settings.js
    settings-ui.js
-   ocr.js
-   contact.js
    i18n.js
-   icons.css
-   fa-solid-subset.woff2
+   ocr.js
+   pwa.js
    tailwind.css
-   weather.js      (yalnızca sürüm başlığı)
-   sw.js           (EN SON)
-   README.md       (isteğe bağlı)
-   KURULUM.txt     (isteğe bağlı)
+   contact.js              (yalnızca sürüm başlığı)
+   weather.js              (yalnızca sürüm başlığı)
+   README.md               (isteğe bağlı)
+   KURULUM.txt             (isteğe bağlı)
+   sw.js                   (EN SON)
 5. Commit changes deyin.
 6. https://ozzkkk.github.io/yakittakipv.10.3/ adresini bir kez yenileyin.
    Görünüm eskiyse: sayfayı kapatıp açın veya menü > Rapor oluştur ekranındaki
    "Güncellemeleri denetle" düğmesine basın.
 
-TAM PAKET ZIP'i kullanıyorsanız: içindeki 36 dosyanın tamamını yükleyin.
+TAM PAKET ZIP'i kullanıyorsanız: içindeki 41 dosyanın tamamını yükleyin.
 serve.py gerekmez (yalnızca yerel test sunucusu).
 
 VERİLERİM SİLİNİR Mİ?
 Hayır. Kayıtlarınız tarayıcının localStorage/IndexedDB alanında durur.
-Dosya değiştirmek verileri silmez. OCR motoru da yeniden inmez (5,6 MB korunur).
-Dil seçiminiz (Türkçe/English) ve tüm ayarlarınız korunur.
-
-İLK KURULUM (siteniz yoksa)
-1. GitHub'da yeni bir depo açın (örn. "yakit-takip"), Public seçin.
-2. Tam paket ZIP'indeki 36 dosyayı köke yükleyin, Commit changes deyin.
-3. Settings > Pages > Source: Deploy from a branch > main / (root) > Save.
-4. 1-2 dakika sonra https://KULLANICI.github.io/yakit-takip/ adresi çalışır.
-5. Telefonda bu adresi açın; "Ana ekrana ekle" ile uygulama gibi kurabilirsiniz.
+Dosya değiştirmek verileri silmez. Dil seçiminiz ve tüm ayarlarınız korunur.
 
 KONTROL LİSTESİ
-- Ayarlar'ın en altında "BİLGİ" grubu görünmeli (eski "Hakkında" kalktı).
-- Bilgi'de 5 satır olmalı: Değişiklik Günlüğü / Yakıt Takip (v11.0 rozeti,
-  "Sürüm 11.0.0") / Kullanım koşulları (EULA) / Gizlilik politikası /
-  Açık kaynak lisansları. Puanlama satırı YOKTUR.
-- Değişiklik Günlüğü: en üstte 11.0.0 olmalı.
-- EULA ve Gizlilik: 18'er madde, başta "Sürüm 1.0 · Yürürlük tarihi 15.11.2026".
-- Açık kaynak lisansları: Tesseract, Leaflet, Inter, Font Awesome, Open-Meteo,
-  Photon bildirimleri gelmeli (internet gerekmez).
-- Her pencerede "Metni kopyala" çalışmalı, "Kapat" / Esc / dışına dokunma kapatmalı.
-- Menüde ve sayfa başlığında "Dolumlar" ve "Gezi kaydı" yazmalı.
-- Menü > İletişim > "Metni oku": şartlar sürümü 1.1 olmalı ve altta
-  "Kullanım koşulları (EULA)" ile "Gizlilik politikası" düğmeleri bulunmalı.
-- Fiş tarama: bir fiş okutun. Bazı alanların altında "Diğer okumalar:" ve
-  sayı çipleri çıkmalı. Çipe dokununca alan o değerle güncellenmeli.
-- Ayarlar > Dil > English: menüde "Fill-ups" ve "Trip log", ayarlarda "Info",
-  "Changelog", "Terms of Use (EULA)", "Privacy Policy" görmelisiniz.
-  EULA/Gizlilik İngilizce açılmalı.
+- Dolumlar ekranının üstünde arama kutusu ve yanında filtre düğmesi olmalı.
+  Bir istasyon adı yazın: liste süzülmeli, sayaç "X / Y kayıt" olmalı.
+- Filtre düğmesine basın: tarih aralığı, yakıt türü ve sıralama açılmalı.
+  "Filtreleri temizle" hepsini sıfırlamalı.
+- 50'den çok kaydınız varsa listenin altında "Daha fazla yükle" çıkmalı.
+- Gezi kaydı ekranında da aynı arama/filtre çubuğu olmalı (kategori filtreli).
+- İstatistikler ekranında üç grafik kartı olmalı: Tüketim eğrisi, Yakıt fiyatı
+  eğrisi, Aylık maliyet. Noktaya dokununca altında değer ve tarih yazmalı.
+- Ayarlar > Dil > English: grafikler ve arama çubuğu İngilizce olmalı.
+- Ayarlar'ın en altında BİLGİ bölümü 6 satır olmalı; en üstte "Nasıl kullanılır?".
+  Açınca 15 bölüm gelmeli, "Metni kopyala" çalışmalı.
+- Bilgi > Yakıt Takip: "Sürüm 11.1.0" ve v11.1 rozeti yazmalı.
+- Bir pencere açın (örn. Dolum ekle) ve Esc'ye basın: kapanmalı.
+  Telefonda klavye kendiliğinden AÇILMAMALI (odak pencere kabına verilir).
+- Telefonda uygulamayı ana ekrana eklediyseniz simgeye uzun basın:
+  "Dolum ekle", "Fiş okut", "Gezi ekle" kısayolları görünmeli.
+- Galeriden bir fiş fotoğrafını Paylaş > Yakıt Takip ile gönderin:
+  uygulama fiş okuma ekranında açılmalı (fotoğraf cihazdan çıkmaz).
 
 SORUN GİDERME
-- Bilgi satırları görünmüyor: settings-ui.js yüklenmemiş veya önbellek eski.
-- Bilgi satırına basınca hiçbir şey açılmıyor: legal.js yüklenmemiş (YENİ dosya).
-  GitHub'da legal.js'in depo kökünde olduğunu doğrulayın.
-- Açık kaynak lisansları "yüklenemedi" diyor: LICENSES.txt depoda olmalı
-  (v10.9'dan beri var) ve sw.js güncellenmiş olmalı.
-- İkonlar kare/boş görünüyor: icons.css VE fa-solid-subset.woff2 birlikte yüklenmeli.
-- Yeni adlar görünmüyor: index.html + i18n.js yüklenmemiş.
-- Her şey eski görünüyor: sw.js'i yükleyin, sayfayı tamamen kapatıp açın.
-  Gerekirse menü > Rapor oluştur > "Güncellemeleri denetle", sonra
-  "Yeni sürümü uygula" düğmesine basın (veriler silinmez).
+- Arama çubuğu görünmüyor: browse.js yüklenmemiş veya önbellek eski.
+- Grafikler boş: son 12 ayda kayıt yoksa aylık grafik boş görünür; tüketim
+  grafiği için arka arkaya iki TAM DEPO dolumu gerekir. Bu normaldir.
+- Esc çalışmıyor: a11y.js yüklenmemiş.
+- Kısayollar/paylaşım çalışmıyor: manifest.webmanifest ve sw.js birlikte
+  yüklenmeli; uygulamayı ana ekrana yeniden eklemek gerekebilir.
+- Paylaşılan fiş açılmıyor: fotoğraf biçimi desteklenmiyor olabilir (JPG/PNG/WebP
+  deneyin) veya uygulama ana ekrana kurulu değildir (share_target kurulum ister).
+- Her şey eski görünüyor: sw.js'i yükleyin, sayfayı tamamen kapatıp açın;
+  gerekirse menü > Rapor oluştur > "Güncellemeleri denetle" > "Yeni sürümü uygula".
+
+ESKİ DEPOLAR (ayrı paket)
+yakit-eski-depo-yonlendirme.zip içindeki index.html + sw.js dosyalarını
+ozzkkk/yakit ve ozzkkk/yakit-takip depolarına yükleyin. O adresler artık
+"Bu uygulama taşındı" sayfası gösterip güncel adrese yönlendirir.
+Eski önbellek temizlenir, KULLANICI VERİLERİ SİLİNMEZ.
+Not: kayıtlar adrese bağlı saklanır; eski adreste kayıt varsa önce oradan yedek
+alın (v1'te yedek özelliği yoksa elle not edin), sonra yeni adreste geri yükleyin.
 
 DESTEK
 Menü > İletişim veya doğrudan: o.elver@gmail.com
-
-NOT
-EULA ve Gizlilik Politikası bilgilendirme amaçlıdır, hukuki danışmanlık değildir.
-Uygulamayı bir şirket adına yayımlayacaksanız metni bir hukukçuya gözden geçirtin.

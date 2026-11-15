@@ -1,4 +1,4 @@
-/* Yakıt Takip v11.0 — İletişim formu, kurallar ve şartlar
+/* Yakıt Takip v11.1 — İletişim formu, kurallar ve şartlar
  * Bağımsız modül: window.YakitContact
  *
  * Tasarım (sunucusuz):
