@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#ffffff">
+    <script src="./theme.js"></script>
     <meta name="description" content="Oktanote — araç yakıt dolumları, tüketim, giderler, gezi kaydı ve bakım hatırlatıcıları. Fiş fotoğrafından okuma, grafikler ve yedekleme — veriler cihazınızda kalır, çevrimdışı çalışır.">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Oktanote">
@@ -23,8 +24,9 @@
     <link rel="stylesheet" href="./tailwind.css">
     <link rel="stylesheet" href="./fonts.css">
     <link rel="stylesheet" href="./icons.css">
-    <link rel="stylesheet" href="./leaflet.css">
     <link rel="stylesheet" href="./pwa.css">
+    <link rel="stylesheet" href="./theme.css">
+    <link rel="stylesheet" href="./print.css">
     <script src="./pwa.js" defer></script>
     <script src="./ocr.js" defer></script>
     <script src="./guards.js"></script>
@@ -38,6 +40,14 @@
     <script src="./a11y.js" defer></script>
     <script src="./browse.js" defer></script>
     <script src="./charts.js" defer></script>
+    <script src="./oktanote-ui.js" defer></script>
+    <script src="./map-loader.js" defer></script>
+    <script src="./notify.js" defer></script>
+    <script src="./budget.js" defer></script>
+    <script src="./csv-import.js" defer></script>
+    <script src="./stations.js" defer></script>
+    <script src="./gps.js" defer></script>
+    <script src="./secure-backup.js" defer></script>
     <style>
         /* v10.8: Yakınlaştırma kilidi kaldırıldı (WCAG 1.4.4). iOS Safari, yazı
            boyutu 16px'ten küçük bir alana odaklanınca sayfayı kendi kendine
@@ -99,7 +109,6 @@
             transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
     </style>
-    <script src="./leaflet.js" defer></script>
 </head>
 <body>
 
@@ -143,6 +152,7 @@
         <section id="view-home" class="space-y-4 pt-1">
             <div id="backup-reminder" class="hidden"></div>
             <div id="maintenance-home"></div>
+            <div id="budget-home"></div>
             <!-- Yakıt Bölümü -->
             <div>
                 <div class="flex items-center justify-between mb-2 px-1">
@@ -465,6 +475,7 @@
                 <h2 class="font-bold text-slate-800 text-base">Gezi Kayıtları</h2>
                 <button onclick="openTripModal()" class="text-xs bg-slate-800 text-white px-3 py-1.5 rounded-xl font-medium">+ Yeni Gezi</button>
             </div>
+            <div id="gps-panel" class="space-y-1"></div>
             <div id="trips-browse"></div>
             <div id="trips-list" class="space-y-2.5"></div>
             <div id="trips-more"></div>
@@ -472,11 +483,13 @@
 
         <!-- 6. RAPOR OLUŞTUR GÖRÜNÜMÜ -->
         <section id="view-reports" class="hidden space-y-3 pt-1">
+            <div class="print-only print-title">Oktanote — Araç Raporu</div>
             <h2 class="font-bold text-slate-800 text-base px-1">Rapor Oluştur</h2>
             <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
                 <p class="text-xs text-slate-500 leading-relaxed">Aracınıza ait tüm yakıt dolumlarını, tüketim verilerini ve diğer harcamaları özet rapor olarak görüntüleyebilir veya CSV dosyası olarak indirebilirsiniz.</p>
                 <div id="report-summary-box" class="bg-slate-50 rounded-xl p-3 space-y-1.5 text-xs text-slate-700 border border-slate-200/70"></div>
                 <div id="report-week-box" class="bg-slate-50 rounded-xl p-3 space-y-1.5 text-xs text-slate-700 border border-slate-200/70"></div>
+                <div id="station-compare-box"></div>
                 <div class="flex items-center justify-between bg-slate-50 rounded-xl px-3 py-2.5 border border-slate-200/70">
                     <span class="text-[11px] text-slate-500 flex items-center gap-1.5"><i class="fa-solid fa-database text-slate-400"></i> Fotoğraf Deposu</span>
                     <span id="report-storage-info" class="text-[11px] font-semibold text-slate-700">Hesaplanıyor...</span>
@@ -507,6 +520,10 @@
                     </div>
                     <p class="text-[10px] text-slate-400 leading-relaxed">Kayıtlarınız bu cihazda kalır. Çevrimdışıyken dolum, gider, gezi ve fotoğraflar çalışır; harita karoları, istasyon araması ve Google Haritalar internet ister.</p>
                 </div>
+                <button onclick="window.print()" class="no-print w-full bg-white border border-slate-200 text-slate-700 font-semibold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 transition">
+                    <i class="fa-solid fa-file-lines"></i>
+                    <span>Yazdır / PDF kaydet</span>
+                </button>
                 <button onclick="downloadCSVReport()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-semibold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 transition">
                     <i class="fa-solid fa-file-csv"></i>
                     <span>Raporu İndir (CSV)</span>
@@ -1480,7 +1497,9 @@
         ],
         expenses: [],
         trips: [],
-        reminders: []
+        reminders: [],
+        budgets: {},
+        recurring: []
     };
 
     let state = loadState();
@@ -1506,7 +1525,9 @@
                         refuels: Array.isArray(parsed.refuels) ? parsed.refuels : [],
                         expenses: Array.isArray(parsed.expenses) ? parsed.expenses : [],
                         trips: Array.isArray(parsed.trips) ? parsed.trips : [],
-                        reminders: Array.isArray(parsed.reminders) ? parsed.reminders : []
+                        reminders: Array.isArray(parsed.reminders) ? parsed.reminders : [],
+                        budgets: parsed.budgets && typeof parsed.budgets === 'object' ? parsed.budgets : {},
+                        recurring: Array.isArray(parsed.recurring) ? parsed.recurring : []
                     };
                     merged.vehicles = merged.vehicles.filter(v => v && typeof v.id === 'string' && typeof v.name === 'string')
                         .map(v => ({ ...v, odometer: Number(v.odometer) || 0, tankCapacity: Number(v.tankCapacity) || 50, fuelType: v.fuelType || 'Benzin', icon: typeof v.icon === 'string' ? v.icon : 'car', color: typeof v.color === 'string' ? v.color : 'slate' }));
@@ -1524,6 +1545,8 @@
                             intervalKm: m.intervalKm == null || m.intervalKm === '' ? null : Number(m.intervalKm) || 0,
                             intervalMonths: m.intervalMonths == null || m.intervalMonths === '' ? null : Number(m.intervalMonths) || 0,
                             done: !!m.done, note: typeof m.note === 'string' ? m.note : '' }));
+                    merged.recurring = merged.recurring.filter(r => r && typeof r.id === 'string' && typeof r.vehicleId === 'string')
+                        .map(r => ({ ...r, amount: Number(r.amount) || 0, intervalMonths: Math.max(1, Number(r.intervalMonths) || 1), nextDate: typeof r.nextDate === 'string' ? r.nextDate : '' }));
                     if (!merged.vehicles.some(v => v.id === merged.activeVehicleId)) merged.activeVehicleId = merged.vehicles[0].id;
                     return merged;
                 }
@@ -2712,6 +2735,8 @@
     let stationUserLocation = null, stationPendingPoint = null;
     let stationSearchAbort = null, stationNearbyAbort = null, stationReverseAbort = null;
     let stationTileErrorShown = false;
+    let stationMapLoading = false;
+    const stationMapWaiters = [];
 
     function stationSleep(ms) { return new Promise(r => setTimeout(r, ms)); }
     function isFiniteCoord(lat, lon) {
@@ -2968,7 +2993,26 @@
     function ensureStationMap() {
         const el = document.getElementById('station-leaflet-map');
         if (!el) return null;
-        if (typeof L === 'undefined') { setStationStatus('station-map-status', 'Harita kütüphanesi yüklenemedi. Manuel giriş kullanabilirsiniz.'); return null; }
+        if (typeof L === 'undefined') {
+            if (window.YakitMapLoader && !stationMapLoading) {
+                stationMapLoading = true;
+                setStationStatus('station-map-status', 'Harita yükleniyor...');
+                YakitMapLoader.load().then(() => {
+                    stationMapLoading = false;
+                    const m = ensureStationMap();
+                    const waiters = stationMapWaiters.splice(0);
+                    if (m) waiters.forEach(fn => { try { fn(m); } catch (e) { console.warn('Harita işlemi hatası:', e); } });
+                    else stationMapWaiters.length = 0;
+                }).catch(() => {
+                    stationMapLoading = false;
+                    stationMapWaiters.length = 0;
+                    setStationStatus('station-map-status', 'Harita kütüphanesi yüklenemedi. Manuel giriş kullanabilirsiniz.');
+                });
+            } else if (!window.YakitMapLoader) {
+                setStationStatus('station-map-status', 'Harita kütüphanesi yüklenemedi. Manuel giriş kullanabilirsiniz.');
+            }
+            return null;
+        }
         if (stationMap) { showSelectedStationOnMap(); return stationMap; }
         stationMap = L.map(el, { zoomControl: true, attributionControl: true, worldCopyJump: true }).setView([39.0, 35.0], 6);
         stationTileLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -2987,6 +3031,12 @@
         showSelectedStationOnMap();
         setTimeout(() => stationMap && stationMap.invalidateSize(), 80);
         return stationMap;
+    }
+    function withStationMap(fn) {
+        const map = ensureStationMap();
+        if (map) { fn(map); return true; }
+        if (typeof L === 'undefined' && window.YakitMapLoader) stationMapWaiters.push(fn);
+        return false;
     }
     function invalidateStationMap() { setTimeout(() => { if (stationMap) stationMap.invalidateSize(); }, 80); }
 
@@ -3047,9 +3097,10 @@
             const lat = pos.coords.latitude, lon = pos.coords.longitude;
             if (!isFiniteCoord(lat, lon)) throw new Error('Geçersiz konum');
             stationUserLocation = { lat, lon, accuracy: pos.coords.accuracy };
-            ensureStationMap();
-            if (stationMap) stationMap.setView([lat, lon], 15);
-            addUserLocationMarker(lat, lon, pos.coords.accuracy);
+            withStationMap(map => {
+                map.setView([lat, lon], 15);
+                addUserLocationMarker(lat, lon, pos.coords.accuracy);
+            });
             const radius = Number(document.getElementById('station-radius')?.value) || 5;
             await findNearbyStations(lat, lon, radius, true);
         } catch (err) {
@@ -3061,11 +3112,11 @@
         } finally { if (btn) btn.disabled = false; }
     }
     function findNearbyMapArea() {
-        const map = ensureStationMap();
-        if (!map) return;
-        const c = map.getCenter();
-        const radius = Number(document.getElementById('station-radius')?.value) || 5;
-        findNearbyStations(c.lat, c.lng, radius, false);
+        withStationMap(map => {
+            const c = map.getCenter();
+            const radius = Number(document.getElementById('station-radius')?.value) || 5;
+            findNearbyStations(c.lat, c.lng, radius, false);
+        });
     }
     async function findNearbyStations(lat, lon, radius, fromLocation) {
         if (stationNearbyAbort) stationNearbyAbort.abort();
@@ -3081,8 +3132,7 @@
                 .filter(s => s.isFuel && Number.isFinite(s.distance) && s.distance <= radius + 0.05)
                 .sort((a, b) => a.distance - b.distance);
             stations = dedupeStations(stations).slice(0, 30);
-            const map = ensureStationMap();
-            if (map) {
+            withStationMap(map => {
                 if (stationMarkersLayer) stationMarkersLayer.clearLayers();
                 if (stationRadiusCircle) map.removeLayer(stationRadiusCircle);
                 stationRadiusCircle = L.circle([lat, lon], { radius: radius * 1000, color: '#2563eb', weight: 1, fillColor: '#3b82f6', fillOpacity: 0.05 }).addTo(map);
@@ -3098,7 +3148,7 @@
                     stationMarkersLayer.addLayer(marker);
                 });
                 if (!fromLocation) map.setView([lat, lon], radius <= 3 ? 14 : 13);
-            }
+            });
             renderStationResults(document.getElementById('station-map-list'), stations, 'Bu yarıçapta OSM kayıtlı istasyon bulunamadı. Yarıçapı artırın veya manuel giriş yapın.');
             setStationStatus('station-map-status', stations.length ? `${stations.length} istasyon bulundu · Photon/OpenStreetMap` : 'Bu yarıçapta istasyon bulunamadı. Yarıçapı artırın veya manuel giriş yapın.');
         } catch (err) {
@@ -3723,6 +3773,9 @@
         if (window.YakitCharts) {
             try { window.YakitCharts.render({ refuels: vRefuels, expenses: vExpenses, intervals: consumptionAnalysis.intervals }); } catch (e) { console.error('Grafik çizilemedi:', e); }
         }
+        // v11.4: bütçe + istasyon karşılaştırma
+        if (window.YakitBudget) { try { YakitBudget.renderHome(); } catch (e) {} }
+        if (window.YakitStations) { try { YakitStations.renderReport(); } catch (e) {} }
 
         const totalSpent = vRefuels.reduce((s, r) => s + r.totalCost, 0) + vExpenses.reduce((s, e) => s + e.amount, 0);
         const totalLiters = vRefuels.reduce((s, r) => s + r.liters, 0);

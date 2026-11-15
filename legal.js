@@ -1,4 +1,4 @@
-/* Oktanote v11.3 — Yasal metinler ve bilgi ekranları
+/* Oktanote v11.4 — Yasal metinler ve bilgi ekranları
  * Kullanım Koşulları (EULA), Gizlilik Politikası (KVKK + GDPR),
  * Değişiklik Günlüğü, Hakkında ve Açık Kaynak Lisansları.
  *
@@ -212,7 +212,7 @@
       'Fotoğraflarınız hiçbir sunucuya, bulut servisine veya yapay zekâ hizmetine GÖNDERİLMEZ. İnternet bağlantısı kesikken de fiş tarayabilirsiniz.'
     ] },
     { h: 'Konum bilgisi', p: [
-      'Konum izni yalnızca "Konumum" veya "Konumdan Güncelle" düğmesine bastığınızda istenir. Alınan koordinat yalnızca o işlem için kullanılır, kayıtlarınıza yazılmaz ve Geliştiriciye gönderilmez.',
+      'Konum izni yalnızca "Konumum", "Konumdan Güncelle" veya "GPS ile gezi başlat" düğmesine bastığınızda istenir. Alınan koordinat yalnızca o işlem için kullanılır; GPS gezisinde mesafe ve uç noktalar kayda yazılabilir, ancak Geliştiriciye gönderilmez.',
       'Ayarlar\'dan seçtiğiniz hava durumu şehri ve koordinatı cihazınızda saklanır ve hava durumu isteğinde kullanılır.'
     ] },
     { h: 'İnternete giden istekler', p: [
@@ -293,7 +293,7 @@
       'Your photos are NEVER SENT to any server, cloud service or AI service. You can scan receipts with the internet disconnected.'
     ] },
     { h: 'Location', p: [
-      'Location permission is requested only when you press "My location" or "Update from location". The coordinates are used for that action only, are not written into your records and are not sent to the Developer.',
+      'Location permission is requested only when you press "My location", "Update from location" or "Start a GPS trip". The coordinates are used for that action only; during a GPS trip the distance and endpoints may be written to the record, but nothing is sent to the Developer.',
       'The weather city and coordinates you pick in Settings are stored on your device and used in the weather request.'
     ] },
     { h: 'Requests that leave the device', p: [
@@ -353,6 +353,23 @@
   // DEĞİŞİKLİK GÜNLÜĞÜ
   // ==================================================================
   var CHANGELOG = [
+    { v: '11.4.0', date: '2026-11-13', tr: [
+      'Karanlık mod: Açık / Koyu / Sistem tema seçeneği eklendi.',
+      'CSV içe aktarma: dolum ve giderler başka uygulamaların CSV dosyalarından önizlemeli olarak alınabilir.',
+      'Aylık yakıt bütçesi ve tekrarlayan giderler: bütçe ilerlemesi ana sayfada; zamanı gelen giderler otomatik eklenir.',
+      'Yazdır / PDF raporu ve istasyon fiyat karşılaştırması eklendi.',
+      'GPS ile gezi takibi ve yerel bildirimler (bakım, bütçe, yedek) eklendi.',
+      'Şifreli yedek (AES-GCM + PBKDF2), Leaflet tembel yükleme ve GitHub Actions CI eklendi.',
+      'Marka/hukuk ön araştırma raporu ve kontrol listesi docs olarak eklendi.'
+    ], en: [
+      'Dark mode: Light / Dark / System theme option added.',
+      'CSV import: fill-ups and expenses can be imported from other apps with a preview.',
+      'Monthly fuel budget and recurring expenses: budget progress on Home; due expenses are added automatically.',
+      'Print / PDF report and station price comparison added.',
+      'GPS trip tracking and local notifications (maintenance, budget, backup) added.',
+      'Encrypted backup (AES-GCM + PBKDF2), lazy Leaflet loading and GitHub Actions CI added.',
+      'Trademark/legal preliminary research report and checklist added as docs.'
+    ] },
     { v: '11.3.0', date: '2026-11-13', tr: [
       'Uygulama adı Oktanote oldu. Başlık, ana ekran/PWA adı, manifest, hakkında ve yasal metinler yeni adla güncellendi.',
       'Yedek paylaşımı ve yeni yedek dosyası adı Oktanote olarak değişti; eski yedekler aynen içe aktarılabilir.',
@@ -480,6 +497,7 @@
   var HELP_TR = [
     { h: 'Başlarken', p: [
       'Uygulama hesap istemez; tüm kayıtlar yalnızca bu cihazda durur. Sağ alttaki + düğmesiyle dolum, gider veya gezi ekleyebilirsiniz.',
+      'Ayarlar → Veri → CSV içe aktar ile başka uygulamaların CSV dosyalarından dolum/gider alabilirsiniz.',
       'Telefonda tarayıcının "Ana ekrana ekle" seçeneğiyle uygulama gibi kurabilirsiniz; kurulumdan sonra internetsiz de çalışır.'
     ] },
     { h: 'Araç ekleme ve seçme', p: [
@@ -503,11 +521,13 @@
     ] },
     { h: 'Giderler', p: [
       '+ → Gider ekle. Bakım/servis, sigorta/kasko, yıkama, otopark/HGS ve lastik kategorilerinden birini seçin, tutar ve tarih girin.',
-      'Giderler maliyet raporlarına ve aylık maliyet grafiğine dahil edilir; yakıt tüketimini etkilemez.'
+      'Giderler maliyet raporlarına ve aylık maliyet grafiğine dahil edilir; yakıt tüketimini etkilemez.',
+      'Ayarlar → Veri bölümünden aylık yakıt bütçesi ve tekrarlayan giderler yönetilir; zamanı gelen giderler otomatik eklenir.'
     ] },
     { h: 'Gezi kaydı', p: [
       '+ → Gezi ekle. Başlangıç ve bitiş için yer adı, tarih/saat ve kilometre girin; mesafe otomatik hesaplanır.',
-      'Yer adını haritadan seçmek için konum düğmesini kullanın. Gezi kaydı yakıt kaydından bağımsızdır; iş/kişisel ayrımı için kategori seçebilirsiniz.'
+      'Yer adını haritadan seçmek için konum düğmesini kullanın. Gezi kaydı yakıt kaydından bağımsızdır; iş/kişisel ayrımı için kategori seçebilirsiniz.',
+      'Gezi kayıtları ekranında "GPS ile gezi başlat" ile konum tabanlı mesafe ölçebilirsiniz; ekran açıkken çalışır.'
     ] },
     { h: 'Bakım hatırlatıcıları', p: [
       'Menü → Bakım bölümünden yağ/servis, muayene, sigorta, lastik veya özel bir hatırlatıcı ekleyin.',
@@ -522,18 +542,21 @@
     { h: 'İstatistikler ve grafikler', p: [
       'İstatistikler ekranında tüketim eğrisi (tam depo aralıkları), yakıt fiyatı eğrisi ve son 12 ayın maliyet sütunları bulunur.',
       'Grafikte bir noktaya dokununca değeri ve tarihi altta yazılır. Klavyeyle ok tuşları, Home ve End tuşları da noktalar arasında gezinir.',
-      'Tüketim, fiyat ve maliyet kartları seçtiğiniz birimlere göre hesaplanır.'
+      'Tüketim, fiyat ve maliyet kartları seçtiğiniz birimlere göre hesaplanır.',
+      'Rapor oluştur ekranından yazdırabilir/PDF alabilir ve istasyon fiyat karşılaştırmasını görebilirsiniz.'
     ] },
     { h: 'Yedekleme ve geri yükleme', p: [
       'Ayarlar → Yedekleme → "Yedek al" tüm kayıtları tek bir JSON dosyasına yazar. "Yedeği paylaş" ile dosyayı buluta, e-postaya veya başka bir cihaza gönderebilirsiniz.',
       'Ayarlar → Uygulama içi yedekler, her değişiklikten sonra cihaz içinde otomatik yedek tutar; saklanacak sayıyı siz seçersiniz.',
       'Geri yükleme öncesi özet gösterilir ve onay istenir. Otomatik yedek hatırlatması uzun süre yedek almadıysanız sizi uyarır.',
-      'Veriler tarayıcıda durduğu için tarayıcı verilerini temizlemek kayıtları siler. Düzenli yedek almak en güvenli yoldur.'
+      'Veriler tarayıcıda durduğu için tarayıcı verilerini temizlemek kayıtları siler. Düzenli yedek almak en güvenli yoldur.',
+      'İsterseniz "Şifreli yedek al" ile dosyayı parola ile şifreleyebilirsiniz; geri yüklemede parola gerekir.'
     ] },
     { h: 'Birimler, dil ve tarih', p: [
       'Ayarlar → Ana tercihler: mesafe (km/mil), hacim (L/galon), tüketim (L/100km, km/L, MPG), para birimi, tarih biçimi ve haftanın ilk günü.',
       'Kayıtlar içeride her zaman km ve litre olarak saklanır; birimi değiştirmek geçmişi bozmaz, yalnızca gösterimi değiştirir.',
-      'Dil Türkçe veya İngilizce seçilebilir; yasal metinler ve bu kılavuz da seçilen dilde açılır.'
+      'Dil Türkçe veya İngilizce seçilebilir; yasal metinler ve bu kılavuz da seçilen dilde açılır.',
+      'Tema (Açık/Koyu/Sistem) ve yerel bildirimler Ana tercihler’dedir.'
     ] },
     { h: 'İnternet isteyen özellikler', p: [
       'Hava durumu (Open-Meteo) yalnızca seçilen şehrin koordinatını gönderir. Şehir Ayarlar → Hava durumu bölümünden seçilir; 81 il internetsiz listelenir.',
@@ -555,7 +578,8 @@
   var HELP_EN = [
     { h: 'Getting started', p: [
       'The app needs no account; every record stays on this device only. Use the + button at the bottom right to add a fill-up, an expense or a trip.',
-      'On a phone you can install it with your browser\'s "Add to home screen"; after that it works offline too.'
+      'On a phone you can install it with your browser\'s "Add to home screen"; after that it works offline too.',
+      'Settings → Data → Import CSV lets you bring fill-ups/expenses from other apps’ CSV files.',
     ] },
     { h: 'Adding and switching vehicles', p: [
       'Menu → Vehicles: add a vehicle with a name, current odometer, tank capacity and fuel type. You can pick an icon and a colour.',
@@ -578,11 +602,13 @@
     ] },
     { h: 'Expenses', p: [
       '+ → Add expense. Choose service, insurance, washing, parking/tolls or tyres, then enter the amount and date.',
-      'Expenses appear in cost reports and in the monthly cost chart; they do not affect fuel consumption.'
+      'Expenses appear in cost reports and in the monthly cost chart; they do not affect fuel consumption.',
+      'Settings → Data manages the monthly fuel budget and recurring expenses; due expenses are added automatically.'
     ] },
     { h: 'Trip log', p: [
       '+ → Add trip. Enter start and end places, date/time and odometer readings; the distance is calculated for you.',
-      'Use the location button to pick a place from the map. Trips are independent of fill-ups; pick a category to separate business and private use.'
+      'Use the location button to pick a place from the map. Trips are independent of fill-ups; pick a category to separate business and private use.',
+      'On the Trip log screen, "Start a GPS trip" measures distance from location while the screen is on.'
     ] },
     { h: 'Maintenance reminders', p: [
       'Menu → Maintenance: add an oil/service, inspection, insurance, tyre or custom reminder.',
@@ -597,18 +623,21 @@
     { h: 'Statistics and charts', p: [
       'The Statistics screen has a consumption curve (full-tank intervals), a fuel price curve and monthly cost bars for the last 12 months.',
       'Tap a point to see its value and date below the chart. Arrow keys, Home and End also move between points.',
-      'Consumption, price and cost figures follow the units you selected.'
+      'Consumption, price and cost figures follow the units you selected.',
+      'From Create report you can print/save as PDF and see the station price comparison.'
     ] },
     { h: 'Backup and restore', p: [
       'Settings → Backup → "Take backup" writes every record into one JSON file. "Share backup" sends it to cloud storage, e-mail or another device.',
       'Settings → In-app backups keeps automatic snapshots on the device after each change; you choose how many to keep.',
       'Before a restore you see a summary and must confirm. The backup reminder warns you if you have not taken a backup for a long time.',
-      'Because data lives in the browser, clearing browser data deletes your records. Taking regular backups is the safest habit.'
+      'Because data lives in the browser, clearing browser data deletes your records. Taking regular backups is the safest habit.',
+      'Optionally use "Take an encrypted backup" to protect the file with a password; restoring requires that password.'
     ] },
     { h: 'Units, language and dates', p: [
       'Settings → Main preferences: distance (km/miles), volume (L/gallon), consumption (L/100km, km/L, MPG), currency, date format and first day of week.',
       'Records are always stored in km and litres; changing units never breaks history, it only changes the display.',
-      'The interface is Turkish or English; the legal texts and this guide open in the selected language as well.'
+      'The interface is Turkish or English; the legal texts and this guide open in the selected language as well.',
+      'Theme (Light/Dark/System) and local notifications are in Main preferences.'
     ] },
     { h: 'Features that need internet', p: [
       'Weather (Open-Meteo) sends only the coordinates of the selected city. Pick the city in Settings → Weather; all 81 Turkish provinces are listed offline.',

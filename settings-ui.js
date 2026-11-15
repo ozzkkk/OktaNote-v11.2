@@ -1,4 +1,4 @@
-/* Oktanote v11.3 — Ayarlar ekranı (gruplu ayar listesi)
+/* Oktanote v11.4 — Ayarlar ekranı (gruplu ayar listesi)
  * window.YakitSettingsUI
  */
 (function () {
@@ -63,6 +63,10 @@
     html += group('Ana tercihler', [
       row({ icon: 'sliders', iconBg: '#e0e7ff', iconFg: '#4f46e5', title: 'Dil',
             desc: 'Arayüz dili / Interface language', badge: s.language === 'en' ? 'English' : 'Türkçe', action: 'language', arrow: true }),
+      row({ icon: 'circle-info', iconBg: '#e0e7ff', iconFg: '#4f46e5', title: 'Tema',
+            desc: 'Açık, koyu veya sistem', badge: window.YakitTheme ? YakitTheme.label() : 'Sistem', action: 'theme', arrow: true }),
+      row({ icon: 'calendar-days', iconBg: '#fef3c7', iconFg: '#d97706', title: 'Bildirimler',
+            desc: 'Bakım, bütçe ve yedek hatırlatmaları', toggle: true, value: !!s.notifications, action: 'toggle-notifications' }),
       row({ icon: 'ruler-combined', iconBg: '#dbeafe', iconFg: '#2563eb', title: 'Mesafe birimi',
             desc: 'Kilometre veya mil', badge: S.distanceLabel(), action: 'units', arrow: true }),
       row({ icon: 'fill-drip', iconBg: '#e0f2fe', iconFg: '#0284c7', title: 'Hacim birimi',
@@ -100,6 +104,10 @@
             desc: 'Google Drive, WhatsApp, e-posta — Android paylaş menüsü', action: 'backup-share', arrow: true }),
       row({ icon: 'upload', iconBg: '#fef3c7', iconFg: '#d97706', title: 'Yedekten geri yükle',
             desc: 'Bir yedek dosyası seçin; önce özeti gösterilir', action: 'backup-restore', arrow: true }),
+      row({ icon: 'lock', iconBg: '#dcfce7', iconFg: '#059669', title: 'Şifreli yedek al',
+            desc: 'Parola ile AES-GCM şifreli dosya', action: 'secure-backup', arrow: true }),
+      row({ icon: 'lock', iconBg: '#dcfce7', iconFg: '#059669', title: 'Şifreli yedekten geri yükle',
+            desc: 'Şifreli yedek dosyası + parola', action: 'secure-restore', arrow: true }),
       row({ icon: 'triangle-exclamation', iconBg: '#fee2e2', iconFg: '#dc2626', title: 'Otomatik yedek hatırlatması',
             desc: '30 gün geçtiyse ana ekranda uyarı göster', toggle: true, value: s.autoBackupReminder, action: 'toggle-reminder' })
     ].join(''));
@@ -126,6 +134,14 @@
             desc: 'Yağ, muayene, sigorta, lastik — tarih veya km', action: 'maintenance', arrow: true }),
       row({ icon: 'file-csv', iconBg: '#dcfce7', iconFg: '#059669', title: 'CSV raporu indir',
             desc: 'Dolumları tablo olarak dışa aktar', action: 'csv', arrow: true }),
+      row({ icon: 'file-import', iconBg: '#dbeafe', iconFg: '#2563eb', title: 'CSV içe aktar',
+            desc: 'Dolum veya giderleri CSV’den yükle', action: 'csv-import', arrow: true }),
+      row({ icon: 'coins', iconBg: '#fce7f3', iconFg: '#db2777', title: 'Aylık bütçe',
+            desc: 'Araç başına yakıt bütçesi', action: 'budget', arrow: true }),
+      row({ icon: 'clock-rotate-left', iconBg: '#ede9fe', iconFg: '#7c3aed', title: 'Tekrarlayan giderler',
+            desc: 'Zamanı gelince otomatik gider ekle', action: 'recurring', arrow: true }),
+      row({ icon: 'scale-balanced', iconBg: '#e0f2fe', iconFg: '#0284c7', title: 'İstasyon fiyat karşılaştırması',
+            desc: 'Kendi dolumlarınızdan ortalama fiyat', action: 'station-compare', arrow: true }),
       row({ icon: 'database', iconBg: '#f1f5f9', iconFg: '#64748b', title: 'Depolama', desc: '…', action: 'storage' }),
       row({ icon: 'trash', iconBg: '#fee2e2', iconFg: '#dc2626', title: 'Tüm verileri sıfırla',
             desc: 'Kayıtlar silinir, demo veriler yüklenir', action: 'reset', arrow: true })
@@ -479,6 +495,14 @@
       case 'ocr-status': refreshOcr(); toast('Durum yenilendi'); break;
       case 'maintenance': if (window.switchView) window.switchView('maintenance'); break;
       case 'csv': if (window.downloadCSVReport) window.downloadCSVReport(); break;
+      case 'theme': if (window.YakitTheme) YakitTheme.openPicker(); break;
+      case 'toggle-notifications': if (window.YakitNotify) await YakitNotify.toggle(); break;
+      case 'csv-import': if (window.YakitCSV) YakitCSV.open(); break;
+      case 'budget': if (window.YakitBudget) YakitBudget.openSettings(); break;
+      case 'recurring': if (window.YakitBudget) YakitBudget.openRecurring(); break;
+      case 'station-compare': if (window.YakitStations) YakitStations.open(); break;
+      case 'secure-backup': if (window.YakitSecureBackup) YakitSecureBackup.exportPrompt(); break;
+      case 'secure-restore': if (window.YakitSecureBackup) YakitSecureBackup.importPrompt(); break;
       case 'reset': if (window.resetDemoData) window.resetDemoData(); break;
       case 'licenses': window.open('./LICENSES.txt', '_blank'); break;
       // v11.0 — Bilgi / yasal ekranlar

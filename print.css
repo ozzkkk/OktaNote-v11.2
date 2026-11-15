@@ -1,0 +1,15 @@
+/* Oktanote v11.4 — yazdırma / PDF */
+@media print {
+  html, body, #app { background: #fff !important; color: #000 !important; height: auto !important; overflow: visible !important; }
+  header, nav, #nav-drawer, #drawer-backdrop, #toast, .no-print,
+  #pwa-banner, #backup-reminder, button, .fab, [data-modal-close] { display: none !important; }
+  main { overflow: visible !important; padding: 0 !important; }
+  section[id^="view-"] { display: none !important; }
+  #view-reports { display: block !important; }
+  #view-reports .bg-white, #view-reports .bg-slate-50 { border: 1px solid #ccc !important; box-shadow: none !important; background: #fff !important; }
+  #view-reports * { color: #000 !important; }
+  .print-title { display: block !important; font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+  .print-only { display: block !important; }
+  a { text-decoration: none; color: #000 !important; }
+}
+.print-only { display: none; }

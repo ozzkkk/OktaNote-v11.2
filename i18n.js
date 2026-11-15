@@ -1,4 +1,4 @@
-/* Oktanote v11.3 — İki dil desteği (Türkçe / English)
+/* Oktanote v11.4 — İki dil desteği (Türkçe / English)
  * Bağımsız modül: window.YakitI18n
  *
  * Tasarım: kaynak kod ve veri değerleri Türkçe kalır (kanonik). Bu katman
@@ -158,6 +158,7 @@
     'Konum izni verilmedi. Haritayı kaydırıp bu alanda arayabilir veya manuel giriş yapabilirsiniz.': 'Location permission denied. Pan the map and search this area, or enter manually.',
     'Konum isteği zaman aşımına uğradı. Tekrar deneyin veya haritadan alan seçin.': 'Location request timed out. Try again or pick an area on the map.',
     'Bu tarayıcı konum desteklemiyor. Haritayı kaydırıp bu alanda arayın.': 'This browser does not support location. Pan the map and search this area.',
+    'Harita yükleniyor...': 'Loading map...',
     'Harita kütüphanesi yüklenemedi. Manuel giriş kullanabilirsiniz.': 'Map library could not load. You can use manual entry.',
     'Harita karoları yüklenemedi. İnterneti kontrol edin; manuel giriş kullanılabilir.': 'Map tiles could not load. Check your internet; manual entry is available.',
     'Harita/arama servisi geçici olarak yanıt vermiyor. Manuel giriş kullanabilirsiniz.': 'Map/search service is temporarily unresponsive. You can use manual entry.',
@@ -544,6 +545,55 @@
     'Dördüncü geçiş başarısız:': 'Fourth pass failed:',
     'Kontrast ve eğiklik düzeltilerek okunuyor': 'Reading with contrast and skew correction',
     'Beşinci geçiş başarısız:': 'Fifth pass failed:',
+    // v11.4: tema, bildirim, bütçe, CSV, istasyon, GPS, şifreli yedek, yazdırma
+    'Tema': 'Theme', 'Açık': 'Light', 'Koyu': 'Dark', 'Sistem': 'System',
+    'Açık, koyu veya sistem': 'Light, dark or system',
+    'Cihazın açık/koyu ayarını izle': 'Follow the device light/dark setting',
+    'Her zaman açık tema': 'Always light theme', 'Her zaman koyu tema': 'Always dark theme',
+    'Bildirimler': 'Notifications', 'Bakım, bütçe ve yedek hatırlatmaları': 'Maintenance, budget and backup reminders',
+    'Bildirimler açık': 'Notifications on', 'Bildirimler kapalı': 'Notifications off',
+    'Bu tarayıcı bildirimi desteklemiyor': 'This browser does not support notifications',
+    'Bildirim izni reddedilmiş; tarayıcı ayarlarından açın': 'Notification permission denied; enable it in browser settings',
+    'Bildirimler etkinleştirildi.': 'Notifications enabled.',
+    'Bakım hatırlatması': 'Maintenance reminder', 'Bütçe aşıldı': 'Budget exceeded', 'Bütçe uyarısı': 'Budget warning',
+    'Yedek hatırlatması': 'Backup reminder', 'Tekrarlayan gider': 'Recurring expense',
+    'Bu ayki yakıt harcaması bütçeyi aştı.': 'This month’s fuel spending exceeded the budget.',
+    'Yakıt bütçesinin %90’ına ulaşıldı.': '90% of the fuel budget has been reached.',
+    '30 günden uzun süredir yedek alınmadı.': 'No backup has been taken for more than 30 days.',
+    'Aylık yakıt bütçesi': 'Monthly fuel budget', 'Aylık bütçe': 'Monthly budget',
+    'Aylık yakıt bütçesi belirle': 'Set a monthly fuel budget',
+    'Bu araç için aylık yakıt bütçesi. Ana sayfada ilerleme gösterilir.': 'Monthly fuel budget for this vehicle. Progress is shown on Home.',
+    'Bütçe güncellendi': 'Budget updated', 'Kaldır': 'Remove',
+    'Araç başına yakıt bütçesi': 'Fuel budget per vehicle',
+    'Tekrarlayan giderler': 'Recurring expenses', 'Zamanı gelince otomatik gider ekle': 'Add expenses automatically when due',
+    'Sigorta, bakım gibi giderler zamanı gelince otomatik eklenir.': 'Expenses such as insurance and maintenance are added automatically when due.',
+    'Yeni tekrarlayan gider': 'New recurring expense', 'Kategori (Sigorta, Bakım…)': 'Category (Insurance, Maintenance…)',
+    'Ay': 'Month', 'Tekrarlayan gider yok.': 'No recurring expenses.', 'Kategori ve tutar girin': 'Enter a category and amount',
+    'Tekrarlayan gider eklendi': 'Recurring expense added',
+    'CSV içe aktar': 'Import CSV', 'Dolum veya giderleri CSV’den yükle': 'Load fill-ups or expenses from CSV',
+    'Başka uygulamaların CSV dosyalarını içe aktarın. Sütunlar otomatik eşleştirilir; önizlemeden önce kaydedilmez.': 'Import CSV files from other apps. Columns are matched automatically; nothing is saved before preview.',
+    'İçe aktar': 'Import', 'geçerli': 'valid', 'hatalı': 'invalid', 'Eşleşme:': 'Mapping:',
+    'İstasyon fiyat karşılaştırması': 'Station price comparison', 'Kendi dolumlarınızdan ortalama fiyat': 'Average price from your own fill-ups',
+    'Yalnızca sizin dolum kayıtlarınızdan hesaplanır; canlı fiyat servisi yoktur. Birim fiyat litre başınadır.': 'Calculated only from your fill-up records; there is no live price service. Unit price is per litre.',
+    'Ort.': 'Avg.', 'Son': 'Latest', 'Min–Max': 'Min–Max', 'en ucuz ort.': 'cheapest avg.',
+    'Karşılaştırma için istasyon adı ve fiyat içeren dolum kaydı gerekli.': 'Fill-up records with a station name and price are required for comparison.',
+    'Henüz yeterli kayıt yok.': 'Not enough records yet.', 'Tümü': 'All',
+    'GPS ile gezi başlat': 'Start a GPS trip', 'Konum izni ister; ekran açıkken ölçer. Arka planda çalışmaz.': 'Requires location permission; measures while the screen is on. Does not run in the background.',
+    'GPS gezisi sürüyor': 'GPS trip in progress', 'Bitir ve kaydet': 'Finish and save', 'İptal': 'Cancel',
+    'Tarayıcı konum desteklemiyor': 'The browser does not support location', 'GPS başlatılamadı': 'GPS could not be started',
+    'GPS gezisi kaydedildi': 'GPS trip saved', 'GPS gezisi': 'GPS trip',
+    'Şifreli yedek al': 'Take an encrypted backup', 'Parola ile AES-GCM şifreli dosya': 'AES-GCM encrypted file with a password',
+    'Şifreli yedekten geri yükle': 'Restore from an encrypted backup', 'Şifreli yedek dosyası + parola': 'Encrypted backup file + password',
+    'Parola': 'Password', 'En az 6 karakter parola girin.': 'Enter a password of at least 6 characters.',
+    'Devam': 'Continue', 'Şifreleniyor…': 'Encrypting…', 'Çözülüyor…': 'Decrypting…',
+    'Şifreli yedek indirildi': 'Encrypted backup downloaded', 'Şifreli yedek geri yüklendi': 'Encrypted backup restored',
+    'Parola yanlış veya dosya bozuk.': 'Wrong password or corrupt file.', 'Bu bir Oktanote şifreli yedeği değil.': 'This is not an Oktanote encrypted backup.',
+    'Tüm kayıtlar ve fotoğraflar parola ile şifrelenir.': 'All records and photos are encrypted with the password.',
+    'Parola kaydedilmez. Kaybederseniz yedek çözülemez.': 'The password is not stored. If you lose it, the backup cannot be decrypted.',
+    'Şifreli yedek dosyasını seçin, ardından parolayı girin.': 'Select the encrypted backup file, then enter the password.',
+    'Parolayı girin': 'Enter the password',
+    'Şifreli yedek geri yüklenecek. Mevcut veriler değiştirilecek. Devam edilsin mi?': 'The encrypted backup will be restored. Current data will be replaced. Continue?',
+    'Yazdır / PDF kaydet': 'Print / Save as PDF', 'Oktanote — Araç Raporu': 'Oktanote — Vehicle Report',
     // v11.2: kameradan çekme
     'Kameradan çek': 'Take a photo', 'Galeriden seç': 'Choose from gallery',
     'Kamera': 'Camera', 'Galeri': 'Gallery',
@@ -699,6 +749,18 @@
       var tr = DICT[name.trim()];
       return tr ? sym + '  ' + tr : m;
     }]
+  );
+
+  PATTERNS.push(
+    // v11.4
+    [/^(\d+) kayıt içe aktarıldı(?:, (\d+) atlandı)?$/, function (m, a, b) { return a + ' records imported' + (b ? ', ' + b + ' skipped' : ''); }],
+    [/^(\d+) tekrarlayan gider eklendi$/, '$1 recurring expenses added'],
+    [/^Her (\d+) ayda bir · sonraki: (.+)$/, 'Every $1 months · next: $2'],
+    [/^(\d+) nokta$/, '$1 points'],
+    [/^(\d+) bakım kaydı yaklaşıyor veya gecikti\.$/, '$1 maintenance items are due or overdue.'],
+    [/^GPS ile ölçüldü · (\d+) nokta$/, 'Measured by GPS · $1 points'],
+    [/^Konum alınamadı: (.+)$/, 'Could not get location: $1'],
+    [/^Hata: (.+)$/, 'Error: $1']
   );
 
   // v10.8: Bildirim kuyruklarını ("3 fotoğraf", "12 dolum, 3 fotoğraf",

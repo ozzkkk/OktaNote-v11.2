@@ -1,4 +1,4 @@
-/* Oktanote v11.3 — Ayarlar, birimler, dosya yedekleme + uygulama içi otomatik yedek
+/* Oktanote v11.4 — Ayarlar, birimler, dosya yedekleme + uygulama içi otomatik yedek
  * Bağımsız modül: window.YakitSettings
  * Veri modeli: state.settings (localStorage içinde, ana state ile birlikte)
  */
@@ -7,7 +7,7 @@
 
   var SETTINGS_KEY = 'yakitTakipSettings';
   // v10.9: tek kaynak — sürüm her yerde buradan okunur
-  var APP_VERSION = '11.3.0';
+  var APP_VERSION = '11.4.0';
 
   var DEFAULTS = {
     distanceUnit: 'km',        // 'km' | 'mi'
@@ -23,6 +23,8 @@
     localBackupKeep: 7,        // saklanacak yedek sayısı: 7 | 14 | 30
     dataGuards: true,          // v10.2: veri giriş uyarıları (mükerrer/sayaç/tüketim)
     language: 'tr',            // v10.5: arayüz dili — 'tr' | 'en'
+    theme: 'system',           // v11.4: 'system' | 'light' | 'dark'
+    notifications: false,      // v11.4: yerel bildirimler
     // v10.9: hava durumu şehri (koordinatlar cihazda; konum izni istenmez)
     weatherCityId: '',         // 81 il için plaka kodu; özel yerde ''
     weatherCityName: '',

@@ -1,4 +1,4 @@
-/* Oktanote v11.3 — Erişilebilirlik katmanı
+/* Oktanote v11.4 — Erişilebilirlik katmanı
  * - Pencerelere role="dialog" + aria-modal + ad; açılınca odak, kapanınca geri verme
  * - Esc ile en üstteki pencereyi kapatma; Tab odağını pencere içinde tutma
  * - Adsız form alanlarına komşu etiketten aria-labelledby; adsız ikon butonlara ad
@@ -17,7 +17,13 @@
     { id: 'guard-modal', z: 70, close: 'closeGuardModal', label: 'Veri giriş uyarıları' },
     { id: 'settings-restore-modal', z: 62, click: 'settings-restore-cancel', label: 'Yedekten geri yükle' },
     { id: 'vehicle-icon-modal', z: 61, click: 'vehicle-icon-close', label: 'Araç simgesi seç' },
+    { id: 'theme-modal', z: 60, click: 'theme-close', label: 'Tema' },
     { id: 'settings-picker', z: 60, close: 'YakitSettingsUI.closePicker', label: 'Seçim' },
+    { id: 'budget-modal', z: 56, close: 'OktanoteUI.close', arg: 'budget-modal', label: 'Aylık bütçe' },
+    { id: 'recurring-modal', z: 56, close: 'OktanoteUI.close', arg: 'recurring-modal', label: 'Tekrarlayan giderler' },
+    { id: 'csv-modal', z: 56, close: 'OktanoteUI.close', arg: 'csv-modal', label: 'CSV içe aktar' },
+    { id: 'stations-modal', z: 56, close: 'OktanoteUI.close', arg: 'stations-modal', label: 'İstasyon fiyat karşılaştırması' },
+    { id: 'secure-backup-modal', z: 56, close: 'OktanoteUI.close', arg: 'secure-backup-modal', label: 'Şifreli yedek' },
     { id: 'receipt-modal', z: 55, close: 'YakitOCR.closeReceiptModal', label: 'Fiş oku' },
     { id: 'station-modal', z: 54, close: 'closeStationPicker', label: 'İstasyon veya konum seç' },
     { id: 'trip-map-modal', z: 53, close: 'closeTripMapPicker', label: 'Haritadan konum seç' },

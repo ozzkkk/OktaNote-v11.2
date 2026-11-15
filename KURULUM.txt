@@ -1,75 +1,81 @@
-OKTANOTE v11.3 — MARKA DEĞİŞİKLİĞİ
-===================================
+OKTANOTE v11.4 — YEDİ BAŞLIK TEK PAKETTE
+========================================
 
 BU ZIP NE İŞE YARAR?
-1. Uygulamanın görünen adı artık OKTANOTE: sekme başlığı, üst bar, yan menü,
-   Hakkında/Bilgi, yasal metinler, iletişim formu, yedek paylaşımı.
-2. PWA/manifest adı Oktanote olur; ana ekrana eklenen uygulama yeni adla görünür.
-3. Yeni yedek dosyası adı "oktanote-yedek-…json" olur.
-   Eski yedekler AYNEN içe aktarılabilir (format değişmedi).
-4. Kod yorumlarındaki üçüncü taraf ürün atıfları temizlendi.
-5. v11.2 kamera + galeri fiş tarama ve diğer tüm özellikler korunur.
+1. Karanlık mod (Açık / Koyu / Sistem)
+2. CSV içe aktarma (dolum / gider, önizlemeli)
+3. Aylık yakıt bütçesi + tekrarlayan giderler
+4. Yazdır / PDF raporu + istasyon fiyat karşılaştırması
+5. GPS ile gezi takibi + yerel bildirimler
+6. Şifreli yedek, Leaflet tembel yükleme, GitHub Actions CI
+7. Marka/hukuk ön araştırma raporu (MARKA-VE-HUKUK.md)
+   NOT: Resmî marka tescili ve avukat incelemesi bu pakette YAPILMAZ.
 
 VERİLERİNİZ SİLİNMEZ:
 - Kayıtlar, araçlar, fotoğraflar, dil, ayarlar
 - İndirilmiş OCR motoru (5,6 MB yeniden inmez)
-- Eski yedek dosyaları
-Teknik saklama anahtarları bilerek eski adla bırakıldı; bu sayede güncelleme
-sorunsuz çalışır.
+- Eski yedek dosyaları (şifresiz ve şifreli ayrı)
 
-ÖNEMLİ: BU SÜRÜMDE 17 DOSYA DEĞİŞTİ (+2 BELGE = ZIP'TE 19 DOSYA)
-YENİ DOSYA YOK — hepsi mevcut dosyaların üzerine yazılır.
+ÖNEMLİ: BU SÜRÜMDE YENİ DOSYALAR VAR
+Yeni dosyalar GitHub'da "Add file > Upload files" ile eklenir.
+.github/workflows/ci.yml dosyasını klasör yoluyla birlikte yükleyin.
 sw.js'i EN SON yükleyin; yoksa eski önbellek yeni dosyaları gösterir.
 
 GÜNCELLEME (mevcut siteniz varsa — önerilen)
-1. ZIP'i telefonda/bilgisayarda açın (klasör yok, dosyalar kökte).
-2. Tarayıcıdan github.com > ozzkkk/yakittakipv.10.3 deposunu açın (main dalı).
-   (Depo adı değişmez; uygulama adı Oktanote olur.)
-3. Add file > Upload files'a dokunun.
-4. ZIP'ten çıkan şu dosyaları seçip yükleyin (sw.js HARİÇ):
+1. ZIP'i açın (dosyalar kökte; .github klasörü ayrı).
+2. github.com > ozzkkk/yakittakipv.10.3 deposu (main).
+3. Add file > Upload files ile şu YENİ dosyaları ekleyin:
+   theme.js
+   theme.css
+   print.css
+   oktanote-ui.js
+   map-loader.js
+   notify.js
+   budget.js
+   csv-import.js
+   stations.js
+   gps.js
+   secure-backup.js
+   ci/check.mjs
+   .github/workflows/ci.yml
+   MARKA-VE-HUKUK.md
+4. Sonra mevcut dosyaların üzerine şunları yükleyin (sw.js HARİÇ):
    index.html
-   manifest.webmanifest
+   settings.js
+   settings-ui.js
    i18n.js
    legal.js
    contact.js
-   settings.js
-   settings-ui.js
-   ocr.js
-   pwa.js
    a11y.js
-   browse.js
-   charts.js
-   guards.js
-   maintenance.js
-   weather.js
-   pwa.css
    README.md
    KURULUM.txt
-5. "Commit changes" deyin.
-6. Sonra AYNI şekilde yalnızca sw.js dosyasını yükleyin ve commit edin.
-7. 1-2 dakika bekleyin (GitHub Pages yayını).
-8. Uygulamayı açın: Rapor oluştur > "Güncellemeleri denetle" > çıkan bildirimle
-   yeni sürümü alın. Görünmezse uygulamayı tamamen kapatıp açın.
-9. Bilgi ekranında uygulama adı "Oktanote", sürüm "v11.3" görünmeli.
-
-ANA EKRAN KISAYOLU
-- Güncellemeden sonra kısayol adı çoğu cihazda kendiliğinden Oktanote olur.
-- Eski ad kalırsa: kısayolu kaldırın ve tarayıcıdan "Ana ekrana ekle" ile yeniden
-  ekleyin. Aynı tarayıcı/site profilinde veriler silinmez.
-- Site adresi değişmediği için mevcut kayıtlarınız aynı kalır.
+5. Commit changes.
+6. EN SON yalnızca sw.js dosyasını yükleyin ve commit edin.
+7. 1-2 dakika bekleyin; uygulamada Rapor oluştur > Güncellemeleri denetle.
+8. Bilgi ekranında sürüm v11.4 görünmeli.
 
 KULLANIM
-- Fiş okutma: Dolum ekle > fiş düğmesi > "Kameradan çek" veya "Galeriden seç".
-- Yedek: Ayarlar > Yedekleme > "Yedek al" veya "Yedeği paylaş".
-  Yeni dosya adı oktanote-yedek-…json olur; eski yedekleri de geri yükleyebilirsiniz.
+- Tema: Ayarlar > Ana tercihler > Tema.
+- CSV: Ayarlar > Veri > CSV içe aktar. Dosyayı seçin, önizlemeyi kontrol edin.
+- Bütçe: Ayarlar > Veri > Aylık bütçe. Ana sayfada ilerleme görünür.
+- Tekrarlayan gider: Ayarlar > Veri > Tekrarlayan giderler.
+- İstasyon karşılaştırma: Ayarlar > Veri veya Rapor oluştur ekranı.
+- GPS: Gezi kayıtları > GPS ile gezi başlat. Ekran açıkken ölçer.
+- Bildirim: Ayarlar > Ana tercihler > Bildirimler. Tarayıcı izni ister.
+- Şifreli yedek: Ayarlar > Yedekleme > Şifreli yedek al / geri yükle.
+  Parolayı kaybederseniz yedek çözülemez.
+- PDF: Rapor oluştur > Yazdır / PDF kaydet.
 
 SORUN GİDERME
-- Eski görünüm kalırsa: sw.js yüklenmemiştir; 6. adımı tekrarlayın.
-- Ad hâlâ eski ise: tarayıcı önbelleğini temizleyin veya kısayolu yeniden ekleyin.
-- Bilgi ekranında sürüm v11.3 değilse güncelleme tamamlanmamıştır.
+- Eski görünüm kalırsa sw.js yüklenmemiştir; 6. adımı tekrarlayın.
+- Yeni özellikler görünmüyor ama sürüm v11.4 ise tarayıcı önbelleğini temizleyin.
+- GPS çalışmazsa konum izni verin; HTTPS gerekir.
+- Bildirim gelmezse tarayıcı bildirim iznini kontrol edin.
+- CI GitHub'da çalışmazsa .github/workflows/ci.yml yolunu kontrol edin.
 
-ZIP İÇERİĞİ (19 dosya)
-index.html, manifest.webmanifest, i18n.js, legal.js, contact.js, settings.js,
-settings-ui.js, ocr.js, pwa.js, a11y.js, browse.js, charts.js, guards.js,
-maintenance.js, weather.js, pwa.css, README.md, KURULUM.txt,
-sw.js (EN SON yüklenir)
+ZIP İÇERİĞİ
+Yeni: theme.js, theme.css, print.css, oktanote-ui.js, map-loader.js, notify.js,
+budget.js, csv-import.js, stations.js, gps.js, secure-backup.js, ci/check.mjs,
+.github/workflows/ci.yml, MARKA-VE-HUKUK.md
+Güncellenen: index.html, settings.js, settings-ui.js, i18n.js, legal.js,
+contact.js, a11y.js, README.md, KURULUM.txt, sw.js (EN SON)

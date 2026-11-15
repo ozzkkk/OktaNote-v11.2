@@ -1,55 +1,52 @@
-# Oktanote v11.3 — marka değişikliği
+# Oktanote v11.4 — yedi başlık tek pakette
 
-Bu sürüm uygulamanın adını **Oktanote** yapar ve kod içindeki üçüncü taraf ürün
-atıflarını temizler. Özellik tarafında v11.2 (kameradan fiş çekme) aynen korunur.
+Bu sürüm kullanıcının istediği 7 kalan başlığı tek pakette toplar:
 
-## Neler değişti?
+1. **Karanlık mod** — Açık / Koyu / Sistem; Ayarlar → Ana tercihler → Tema.
+2. **CSV içe aktarma** — Ayarlar → Veri → CSV içe aktar. Dolum veya gider;
+   sütun eşleştirme ve önizleme vardır. TR sayı/tarih biçimleri desteklenir.
+3. **Bütçe + tekrarlayan giderler** — araç başına aylık yakıt bütçesi ana sayfada
+   ilerleme çubuğuyla gösterilir; tekrarlayan giderler zamanı gelince otomatik eklenir.
+4. **PDF/yazdırma raporu** — Rapor oluştur → “Yazdır / PDF kaydet”.
+   **İstasyon fiyat karşılaştırması** kendi dolumlarınızdan hesaplanır.
+5. **GPS’li gezi takibi** — Gezi kayıtları → “GPS ile gezi başlat” (ekran açıkken).
+   **Bildirimler** — bakım, bütçe ve yedek hatırlatmaları; push sunucusu yoktur.
+6. **Teknik** — şifreli yedek (AES-GCM + PBKDF2), Leaflet tembel yükleme,
+   GitHub Actions CI (`.github/workflows/ci.yml` + `ci/check.mjs`).
+7. **Hukuk/marka** — `MARKA-VE-HUKUK.md` ön araştırma raporu ve kontrol listesi.
+   **Resmî tescil ve avukat incelemesi bu pakette yapılmaz**; benzer markalar
+   (OKTANE, OktoNote, Okunote…) nedeniyle profesyonel araştırma önerilir.
 
-1. **Görünen ad**: sekme başlığı, üst bar, yan menü, Hakkında/Bilgi satırı,
-   yasal metinler, iletişim formu ve yedek paylaşımı artık **Oktanote**.
-2. **PWA / manifest**: `name`, `short_name`, `application-name`,
-   `apple-mobile-web-app-title`, Open Graph başlığı ve manifest açıklaması Oktanote.
-   Ana ekrana eklenen uygulamanın adı güncellemeden sonra Oktanote olur.
-3. **Yedekler**: yeni yedek dosyası adı `oktanote-yedek-…json`.
-   Yedek **formatı değişmedi**; eski `yakit-takip-backup` dosyaları aynen içe aktarılır.
-4. **Temizlik**: `settings-ui.js` ve diğer kod yorumlarındaki üçüncü taraf ürün atıfları kaldırıldı.
-5. **Sürüm**: `APP_VERSION 11.3.0`, `CACHE_VERSION 11.3.0`.
-   `OCR_VERSION 6.0.0` korundu; 5,6 MB motor yeniden inmez.
+## Korunanlar
 
-## Korunanlar (önemli)
+- Veri anahtarı `yakit_takip_data_v1`, fotoğraf DB `yakit_takip_photos`
+- Yedek formatı `yakit-takip-backup`; eski yedekler aynen içe aktarılır
+- OCR önbelleği `OCR_VERSION 6.0.0` (5,6 MB yeniden inmez)
+- Manifest `id/start_url/scope`, simgeler, kısayollar, kamera+galeri OCR akışı
+- `state.budgets` ve `state.recurring` yedeklere dahildir
 
-- Veri anahtarı: `yakit_takip_data_v1`
-- Fotoğraf veritabanı: `yakit_takip_photos`
-- Yedek format kimliği: `yakit-takip-backup`
-- Service Worker önbellek adları: `yakit-takip-shell-*`, `yakit-takip-ocr-*`,
-  `yakit-takip-share` (OCR ve paylaşım önbelleği bozulmaz)
-- JS API adları: `window.YakitSettings`, `YakitOCR`, `YakitPWA` vb.
-- Simgeler, kısayollar, `share_target`, `id: "./"`, `start_url`, `scope`
-- Kamera + galeri fiş tarama, çevrimdışı OCR, grafikler, arama/filtre, kılavuz
+## Yeni dosyalar
 
-> Not: Teknik anahtarların eski adla kalması bilinçlidir; değiştirilirse mevcut
-> kullanıcı verisi, yedek uyumluluğu veya indirilmiş OCR dosyaları kaybolabilirdi.
+`theme.js`, `theme.css`, `print.css`, `oktanote-ui.js`, `map-loader.js`,
+`notify.js`, `budget.js`, `csv-import.js`, `stations.js`, `gps.js`,
+`secure-backup.js`, `ci/check.mjs`, `.github/workflows/ci.yml`, `MARKA-VE-HUKUK.md`
 
-## Değişen dosyalar (17 + 2 belge = 19)
+## Değişen dosyalar
 
-`index.html`, `manifest.webmanifest`, `i18n.js`, `legal.js`, `contact.js`,
-`settings.js`, `settings-ui.js`, `ocr.js`, `pwa.js`, `a11y.js`, `browse.js`,
-`charts.js`, `guards.js`, `maintenance.js`, `weather.js`, `pwa.css`, `sw.js`
-ve belgeler `README.md`, `KURULUM.txt`.
+`index.html`, `settings.js`, `settings-ui.js`, `i18n.js`, `legal.js`,
+`contact.js`, `a11y.js`, `sw.js`, `README.md`, `KURULUM.txt`
 
-Yeni dosya yok; PNG/manifest görselleri değişmedi. **sw.js her zaman EN SON yüklenir.**
+**sw.js her zaman EN SON yüklenir.**
 
 ## Testler
 
-- Tam regresyon: **1605/1605 kontrol, 37 paket, 0 hata** (v11.2'nin 36 paketi + yeni marka paketi).
+- Tam regresyon: **1666/1666 kontrol, 38 paket, 0 hata**
+  (v11.3’ün 37 paketi + yeni özellik paketi).
+- Yeni özellik testi: 61 kontrol (tema, CSV, bütçe, tekrarlayan, istasyon,
+  yazdırma, GPS mock, şifreli yedek, lazy Leaflet, modal erişilebilirliği, CI, hukuk docs).
 - OCR test kümesi: **62/72 alan (%86)** — değişmedi.
-- Veri, dil ve OCR önbelleği güncellemede korunur.
 
 ## Kurulum
 
-`KURULUM.txt`'e bakın. Mevcut site adresi/depo değişmez. Güncellemeden sonra
-ana ekran kısayolunun adı hâlâ eski görünürse kısayolu kaldırıp yeniden ekleyin
-(aynı tarayıcı/site profilinde veriler silinmez).
-
-> Oktanote adı için marka tescili bu paketin kapsamında değildir; ticari kullanım
-> öncesi TÜRKPATENT / WIPO / EUIPO / USPTO araştırması önerilir.
+`KURULUM.txt`’e bakın. Yeni dosyalar GitHub’da “Add file > Upload files” ile
+eklenir; `.github/workflows/ci.yml` klasör yolıyla birlikte yüklenmelidir.
