@@ -1,4 +1,4 @@
-/* Yakıt Takip v11.1 — Gerçek OCR (Tesseract.js, tamamen yerel/çevrimdışı)
+/* Yakıt Takip v11.2 — Gerçek OCR (Tesseract.js, tamamen yerel/çevrimdışı)
  * - Motor ve Türkçe model aynı klasörden yüklenir, CDN yoktur.
  * - Görüntü cihazdan çıkmaz; işleme WebWorker içinde yapılır.
  * - Çıkarılan alanlar: yakıt türü, litre, birim fiyat, toplam tutar, tarih, saat.
@@ -1572,11 +1572,45 @@
     }
   }
 
+  // v11.2: Kamera mı var? Dokunmatik cihazlarda capture="environment" arka kamerayı açar.
+  // Fare ile kullanılan masaüstünde capture yok sayılır; kamera düğmesi gizlenir.
+  function cameraLikely() {
+    try {
+      if (navigator.maxTouchPoints > 0) return true;
+      if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) return true;
+      if (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || '')) return true;
+    } catch (e) {}
+    return false;
+  }
+
+  function setupPickButtons() {
+    const camLabel = $('ocr-camera-label');
+    const camHint = $('ocr-camera-hint');
+    const galleryLabel = $('ocr-gallery-label');
+    const hasCam = cameraLikely();
+    if (camLabel) camLabel.classList.toggle('hidden', !hasCam);
+    if (camHint) camHint.classList.toggle('hidden', !hasCam);
+    if (galleryLabel && !hasCam) {
+      // Tek seçenek kaldığında galeri düğmesi ana düğme görünümünü alır
+      galleryLabel.classList.remove('bg-white', 'border', 'border-slate-200', 'text-slate-700');
+      galleryLabel.classList.add('bg-slate-800', 'text-white', 'shadow');
+    }
+    const photoCam = document.getElementById('refuel-photo-camera-label');
+    if (photoCam) photoCam.classList.toggle('hidden', !hasCam);
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     const input = $('ocr-file-input');
     if (input) input.addEventListener('change', e => handleFile(e.target.files && e.target.files[0]));
+    const cam = $('ocr-camera-input');
+    if (cam) cam.addEventListener('change', e => handleFile(e.target.files && e.target.files[0]));
+    setupPickButtons();
     $('ocr-apply-btn')?.addEventListener('click', applyToRefuel);
-    $('ocr-retry-btn')?.addEventListener('click', () => { state.lastResult = null; showPicker(); setStatus(''); const i = $('ocr-file-input'); if (i) i.value = ''; });
+    $('ocr-retry-btn')?.addEventListener('click', () => {
+      state.lastResult = null; showPicker(); setStatus('');
+      const i = $('ocr-file-input'); if (i) i.value = '';
+      const c = $('ocr-camera-input'); if (c) c.value = '';
+    });
     $('ocr-raw-btn')?.addEventListener('click', toggleRaw);
     $('ocr-warmup-btn')?.addEventListener('click', warmUp);
   });
@@ -1589,6 +1623,7 @@
     REFUEL_FUEL_TYPES,
     recognizeFile, ensureWorker, terminate, warmUp,
     openReceiptModal, closeReceiptModal, applyToRefuel, handleFile, consumeShared,
+    cameraLikely, setupPickButtons,
     state, preprocessImage, pickAlternative
   };
 

@@ -1,4 +1,4 @@
-/* Yakıt Takip v11.1 — İki dil desteği (Türkçe / English)
+/* Yakıt Takip v11.2 — İki dil desteği (Türkçe / English)
  * Bağımsız modül: window.YakitI18n
  *
  * Tasarım: kaynak kod ve veri değerleri Türkçe kalır (kanonik). Bu katman
@@ -544,6 +544,11 @@
     'Dördüncü geçiş başarısız:': 'Fourth pass failed:',
     'Kontrast ve eğiklik düzeltilerek okunuyor': 'Reading with contrast and skew correction',
     'Beşinci geçiş başarısız:': 'Fifth pass failed:',
+    // v11.2: kameradan çekme
+    'Kameradan çek': 'Take a photo', 'Galeriden seç': 'Choose from gallery',
+    'Kamera': 'Camera', 'Galeri': 'Gallery',
+    'Kamera açılmazsa tarayıcı izinlerini kontrol edin veya "Galeriden seç"i kullanın.':
+      'If the camera does not open, check your browser permissions or use "Choose from gallery".',
     // v11.1: arama/filtre/sıralama, grafikler, kullanım kılavuzu, erişilebilirlik
     'Nasıl kullanılır?': 'How to use', 'Adım adım kullanım kılavuzu': 'Step-by-step guide',
     'Tüm kategoriler': 'All categories', 'Tüm yakıtlar': 'All fuels',

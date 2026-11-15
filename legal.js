@@ -1,4 +1,4 @@
-/* Yakıt Takip v11.1 — Yasal metinler ve bilgi ekranları
+/* Yakıt Takip v11.2 — Yasal metinler ve bilgi ekranları
  * Kullanım Koşulları (EULA), Gizlilik Politikası (KVKK + GDPR),
  * Değişiklik Günlüğü, Hakkında ve Açık Kaynak Lisansları.
  *
@@ -353,6 +353,17 @@
   // DEĞİŞİKLİK GÜNLÜĞÜ
   // ==================================================================
   var CHANGELOG = [
+    { v: '11.2.0', date: '2026-11-16', tr: [
+      'Fiş taramada "Kameradan çek" ve "Galeriden seç" ayrı düğmeler oldu. Kameradan çek, telefonun arka kamerasını doğrudan açar.',
+      'Dolum formundaki Resimler bölümüne de "Kamera" düğmesi eklendi; galeri düğmesi yanında durur.',
+      'Kamera olmayan (fare ile kullanılan) bilgisayarlarda kamera düğmesi gizlenir, tek düğme olarak galeri seçimi kalır.',
+      'Kamera açılmazsa izinleri kontrol etmeniz için kısa bir açıklama gösterilir.'
+    ], en: [
+      'Receipt scanning now has separate "Take a photo" and "Choose from gallery" buttons. The camera button opens the rear camera directly.',
+      'A "Camera" button was added to the Photos section of the fill-up form, next to the gallery button.',
+      'On computers without a camera (mouse-driven), the camera button is hidden and only the gallery picker remains.',
+      'A short hint is shown about browser permissions if the camera does not open.'
+    ] },
     { v: '11.1.0', date: '2026-11-16', tr: [
       'Dolumlar ve Gezi kaydı listelerine arama, tarih aralığı, yakıt türü/kategori filtresi ve sıralama eklendi.',
       'Listeler artık ilk 50 kaydı gösteriyor; "Daha fazla yükle" ile devamı geliyor. Binlerce kayıtta ekran çok daha hızlı açılıyor.',
@@ -470,7 +481,7 @@
       'İstasyon alanından haritadan veya aramayla istasyon seçebilirsiniz; seçmezseniz elle yazabilirsiniz.'
     ] },
     { h: 'Fiş okutma (OCR)', p: [
-      'Dolum formunda fiş düğmesine basın, fotoğrafı çekin veya galeriden seçin. Okuma tamamen cihazda yapılır, fotoğraf hiçbir yere gönderilmez.',
+      'Dolum formunda fiş düğmesine basın. "Kameradan çek" arka kamerayı doğrudan açar; "Galeriden seç" ile kayıtlı bir fotoğrafı seçersiniz. Okuma tamamen cihazda yapılır, fotoğraf hiçbir yere gönderilmez.',
       'İlk kullanımda Ayarlar → Fiş okuma (OCR) → "OCR dosyalarını indir" ile yaklaşık 5,6 MB motor ve Türkçe model bir kez indirilir; sonra internetsiz çalışır.',
       'Sonuçlar düzenlenebilir gelir. Yeşil "doğrulandı" etiketi litre × fiyat = toplam tutarlılığını gösterir; sarı alanları kontrol edin.',
       'Fişi düz bir zemide, iyi ışıkta, tamamı kadraja girecek şekilde çekmek doğruluğu en çok artıran şeydir.'
@@ -545,7 +556,7 @@
       'In the station field you can pick a station from the map or by search, or simply type it yourself.'
     ] },
     { h: 'Scanning a receipt (OCR)', p: [
-      'In the fill-up form tap the receipt button, take a photo or pick one from the gallery. Recognition runs entirely on your device; the photo is never uploaded.',
+      'In the fill-up form tap the receipt button. "Take a photo" opens the rear camera directly; "Choose from gallery" picks a saved photo. Recognition runs entirely on your device; the photo is never uploaded.',
       'Before the first use, Settings → Receipt scanning (OCR) → "Download OCR files" fetches the engine and Turkish model once (about 5.6 MB); afterwards it works offline.',
       'Results are editable. A green "verified" badge means litres × price matches the total; check the amber fields.',
       'A flat surface, good light and the whole receipt inside the frame improve accuracy more than anything else.'

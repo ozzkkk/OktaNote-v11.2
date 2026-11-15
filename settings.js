@@ -1,4 +1,4 @@
-/* Yakıt Takip v11.1 — Ayarlar, birimler, dosya yedekleme + uygulama içi otomatik yedek
+/* Yakıt Takip v11.2 — Ayarlar, birimler, dosya yedekleme + uygulama içi otomatik yedek
  * Bağımsız modül: window.YakitSettings
  * Veri modeli: state.settings (localStorage içinde, ana state ile birlikte)
  */
@@ -7,7 +7,7 @@
 
   var SETTINGS_KEY = 'yakitTakipSettings';
   // v10.9: tek kaynak — sürüm her yerde buradan okunur
-  var APP_VERSION = '11.1.0';
+  var APP_VERSION = '11.2.0';
 
   var DEFAULTS = {
     distanceUnit: 'km',        // 'km' | 'mi'

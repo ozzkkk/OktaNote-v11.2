@@ -1,4 +1,4 @@
-/* Yakıt Takip v11.1 — Erişilebilirlik katmanı
+/* Yakıt Takip v11.2 — Erişilebilirlik katmanı
  * - Pencerelere role="dialog" + aria-modal + ad; açılınca odak, kapanınca geri verme
  * - Esc ile en üstteki pencereyi kapatma; Tab odağını pencere içinde tutma
  * - Adsız form alanlarına komşu etiketten aria-labelledby; adsız ikon butonlara ad

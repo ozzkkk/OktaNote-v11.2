@@ -1,4 +1,4 @@
-/* Yakıt Takip v11.1 — Ayarlar ekranı (Fuelio tarzı gruplu liste)
+/* Yakıt Takip v11.2 — Ayarlar ekranı (Fuelio tarzı gruplu liste)
  * window.YakitSettingsUI
  */
 (function () {

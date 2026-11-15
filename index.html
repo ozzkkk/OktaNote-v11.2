@@ -841,10 +841,16 @@
                         <i class="fa-solid fa-camera text-slate-500"></i>
                         <span class="text-sm font-semibold text-slate-800">Resimler</span>
                     </div>
-                    <label class="text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-xl cursor-pointer transition">
-                        <i class="fa-solid fa-plus mr-1"></i> Ekle
-                        <input type="file" accept="image/*" multiple onchange="handleRefuelPhotos(event)" class="hidden">
-                    </label>
+                    <div class="flex items-center gap-1.5">
+                        <label id="refuel-photo-camera-label" class="text-xs font-semibold text-white bg-slate-800 hover:bg-slate-900 px-3 py-1.5 rounded-xl cursor-pointer transition flex items-center gap-1">
+                            <i class="fa-solid fa-camera" aria-hidden="true"></i> Kamera
+                            <input type="file" id="refuel-photo-camera" accept="image/*" capture="environment" onchange="handleRefuelPhotos(event)" class="hidden">
+                        </label>
+                        <label class="text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-xl cursor-pointer transition flex items-center gap-1">
+                            <i class="fa-solid fa-plus" aria-hidden="true"></i> Galeri
+                            <input type="file" accept="image/*" multiple onchange="handleRefuelPhotos(event)" class="hidden">
+                        </label>
+                    </div>
                 </div>
                 <div id="refuel-photos-preview" class="flex gap-2 overflow-x-auto no-scrollbar"></div>
             </div>
@@ -1086,10 +1092,18 @@
                         <h3 class="font-bold text-slate-800 text-base">Fiş Fotoğrafı Yükle</h3>
                         <p class="text-xs text-slate-500 mt-1 leading-relaxed">Fişin fotoğrafını seçin; yakıt türü, litre, birim fiyat, toplam tutar, tarih ve saat okunup size gösterilir. Onaylamadan kayıt oluşmaz.</p>
                     </div>
-                    <label class="w-full bg-slate-800 text-white font-semibold py-3 rounded-2xl text-sm cursor-pointer shadow text-center">
-                        Fotoğraf Seç / Çek
-                        <input type="file" id="ocr-file-input" accept="image/*" class="hidden">
-                    </label>
+                    <!-- v11.2: kamera ve galeri ayrı düğmeler -->
+                    <div id="ocr-pick-buttons" class="w-full space-y-2">
+                        <label id="ocr-camera-label" class="w-full bg-slate-800 text-white font-semibold py-3 rounded-2xl text-sm cursor-pointer shadow flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-camera" aria-hidden="true"></i> Kameradan çek
+                            <input type="file" id="ocr-camera-input" accept="image/*" capture="environment" class="hidden">
+                        </label>
+                        <label id="ocr-gallery-label" class="w-full bg-white border border-slate-200 text-slate-700 font-semibold py-3 rounded-2xl text-sm cursor-pointer flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-image" aria-hidden="true"></i> Galeriden seç
+                            <input type="file" id="ocr-file-input" accept="image/*" class="hidden">
+                        </label>
+                    </div>
+                    <p id="ocr-camera-hint" class="text-[10px] text-slate-400 leading-relaxed">Kamera açılmazsa tarayıcı izinlerini kontrol edin veya "Galeriden seç"i kullanın.</p>
                     <button type="button" id="ocr-warmup-btn" class="text-[11px] font-semibold text-blue-600 hover:underline">OCR motorunu şimdiden hazırla</button>
                 </div>
                 <div class="bg-slate-50 rounded-xl p-3 border border-slate-200/70 space-y-1">
