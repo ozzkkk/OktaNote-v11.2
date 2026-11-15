@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#ffffff">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -25,6 +25,14 @@
     <script src="./settings-ui.js" defer></script>
     <script src="./maintenance.js" defer></script>
     <style>
+        /* v10.8: Yakınlaştırma kilidi kaldırıldı (WCAG 1.4.4). iOS Safari, yazı
+           boyutu 16px'ten küçük bir alana odaklanınca sayfayı kendi kendine
+           yakınlaştırır; bunu önlemek için metin girişleri 16px'e çekildi.
+           Onay kutusu, dosya seçici ve gizli alanlar etkilenmez. */
+        input:not([type="hidden"]):not([type="file"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="button"]):not([type="submit"]),
+        select, textarea {
+            font-size: 16px !important;
+        }
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f8fafc;
@@ -84,7 +92,7 @@
 <div class="app-shell" id="app">
     <!-- Üst Uygulama Barı -->
     <header class="bg-white px-4 py-3 flex items-center justify-between border-b border-slate-100 shrink-0 pt-[max(0.75rem,env(safe-area-inset-top))]">
-        <button onclick="toggleDrawer(true)" class="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-700 transition">
+        <button onclick="toggleDrawer(true)" aria-label="Menüyü aç" title="Menü" class="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-700 transition">
             <i class="fa-solid fa-bars text-lg"></i>
         </button>
         <div class="flex items-center gap-2">
@@ -474,12 +482,16 @@
                 <div class="text-xs font-bold text-slate-700">Yeni Araç Ekle</div>
                 <div class="flex items-center gap-2.5">
                     <button type="button" id="new-vehicle-icon-btn" onclick="pickNewVehicleIcon()" title="Simge seç" class="shrink-0 rounded-full ring-2 ring-transparent hover:ring-slate-200 transition"></button>
-                    <input type="text" id="new-vehicle-name" placeholder="Araç Marka/Model (Örn: Renault Clio)" class="flex-1 min-w-0 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs">
+                    <input type="text" id="new-vehicle-name" placeholder="Marka / Model (Örn: Clio)" class="flex-1 min-w-0 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs">
                 </div>
                 <button type="button" onclick="pickNewVehicleIcon()" class="text-[10px] font-semibold text-blue-600 hover:underline">Simge ve renk seç</button>
-                <div class="grid grid-cols-3 gap-2">
+                <!-- v10.8: 16px giriş yazısıyla dar sütunlarda ipucu metni kırpılıyordu;
+                     sayaç + depo iki sütuna, yakıt türü kendi satırına alındı. -->
+                <div class="grid grid-cols-2 gap-2">
                     <input type="number" id="new-vehicle-odo" placeholder="Güncel Km" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs">
                     <input type="number" id="new-vehicle-tank" placeholder="Tank (L)" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs">
+                </div>
+                <div>
                     <select id="new-vehicle-fuel" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs">
                         <option value="Benzin">Benzin</option>
                         <option value="Dizel">Dizel</option>
@@ -513,7 +525,7 @@
     </main>
 
     <!-- Yüzen Ekle (+) Butonu -->
-    <button onclick="toggleActionSheet(true)" class="absolute bottom-16 right-4 w-[52px] h-[52px] rounded-2xl bg-slate-800 hover:bg-slate-900 text-white shadow-lg flex items-center justify-center transition transform active:scale-95 z-20">
+    <button onclick="toggleActionSheet(true)" aria-label="Yeni kayıt ekle" title="Ekle" class="absolute bottom-16 right-4 w-[52px] h-[52px] rounded-2xl bg-slate-800 hover:bg-slate-900 text-white shadow-lg flex items-center justify-center transition transform active:scale-95 z-20">
         <i class="fa-solid fa-plus text-xl"></i>
     </button>
 
@@ -3377,7 +3389,7 @@
                                     #${tlTotal - i}
                                 </div>
                                 <div class="min-w-0">
-                                    <div class="font-bold text-slate-800 text-sm truncate">Dolum · ${r.liters.toFixed(2).replace('.', ',')} L</div>
+                                    <div class="font-bold text-slate-800 text-sm truncate">Dolum · ${Number(r.liters || 0).toFixed(2).replace('.', ',')} L</div>
                                     <div class="text-[11px] text-slate-400 truncate">${escapeHtml(fmtDate(r.date))} ${escapeHtml(r.time || '')} · ${fmtDistance(r.odometer, 0)}<span class="text-emerald-600 font-semibold">${kmDiffText}</span></div>
                                 </div>
                             </div>

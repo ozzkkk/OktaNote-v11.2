@@ -1,4 +1,4 @@
-/* Yakıt Takip v10.7 — Gerçek OCR (Tesseract.js, tamamen yerel/çevrimdışı)
+/* Yakıt Takip v10.8 — Gerçek OCR (Tesseract.js, tamamen yerel/çevrimdışı)
  * - Motor ve Türkçe model aynı klasörden yüklenir, CDN yoktur.
  * - Görüntü cihazdan çıkmaz; işleme WebWorker içinde yapılır.
  * - Çıkarılan alanlar: yakıt türü, litre, birim fiyat, toplam tutar, tarih, saat.

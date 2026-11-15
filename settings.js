@@ -1,4 +1,4 @@
-/* Yakıt Takip v10.7 — Ayarlar, birimler, dosya yedekleme + uygulama içi otomatik yedek
+/* Yakıt Takip v10.8 — Ayarlar, birimler, dosya yedekleme + uygulama içi otomatik yedek
  * Bağımsız modül: window.YakitSettings
  * Veri modeli: state.settings (localStorage içinde, ana state ile birlikte)
  */
@@ -137,7 +137,12 @@
     if (settings.volumeUnit === 'galUK') return n * L_PER_GALUK;
     return n;
   }
-  function distanceLabel() { return settings.distanceUnit === 'mi' ? 'mil' : 'km'; }
+  // v10.8: EN arayüzde mil kısaltması uluslararası 'mi' olur (TR'de 'mil' kalır).
+  function distanceLabel() {
+    if (settings.distanceUnit !== 'mi') return 'km';
+    var en = window.YakitI18n && window.YakitI18n.getLang && window.YakitI18n.getLang() === 'en';
+    return en ? 'mi' : 'mil';
+  }
   function volumeLabel() {
     return settings.volumeUnit === 'galUS' ? 'gal (US)' : settings.volumeUnit === 'galUK' ? 'gal (UK)' : 'L';
   }
@@ -286,7 +291,7 @@
       format: 'yakit-takip-backup',
       version: 7,
       createdAt: new Date().toISOString(),
-      appVersion: '10.7.0',
+      appVersion: '10.8.0',
       settings: get(),
       state: JSON.parse(JSON.stringify(st)),
       photos: {},

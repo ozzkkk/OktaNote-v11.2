@@ -1,3 +1,81 @@
+# Yakıt Takip v10.8 — Kod Denetimi ve Cilâ (OCR'a dokunulmadı)
+
+Bu sürüm yeni özellik eklemez; **baştan sona kod denetiminden** çıkan 18 küçük eksiği
+kapatır. OCR motoru, alan ayrıştırıcı ve yedekleme motoru **aynen korunur**
+(`OCR_VERSION 6.0.0`, ölçülen doğruluk 61/72 değişmez). Fotoğraflar cihazdan çıkmaz.
+
+## Denetimde temiz çıkanlar
+12 JS dosyasının sözdizimi, manifest JSON'u, 231 HTML kimliği (çakışma yok), 44 satır
+içi olay işleyicisi (hepsi tanımlı), service worker kabuk listesi (24 dosya mevcut),
+yerel tarih üretimi (UTC kayması yok), boş durumlar, bozuk veri onarımı ve sayısal uç
+durumlar sorunsuz. **XSS testi:** araç adı, istasyon, not, gider başlığı ve gezi
+etiketine zararlı içerik enjekte edildi — hiçbiri çalışmadı. Google Maps çerçevesi
+tembel yükleniyor; uygulama açılışında Google'a istek gitmiyor.
+
+## 1) İngilizce arayüzdeki Türkçe metinler giderildi
+| Nerede | v10.7'de EN modunda | v10.8'de |
+|---|---|---|
+| Dolum formu fiyat etiketi | `Fiyat/L (₺)` | **`Price/L (₺)`** |
+| Uyarı penceresi düğmesi | `Alanı düzenle` | **`Edit field`** |
+| Ana sayfa boş durumu | `Henüz yakıt dolumu eklenmedi.` | **`No fuel fill-ups added yet.`** |
+| Kilometre günlüğü boş durumu | `Henüz kayıt bulunmuyor.` | **`No records yet.`** |
+| Zaman çizelgesi etiketleri | `Kısmi dolum` / `Tam dolum` | **`Partial fill-up` / `Full fill-up`** |
+| OCR sonuç etiketi | `düzeltildi` | **`corrected`** |
+| Ayarlar yedek kartı | `Yedek almanız önerilir` | **`Backing up is recommended`** |
+| Fotoğraf / adres uyarıları | Türkçe | **İngilizce** |
+
+**Yarım çevrilen bildirimler** de düzeldi (cümle başı İngilizce, kuyruğu Türkçe kalıyordu):
+- `Backup saved ✓ 2,4 MB · 3 fotoğraf` → **`… · 3 photos`**
+- `Restored: 12 dolum, 3 fotoğraf` → **`Restored: 12 fill-ups, 3 photos`**
+- `First day of week: Pazartesi` → **`First day of week: Monday`**
+- `Default page: Ana sayfa` → **`Default page: Home`**
+
+## 2) Birim kısaltması
+EN + mil seçiliyken etiketler `Odometer (mil)` yazıyordu → artık **`Odometer (mi)`**.
+Türkçe arayüzde `mil` aynen kalır.
+
+## 3) Erişilebilirlik
+- Menü (☰) ve yüzen **+** butonlarına erişilebilir ad eklendi (`Menüyü aç` / `Yeni kayıt ekle`,
+  EN'de `Open menu` / `Add new record`). Ekran okuyucu artık ne işe yaradıklarını söylüyor.
+- **Yakınlaştırma kilidi kaldırıldı** (`user-scalable=no` ve `maximum-scale` silindi):
+  parmakla zoom artık serbest (WCAG 1.4.4).
+- iOS Safari'nin küçük yazı alanlarına odaklanınca sayfayı kendi kendine yakınlaştırmasını
+  önlemek için **metin girişleri 16px**'e çekildi. Dar sütunlarda ipucu metni kırpılmasın diye
+  yeni araç formundaki sayaç + depo iki sütuna, yakıt türü kendi satırına alındı.
+  Telefon (390px) ve masaüstünde taşma/yatay kaydırma olmadığı doğrulandı.
+
+## 4) Lisans bildirimi
+`LICENSES.txt` içine **tesseract.js** (sarmalayıcı kütüphane, Apache-2.0) bölümü eklendi.
+`tesseract.js-core` ve `tessdata_fast` bildirimleri zaten vardı.
+
+## 5) Küçük sağlamlaştırmalar
+- Zaman çizelgesinde litre değeri sayıya zorlanıyor (`Number(r.liters || 0)`): bozuk bir
+  kayıt artık tüm listeyi çökertemez.
+- Service worker kaydı başarısız olursa ekranda ham JavaScript hata metni yerine
+  anlaşılır bir mesaj gösteriliyor; ayrıntı konsola yazılıyor.
+
+## Testler
+**1127/1127 yeşil, 29 paket** (27 mevcut + 2 yeni denetim paketi). OCR korpus testi
+v10.8'de de **61/72** ölçtü — doğruluk değişmedi. Yeni paketler yukarıdaki her düzeltmeyi
+kilitler: EN/TR sözlük taraması, kuyruk çevirisi, birim kısaltması, aria adları, zoom
+meta etiketi, 16px kuralı, taşma denetimi ve lisans bölümleri.
+
+### v10.8 kurulumu (ZIP)
+- `yakit-takip-v10-8-guncelleme.zip` → değişen **8 dosya** (`index.html`, `i18n.js`,
+  `settings.js`, `settings-ui.js`, `pwa.js`, `LICENSES.txt`, `sw.js` ve `ocr.js`)
+  + README + KURULUM.txt. **`ocr.js`'te yalnızca sürüm başlığı değişti**; okuma
+  mantığı, ön işleme ve ayrıştırıcı v10.7 ile birebir aynıdır.
+- `yakit-takip-v10-8-tam-paket.zip` → uygulamanın **33 dosyasının tamamı**
+
+> **Not:** Bu sürümde `index.html` de değişti. Güncelleme ZIP'ini kullanıyorsanız
+> `index.html`'i yüklemeyi unutmayın; yoksa zoom kilidi ve 16px düzeltmesi gelmez.
+
+GitHub'da **Add file → Upload files** ile ZIP'ten çıkan dosyaları yükleyin; aynı adlı
+dosyalar üzerine yazılır. Kayıtlarınız tarayıcıda kaldığı için **veri kaybı olmaz**.
+OCR motor önbelleği korunur (`OCR_VERSION 6.0.0`), 5,6 MB yeniden inmez.
+
+---
+
 # Yakıt Takip v10.7 — Zor Fotoğraflar için Agresif Ön İşleme (3. tur)
 
 Bu sürüm, v10.6'nın tüm kazanımlarını ve **iki dil (Türkçe/English)** desteğini korur;

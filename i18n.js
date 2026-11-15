@@ -1,4 +1,4 @@
-/* Yakıt Takip v10.5 — İki dil desteği (Türkçe / English)
+/* Yakıt Takip v10.8 — İki dil desteği (Türkçe / English)
  * Bağımsız modül: window.YakitI18n
  *
  * Tasarım: kaynak kod ve veri değerleri Türkçe kalır (kanonik). Bu katman
@@ -96,7 +96,7 @@
     'OCR hatası:': 'OCR error:', 'OCR güveni:': 'OCR confidence:',
     // araçlar
     'Yeni Araç Ekle': 'Add New Vehicle', 'Araç Bilgilerini Düzenle': 'Edit Vehicle Details',
-    'Araç Marka / Model': 'Vehicle Make / Model', 'Araç Marka/Model (Örn: Renault Clio)': 'Vehicle make/model (e.g. Renault Clio)',
+    'Araç Marka / Model': 'Vehicle Make / Model', 'Araç Marka/Model (Örn: Renault Clio)': 'Vehicle make/model (e.g. Renault Clio)', 'Marka / Model (Örn: Clio)': 'Make / model (e.g. Clio)',
     'Araç Simgesi': 'Vehicle Icon', 'Simge': 'Icon', 'Simge seç': 'Choose icon',
     'Simge ve renk seç': 'Choose icon and color', 'Simge ve renk değiştir': 'Change icon and color',
     'Renk': 'Color', 'Aracı Kaydet': 'Save Vehicle', 'Aracı Sil': 'Delete Vehicle',
@@ -423,14 +423,14 @@
     [/^Son değer: (.+)$/, 'Last value: $1'],
     [/^Seçilen nokta: (.+)$/, 'Selected point: $1'],
     [/^Kayıtlı hava durumu: (.+)$/, 'Saved weather: $1'],
-    [/^Haftanın ilk günü: (.+)$/, 'First day of week: $1'],
-    [/^Varsayılan sayfa: (.+)$/, 'Default page: $1'],
+    [/^Haftanın ilk günü: (.+)$/, function (m, v) { return 'First day of week: ' + trTail(v); }],
+    [/^Varsayılan sayfa: (.+)$/, function (m, v) { return 'Default page: ' + trTail(v); }],
     [/^Örnek: (.+)$/, 'Example: $1'],
-    [/^Geri yüklendi: (.+)$/, 'Restored: $1'],
+    [/^Geri yüklendi: (.+)$/, function (m, v) { return 'Restored: ' + trTail(v); }],
     [/^Geri yüklenemedi: (.+)$/, 'Could not restore: $1'],
-    [/^Yedek alındı ✓ (.*)$/, 'Backup saved ✓ $1'],
-    [/^Otomatik yedek alındı ✓ (.*)$/, 'Automatic backup saved ✓ $1'],
-    [/^Yedek hazır: (.+)$/, 'Backup ready: $1'],
+    [/^Yedek alındı ✓ (.*)$/, function (m, v) { return 'Backup saved ✓ ' + trTail(v); }],
+    [/^Otomatik yedek alındı ✓ (.*)$/, function (m, v) { return 'Automatic backup saved ✓ ' + trTail(v); }],
+    [/^Yedek hazır: (.+)$/, function (m, v) { return 'Backup ready: ' + trTail(v); }],
     [/^Yedek alınamadı: (.+)$/, 'Backup failed: $1'],
     [/^Yedek okunamadı: (.+)$/, 'Backup could not be read: $1'],
     [/^Yedek listesi okunamadı: (.+)$/, 'Backup list could not be read: $1'],
@@ -534,6 +534,18 @@
     'Dördüncü geçiş başarısız:': 'Fourth pass failed:',
     'Kontrast ve eğiklik düzeltilerek okunuyor': 'Reading with contrast and skew correction',
     'Beşinci geçiş başarısız:': 'Fifth pass failed:',
+    // v10.8: kod denetiminde bulunan çeviri boşlukları
+    'Alanı düzenle': 'Edit field',
+    'Menüyü aç': 'Open menu', 'Menü': 'Menu', 'Yeni kayıt ekle': 'Add new record',
+    'Henüz yakıt dolumu eklenmedi.': 'No fuel fill-ups added yet.',
+    'Henüz kayıt bulunmuyor.': 'No records yet.',
+    'Kısmi dolum': 'Partial fill-up', 'Tam dolum': 'Full fill-up',
+    'düzeltildi': 'corrected',
+    'Yedek almanız önerilir': 'Backing up is recommended',
+    'Fotoğraf bulunamadı': 'Photo not found',
+    'Geçerli bir http(s) adresi girin': 'Enter a valid http(s) address',
+    '⚠️ IndexedDB kullanılamadı; fotoğraf küçültülerek yedek modda eklendi': '⚠️ IndexedDB unavailable; the photo was downscaled and added in fallback mode',
+    'Service worker kaydı başarısız': 'Service worker registration failed',
     'Toplam ÷ birim fiyat ile hesaplandı': 'Computed as total ÷ unit price',
     'katkıda bulunanlar': 'contributors',
     '1 araç': '1 vehicle', '1 dolum': '1 fill-up', '1 fotoğraf': '1 photo', '1 kayıt': '1 record',
@@ -542,6 +554,8 @@
     '(ODbL). Konumunuz yalnızca “Konumum” veya “Bu alanda ara” dediğinizde istasyon bulmak için Photon\'a gönderilir. Adres araması arama sorgusunu gönderir.': '(ODbL). Your location is sent to Photon only when you tap “My location” or “Search this area” to find stations. Address search sends the search query.'
   });
   PATTERNS.push(
+    // v10.8: "Fiyat/L (₺)", "Fiyat/gal (US) ($)" gibi birim etiketleri
+    [/^Fiyat\/(.+) \(([^()]*)\)$/, 'Price/$1 ($2)'],
     [/^Sürüm (.+)$/, 'Version $1'],
     [/^Örn: (.+)$/, 'e.g. $1'],
     [/^(.+) başlangıçlı$/, 'starting $1'],
@@ -553,6 +567,25 @@
       return tr ? sym + '  ' + tr : m;
     }]
   );
+
+  // v10.8: Bildirim kuyruklarını ("3 fotoğraf", "12 dolum, 3 fotoğraf",
+  // "Pazartesi", "Ana sayfa") ayrıca çevir. Desenler cümlenin tamamını
+  // yuttuğu için bu parçalar eskiden Türkçe kalıyordu.
+  var tailBusy = false;
+  function trTail(s) {
+    var raw = String(s == null ? '' : s);
+    if (tailBusy || lang !== 'en') return raw;
+    tailBusy = true;
+    try {
+      return raw.split(/( · |, )/).map(function (part) {
+        if (part === ' · ' || part === ', ') return part;
+        var t = part.trim();
+        if (!t) return part;
+        var r = lookup(t);
+        return r == null ? part : part.replace(t, r);
+      }).join('');
+    } finally { tailBusy = false; }
+  }
 
   var NORM = null;
   function normMap() {

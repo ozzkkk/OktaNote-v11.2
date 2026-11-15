@@ -1,30 +1,39 @@
-YAKIT TAKİP v10.7 — ZOR FOTOĞRAFLAR İÇİN AGRESİF ÖN İŞLEME (3. TUR)
-==================================================================
+YAKIT TAKİP v10.8 — KOD DENETİMİ VE CİLÂ
+========================================
 
 BU ZIP NE İŞE YARAR?
-Karanlık, gölgeli, soluk baskılı veya hafif eğri fişlerde okuma doğruluğunu artırır:
-- CLAHE: fotoğrafı bölgelere ayırıp kontrastı yerel olarak açar (soluk ürün satırı okunur).
-- Eğiklik düzeltme: yalnızca 1,5° ve üzeri eğiklikte görüntüyü döndürür.
-- 5. okuma geçişi: sadece önceki geçişler zayıfsa çalışır; fiş olmayan fotoğrafta atlanır.
-- Boşluklu ondalık onarımı: "8 560 LT X 41,06" -> 8,56 litre, 41,06 TL; "500 . 00" -> 500,00.
-Ölçüm (12 gerçek görüntü, 72 alan): 57/72 -> 61/72 (%85). Hiçbir doğru alan kaybedilmedi.
-İki dil (Türkçe/English) desteği AYNEN korunur. Motor ve Türkçe model aynı; fotoğraflar
-cihazdan çıkmaz.
+Yeni özellik yok; kod denetiminde bulunan 18 küçük eksik kapatıldı.
+OCR motoru, fiş okuma mantığı ve yedekleme motoru AYNEN korundu (doğruluk 61/72 aynı).
 
-SÜRE NOTU
-Temiz fişler yine ~2 saniye. Çok zor fotoğraflarda ek geçiş yüzünden süre uzayabilir
-(masaüstünde 15-19 sn, telefonda daha fazla). Ekranda hangi aşamada olunduğu yazar.
+1. İngilizce arayüzde Türkçe kalan metinler çevrildi: dolum formundaki "Fiyat/L (₺)"
+   etiketi, uyarı penceresindeki "Alanı düzenle", boş durum cümleleri, "Kısmi dolum",
+   "Tam dolum", OCR'daki "düzeltildi", "Yedek almanız önerilir" ve fotoğraf uyarıları.
+2. Yarım çevrilen bildirimler düzeldi: "… 3 fotoğraf" yerine "… 3 photos",
+   "First day of week: Pazartesi" yerine "… Monday".
+3. EN + mil seçiliyken "(mil)" yerine uluslararası "(mi)" yazıyor. Türkçe "mil" kalır.
+4. Erişilebilirlik: menü ve + butonlarına ekran okuyucu adı eklendi; yaklaştırma
+   kilidi kaldırıldı (parmakla zoom serbest); giriş alanları 16px yapıldı.
+5. LICENSES.txt içine tesseract.js bildirimi eklendi.
+6. Bozuk bir kayıt artık listeyi çökertemez; service worker hatası anlaşılır metin gösterir.
+
+ÖNEMLİ: BU SÜRÜMDE index.html DE DEĞİŞTİ
+Güncelleme ZIP'ini kullanıyorsanız index.html'i de yükleyin; yoksa zoom ve 16px
+düzeltmesi gelmez. Toplam 8 dosya değişti (aşağıda listeli).
+ocr.js'te yalnızca sürüm başlığı değişti; fiş okuma mantığı v10.7 ile aynı.
 
 GÜNCELLEME (mevcut siteniz varsa — önerilen)
 1. ZIP'i telefonda/bilgisayarda açın (klasör yok, dosyalar kökte).
 2. Tarayıcıdan github.com > ozzkkk/yakit deposunu açın (main dalı).
 3. Add file > Upload files'a dokunun.
 4. ZIP'ten çıkan şu dosyaları seçip yükleyin (hepsi üzerine yazar):
+   index.html
    ocr.js
    i18n.js
    settings.js
    settings-ui.js
-   sw.js
+   pwa.js
+   LICENSES.txt
+   sw.js           (en son)
    README.md       (isteğe bağlı)
    KURULUM.txt     (isteğe bağlı)
 5. Commit changes deyin.
@@ -39,14 +48,20 @@ Dosya değiştirmek verileri silmez. OCR motoru da yeniden inmez (5,6 MB korunur
 Dil seçiminiz (Türkçe/English) korunur.
 
 KONTROL
-- Ayarlar > Hakkında: "Sürüm 10.7.0" ve v10.7 yazmalı.
+- Ayarlar > Hakkında: "Sürüm 10.8.0" ve v10.8 yazmalı.
 - Ayarlar > Dil: Türkçe / English hâlâ çalışmalı.
-- Soluk ürün satırlı bir fiş taratın: litre + birim fiyat + toplam gelmeli.
-- Karanlık/gölgeli bir fiş taratın: "Kontrast ve eğiklik düzeltilerek okunuyor" aşamasını görmelisiniz.
+- İki parmağınızla sayfayı yakınlaştırabiliyor olmalısınız (zoom kilidi kalktı).
+- Dolum formunu açın: yazı alanları daha büyük (16px) ve iOS'ta odaklanınca sayfa zıplamamalı.
+- Ayarlar > Dil > English: dolum formunda "Price/L", uyarıda "Edit field",
+  boş ana sayfada "No fuel fill-ups added yet." görmelisiniz.
+- English + mile çevirin: etiketler "Odometer (mi)" olmalı.
+- Tekrar Türkçe'ye dönün: her şey eski hâline dönmeli.
+- Soluk/karanlık bir fiş taratın: OCR davranışı v10.7 ile aynı olmalı.
 - POS/kart slipi taratın: tutar (binlik dahil) + tarih gelmeli; litre uydurulmaz.
 - Sonuç ekranında değerleri kontrol edip "Dolum formuna aktar" deyin; Kaydet'e siz basarsınız.
 
 SORUN OLURSA
 - Eski sürüm görünüyorsa: bir kez daha yenileyin; service worker güncellemeyi alır.
 - Çok silik/kırışık fişte eksik alan olursa kutulardan elle düzeltin; bu beklenen durumdur.
-- Zor görüntülerde tarama biraz daha uzun sürebilir (ek kırpma okuması devreye girer).
+- Zor görüntülerde tarama biraz daha uzun sürebilir (ek kırpma ve kontrast geçişleri devreye girer).
+- Yazı alanları büyük görünüyorsa bu beklenen durumdur: iOS otomatik zoom'unu önlemek için 16px yapıldı.

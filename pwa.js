@@ -155,7 +155,8 @@
     } catch (err) {
       console.warn('Service worker kaydedilemedi:', err);
       const swStatus = $('pwa-sw-status');
-      if (swStatus) swStatus.textContent = 'Kayıt başarısız: ' + (err && err.message ? err.message : err);
+      // v10.8: ham JS hata metni kullanıcıya gösterilmez; ayrıntı konsola yazılır.
+      if (swStatus) swStatus.textContent = 'Service worker kaydı başarısız';
     }
   }
 
