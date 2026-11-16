@@ -144,7 +144,7 @@
             desc: 'Kendi dolumlarınızdan ortalama fiyat', action: 'station-compare', arrow: true }),
       row({ icon: 'database', iconBg: '#f1f5f9', iconFg: '#64748b', title: 'Depolama', desc: '…', action: 'storage' }),
       row({ icon: 'trash', iconBg: '#fee2e2', iconFg: '#dc2626', title: 'Tüm verileri sıfırla',
-            desc: 'Kayıtlar silinir, demo veriler yüklenir', action: 'reset', arrow: true })
+            desc: 'Araçlar, tüm kayıtlar, fotoğraflar ve yedekler silinir', action: 'reset', arrow: true })
     ].join(''));
 
     // v11.0 — Bilgi bölümü: günlük, hakkında, EULA, gizlilik, lisanslar

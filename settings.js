@@ -7,7 +7,7 @@
 
   var SETTINGS_KEY = 'yakitTakipSettings';
   // v10.9: tek kaynak — sürüm her yerde buradan okunur
-  var APP_VERSION = '11.4.0';
+  var APP_VERSION = '11.4.1';
 
   var DEFAULTS = {
     distanceUnit: 'km',        // 'km' | 'mi'
@@ -564,6 +564,22 @@
     await localTxDone(tx);
   }
 
+  async function clearLocalBackups() {
+    var db = await openLocalBackupDb();
+    var tx = db.transaction('snapshots', 'readwrite');
+    tx.objectStore('snapshots').clear();
+    await localTxDone(tx);
+  }
+
+  async function resetAllData() {
+    Object.keys(DEFAULTS).forEach(function (k) { settings[k] = DEFAULTS[k]; });
+    validate();
+    save();
+    try { localStorage.removeItem(AUTO_STATUS_KEY); } catch (e) {}
+    await clearLocalBackups();
+    return true;
+  }
+
   async function restoreLocalBackup(id) {
     var payload = await getLocalBackup(id);
     if (!payload) throw new Error('Yedek bulunamadı');
@@ -637,6 +653,7 @@
     dataUrlToBlob: dataUrlToBlob, blobToDataUrl: blobToDataUrl,
     createLocalBackup: createLocalBackup, listLocalBackups: listLocalBackups,
     getLocalBackup: getLocalBackup, deleteLocalBackup: deleteLocalBackup,
+    clearLocalBackups: clearLocalBackups, resetAllData: resetAllData,
     restoreLocalBackup: restoreLocalBackup, maybeAutoBackup: maybeAutoBackup,
     pruneLocalBackups: pruneLocalBackups,
     getAutoBackupStatus: getAutoBackupStatus, retryAutoBackup: retryAutoBackup

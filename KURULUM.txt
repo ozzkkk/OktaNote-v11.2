@@ -1,81 +1,57 @@
-OKTANOTE v11.4 — YEDİ BAŞLIK TEK PAKETTE
-========================================
+OKTANOTE v11.4.1 — ARAÇ SİLME VE TAM SIFIRLAMA DÜZELTMESİ
+========================================================
 
-BU ZIP NE İŞE YARAR?
-1. Karanlık mod (Açık / Koyu / Sistem)
-2. CSV içe aktarma (dolum / gider, önizlemeli)
-3. Aylık yakıt bütçesi + tekrarlayan giderler
-4. Yazdır / PDF raporu + istasyon fiyat karşılaştırması
-5. GPS ile gezi takibi + yerel bildirimler
-6. Şifreli yedek, Leaflet tembel yükleme, GitHub Actions CI
-7. Marka/hukuk ön araştırma raporu (MARKA-VE-HUKUK.md)
-   NOT: Resmî marka tescili ve avukat incelemesi bu pakette YAPILMAZ.
+BU GÜNCELLEMEDE
+- Araç düzenle ekranındaki “Aracı Sil” artık son araçta da çalışır.
+- Bir araç silinince ona bağlı dolumlar, giderler, geziler, bakım hatırlatıcıları,
+  tekrarlayan giderler, bütçe ve fotoğraflar da temizlenir.
+- Son araç silinirse uygulama boş “Aracım” başlangıç kaydı oluşturur; gerçek
+  araç ve ona bağlı kayıtlar silinmiş olur, uygulama kullanılabilir kalır.
+- Ayarlar > Veri > Tüm verileri sıfırla; araçları ve bütün kayıtları, fotoğrafları,
+  ayarları ve uygulama içi yedekleri siler. Demo yakıt kaydı geri yüklemez.
+  Sıfırlama sonrası yalnızca boş “Aracım” başlangıç kaydı kalır.
+- Uygulama sürümü 11.4.1 oldu. Kişisel kayıtlar ve dil, güncelleme sırasında korunur.
 
-VERİLERİNİZ SİLİNMEZ:
-- Kayıtlar, araçlar, fotoğraflar, dil, ayarlar
-- İndirilmiş OCR motoru (5,6 MB yeniden inmez)
-- Eski yedek dosyaları (şifresiz ve şifreli ayrı)
+ÖNEMLİ: GITHUB’A YÜKLEME SIRASI
+Güncelleme ZIP’ini açın. GitHub’da `ozzkkk/OktaNote-v11.2` deposunun `main`
+kolunda dosyaları yükleyin. Mevcut dosyaları yenileriyle değiştirin; yeni dosyaları
+yollarıyla ekleyin. Bütün dosyalar aynı commit’te olabilir; ancak `sw.js` dosyasını
+EN SON, ayrı bir commit ile yükleyin. Böylece servis çalışanı eksik dosya görmez.
 
-ÖNEMLİ: BU SÜRÜMDE YENİ DOSYALAR VAR
-Yeni dosyalar GitHub'da "Add file > Upload files" ile eklenir.
-.github/workflows/ci.yml dosyasını klasör yoluyla birlikte yükleyin.
-sw.js'i EN SON yükleyin; yoksa eski önbellek yeni dosyaları gösterir.
+YÜKLENECEK DOSYALAR
+- Yeni: `ci/check.mjs`, `.github/workflows/ci.yml`, `MARKA-VE-HUKUK.md`
+- Değişen: `index.html`, `settings.js`, `settings-ui.js`, `i18n.js`, `legal.js`,
+  `README.md`, `KURULUM.txt`
+- Son olarak: `sw.js`
+- Diğer uygulama modülleri ZIP’te tamdır; isterseniz tüm güncelleme ZIP’indeki
+  dosyaları aynı isim/path ile GitHub’a yükleyebilirsiniz.
 
-GÜNCELLEME (mevcut siteniz varsa — önerilen)
-1. ZIP'i açın (dosyalar kökte; .github klasörü ayrı).
-2. github.com > ozzkkk/yakittakipv.10.3 deposu (main).
-3. Add file > Upload files ile şu YENİ dosyaları ekleyin:
-   theme.js
-   theme.css
-   print.css
-   oktanote-ui.js
-   map-loader.js
-   notify.js
-   budget.js
-   csv-import.js
-   stations.js
-   gps.js
-   secure-backup.js
-   ci/check.mjs
-   .github/workflows/ci.yml
-   MARKA-VE-HUKUK.md
-4. Sonra mevcut dosyaların üzerine şunları yükleyin (sw.js HARİÇ):
-   index.html
-   settings.js
-   settings-ui.js
-   i18n.js
-   legal.js
-   contact.js
-   a11y.js
-   README.md
-   KURULUM.txt
-5. Commit changes.
-6. EN SON yalnızca sw.js dosyasını yükleyin ve commit edin.
-7. 1-2 dakika bekleyin; uygulamada Rapor oluştur > Güncellemeleri denetle.
-8. Bilgi ekranında sürüm v11.4 görünmeli.
+ADIMLAR
+1. Önce mevcut kayıtların yedeğini alın (Ayarlar > Yedekleme).
+2. `oktanote-v1141.zip` dosyasını açın.
+3. GitHub’da `ozzkkk/OktaNote-v11.2` > `main` > Add file > Upload files.
+4. ZIP’teki tüm dosyaları aynı dizin yapısıyla yükleyin; commit edin.
+5. `sw.js` dosyasını bu commit’e dahil etmeyin. Ardından yalnızca `sw.js`’i
+   ayrı yükleyip commit edin.
+6. Pages/Actions başarılı olduktan sonra 1–2 dakika bekleyin. Uygulamayı açıp
+   Rapor oluştur > Güncellemeleri denetle (veya sayfayı yenile) seçin.
+7. Ayarlar > Hakkında bölümünde sürüm **11.4.1** görünmeli.
+8. Düzenle ekranında “Aracı Sil”i deneyin. Tüm verileri silmek için Ayarlar >
+   Veri > Tüm verileri sıfırla kullanılır. Her iki işlem de onay sorar.
 
-KULLANIM
-- Tema: Ayarlar > Ana tercihler > Tema.
-- CSV: Ayarlar > Veri > CSV içe aktar. Dosyayı seçin, önizlemeyi kontrol edin.
-- Bütçe: Ayarlar > Veri > Aylık bütçe. Ana sayfada ilerleme görünür.
-- Tekrarlayan gider: Ayarlar > Veri > Tekrarlayan giderler.
-- İstasyon karşılaştırma: Ayarlar > Veri veya Rapor oluştur ekranı.
-- GPS: Gezi kayıtları > GPS ile gezi başlat. Ekran açıkken ölçer.
-- Bildirim: Ayarlar > Ana tercihler > Bildirimler. Tarayıcı izni ister.
-- Şifreli yedek: Ayarlar > Yedekleme > Şifreli yedek al / geri yükle.
-  Parolayı kaybederseniz yedek çözülemez.
-- PDF: Rapor oluştur > Yazdır / PDF kaydet.
+VERİLERİNİZ
+- Güncelleme, mevcut araçları/kayıtları/fotoğrafları ve tercihleri korur.
+- “Tüm verileri sıfırla” ise kayıtları, araçları, fotoğrafları, ayarları ve
+  uygulama içi yerel yedekleri kalıcı olarak siler. Dışarı aktardığınız dosyalar
+  uygulama dışında kalır. Tarayıcının bildirim izni gibi OS izinleri uygulama
+  tarafından geri alınamaz.
+- Arkadaşlarla aynı GitHub Pages bağlantısını paylaşmak kayıtları paylaşmaz:
+  her cihaz/tarayıcı profili kendi yerel verisini tutar; uygulamanın sunucusu
+  ve hesap tabanlı eşitlemesi yoktur. Aynı cihazda aynı tarayıcı profilini
+  kullanırlarsa o profildeki kayıtları görebilirler.
 
-SORUN GİDERME
-- Eski görünüm kalırsa sw.js yüklenmemiştir; 6. adımı tekrarlayın.
-- Yeni özellikler görünmüyor ama sürüm v11.4 ise tarayıcı önbelleğini temizleyin.
-- GPS çalışmazsa konum izni verin; HTTPS gerekir.
-- Bildirim gelmezse tarayıcı bildirim iznini kontrol edin.
-- CI GitHub'da çalışmazsa .github/workflows/ci.yml yolunu kontrol edin.
-
-ZIP İÇERİĞİ
-Yeni: theme.js, theme.css, print.css, oktanote-ui.js, map-loader.js, notify.js,
-budget.js, csv-import.js, stations.js, gps.js, secure-backup.js, ci/check.mjs,
-.github/workflows/ci.yml, MARKA-VE-HUKUK.md
-Güncellenen: index.html, settings.js, settings-ui.js, i18n.js, legal.js,
-contact.js, a11y.js, README.md, KURULUM.txt, sw.js (EN SON)
+TEST
+- Tam regresyon: 1668 kontrol, 0 hata.
+- Araç silme, son araç silme, ilişkili kayıtların temizlenmesi ve sıfırlamada
+  yerel yedeklerin temizlenmesi ayrıca gerçek tarayıcıda doğrulandı.
+- OCR 62/72; OCR önbelleği 6.0.0 korunur.

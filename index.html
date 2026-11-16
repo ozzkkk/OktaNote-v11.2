@@ -1569,16 +1569,34 @@
     }
 
     function resetDemoData() {
-        if (!confirm('Tüm kayıtlarınız silinip varsayılan demo verileri yüklenecek. Emin misiniz?')) return;
-        state = JSON.parse(JSON.stringify(defaultState));
+        const message = 'Araçlarınız, yakıt dolumları, giderler, geziler, bakım hatırlatıcıları, fotoğraflar, ayarlar ve uygulama içi yedekler silinecek. Uygulamayı kullanmaya devam edebilmeniz için boş bir “Aracım” kaydı oluşturulacak. Bu işlem geri alınamaz. Emin misiniz?';
+        if (!confirm(message)) return;
+        const oldUrls = Array.from(photoUrlCache.values());
+        oldUrls.forEach(url => { try { URL.revokeObjectURL(url); } catch (e) {} });
+        photoUrlCache.clear();
         sessionAddedPhotoIds.clear();
+        state = {
+            activeVehicleId: 'v' + Date.now(),
+            vehicles: [{ id: 'v' + Date.now(), name: 'Aracım', odometer: 0, fuelType: 'Benzin', tankCapacity: 50, icon: 'car', color: 'slate' }],
+            refuels: [], expenses: [], trips: [], reminders: [], budgets: {}, recurring: []
+        };
+        state.activeVehicleId = state.vehicles[0].id;
         recentStations = [];
-        try { localStorage.removeItem(RECENT_STATIONS_KEY); } catch (e) {}
+        try {
+            localStorage.removeItem(RECENT_STATIONS_KEY);
+            localStorage.removeItem(PHOTON_BASE_KEY);
+            localStorage.removeItem('yakitTakipWeatherCache');
+            localStorage.removeItem('oktanoteNotifyLog');
+        } catch (e) {}
+        if (window.YakitSettings && window.YakitSettings.resetAllData) {
+            window.YakitSettings.resetAllData().catch(e => console.warn('Ayar/yedek temizliği tamamlanamadı:', e));
+        }
+        if (window.YakitI18n && window.YakitI18n.setLang) window.YakitI18n.setLang('tr', { force: true });
         saveState();
         idbClearPhotos().catch(e => console.warn('Fotoğraf deposu temizlenemedi:', e));
         renderAll();
         toggleDrawer(false);
-        showToast('Varsayılan verilere sıfırlandı');
+        showToast('Tüm kayıtlar silindi; boş araçla başlandı');
     }
 
     function showToast(msg) {
@@ -3497,7 +3515,7 @@
         editVehicleColor = v.color || 'slate';
         renderEditVehicleIconBtn();
         const delBtn = document.getElementById('delete-vehicle-btn');
-        if (delBtn) delBtn.style.display = state.vehicles.length > 1 ? 'block' : 'none';
+        if (delBtn) delBtn.style.display = 'block';
         document.getElementById('edit-vehicle-modal').classList.remove('hidden');
     }
 
@@ -3519,27 +3537,35 @@
 
     function deleteVehicle() {
         const id = document.getElementById('edit-vehicle-id').value;
-        if (state.vehicles.length <= 1) {
-            showToast('Son aracı silemezsiniz');
-            return;
-        }
         const v = state.vehicles.find(item => item.id === id);
-        if (!confirm(`"${v ? v.name : 'Araç'}" ve tüm dolum/gider/gezi kayıtları silinecek. Emin misiniz?`)) return;
-        // Silinen aracın dolumlarına bağlı fotoğrafları da temizle
+        if (!v) return;
+        const isLast = state.vehicles.length === 1;
+        const message = isLast
+            ? `"${v.name}" ve ona bağlı tüm dolum/gider/gezi/bakım kayıtları silinecek. Uygulamayı kullanmaya devam edebilmeniz için boş bir “Aracım” kaydı oluşturulacak. Emin misiniz?`
+            : `"${v.name}" ve ona bağlı tüm dolum/gider/gezi/bakım kayıtları silinecek. Emin misiniz?`;
+        if (!confirm(message)) return;
         const removedRefuels = state.refuels.filter(r => r.vehicleId === id);
         const photoIds = collectIdbPhotoIds(removedRefuels);
         photoIds.forEach(revokePhotoUrl);
         idbDeletePhotos(photoIds).catch(e => console.warn('Fotoğraflar silinemedi:', e));
-        state.vehicles = state.vehicles.filter(v => v.id !== id);
-        // Yetim kayıtları da temizle
+        state.vehicles = state.vehicles.filter(item => item.id !== id);
         state.refuels = state.refuels.filter(r => r.vehicleId !== id);
         state.expenses = state.expenses.filter(e => e.vehicleId !== id);
         state.trips = state.trips.filter(t => t.vehicleId !== id);
-        state.activeVehicleId = state.vehicles[0].id;
+        state.reminders = state.reminders.filter(r => r.vehicleId !== id);
+        state.recurring = state.recurring.filter(r => r.vehicleId !== id);
+        if (state.budgets && typeof state.budgets === 'object') delete state.budgets[id];
+        if (!state.vehicles.length) {
+            const replacementId = 'v' + Date.now();
+            state.vehicles = [{ id: replacementId, name: 'Aracım', odometer: 0, fuelType: 'Benzin', tankCapacity: 50, icon: 'car', color: 'slate' }];
+            state.activeVehicleId = replacementId;
+        } else if (state.activeVehicleId === id || !state.vehicles.some(item => item.id === state.activeVehicleId)) {
+            state.activeVehicleId = state.vehicles[0].id;
+        }
         saveState();
         document.getElementById('edit-vehicle-modal').classList.add('hidden');
         renderAll();
-        showToast('Araç silindi');
+        showToast(isLast ? 'Araç ve kayıtları silindi; boş araç oluşturuldu' : 'Araç ve kayıtları silindi');
     }
 
     function downloadCSVReport() {

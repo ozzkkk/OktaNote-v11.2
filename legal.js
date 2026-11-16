@@ -353,6 +353,15 @@
   // DEĞİŞİKLİK GÜNLÜĞÜ
   // ==================================================================
   var CHANGELOG = [
+    { v: '11.4.1', date: '2026-11-13', tr: [
+      'Araç silme düzeltildi: son araç da silinebilir; araçla bağlı dolum, gider, gezi, bakım, tekrarlayan gider ve bütçe kayıtları temizlenir. Uygulama için boş bir başlangıç aracı oluşturulur.',
+      'Tüm verileri sıfırla artık demo verileri yüklemez; kayıtları, araçları, fotoğrafları, ayarları ve uygulama içi yedekleri temizleyip boş başlangıca döner.',
+      'GitHub Pages bağlantısını kullanan arkadaşların kayıtları birbirinden ayrıdır; uygulama kayıtları sunucuya göndermez.'
+    ], en: [
+      'Vehicle deletion fixed: the last vehicle can also be deleted; its fill-ups, expenses, trips, maintenance, recurring expenses, and budget are removed. An empty starter vehicle is created so the app remains usable.',
+      'Reset all data no longer loads demo data; it clears records, vehicles, photos, settings, and in-app backups, then starts clean.',
+      'Friends using the GitHub Pages link have separate records; app records are not sent to a server.'
+    ] },
     { v: '11.4.0', date: '2026-11-13', tr: [
       'Karanlık mod: Açık / Koyu / Sistem tema seçeneği eklendi.',
       'CSV içe aktarma: dolum ve giderler başka uygulamaların CSV dosyalarından önizlemeli olarak alınabilir.',
